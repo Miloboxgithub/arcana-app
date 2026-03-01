@@ -49,6 +49,8 @@ function App() {
   const handleTabChange = (id: TabId) => {
     if (id === 'arcana') setPrevArcana(activeTab)
     setActiveTab(id)
+    // 切换 tab 时确保 modal 状态重置（防止习惯页 modal 未关导致 FAB 消失）
+    useUIStore.getState().closeModal()
     // Scroll to top on tab change
     window.scrollTo(0, 0)
   }

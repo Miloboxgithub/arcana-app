@@ -20,7 +20,9 @@ function uid(): string | null {
 // ─── fire-and-forget 工具 ───────────────────────────────
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function quietly(builder: any) {
-  Promise.resolve(builder).catch((e: unknown) => console.warn('[sync]', e))
+  Promise.resolve(builder).then((res: any) => {
+    if (res?.error) console.warn('[sync] error:', res.error)
+  }).catch((e: unknown) => console.warn('[sync] exception:', e))
 }
 
 // ═══════════════════════════════════════════════════════════
