@@ -13,17 +13,17 @@ const pageVariants = {
   animate: { opacity: 1, y: 0 },
   exit:    { opacity: 0, y: -6 },
 }
-const pageTransition = { duration: 0.2, ease: 'easeInOut' as const }
+const pageTransition = { duration: 0.18, ease: 'easeInOut' as const }
 
 function App() {
   const [activeTab, setActiveTab] = useState<TabId>('today')
   const [prevArcana, setPrevArcana] = useState<TabId>('profile')
 
   const handleTabChange = (id: TabId) => {
-    if (id === 'arcana') {
-      setPrevArcana(activeTab)
-    }
+    if (id === 'arcana') setPrevArcana(activeTab)
     setActiveTab(id)
+    // Scroll to top on tab change
+    window.scrollTo(0, 0)
   }
 
   const renderPage = () => {
@@ -38,39 +38,54 @@ function App() {
     }
   }
 
-  // Hide bottom nav on arcana page (it's a sub-page)
   const showNav = activeTab !== 'arcana'
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'var(--black)', maxWidth: 390, margin: '0 auto', position: 'relative' }}>
-      {/* Background decorations */}
+    <div style={{ minHeight: '100vh', background: 'var(--black)', maxWidth: 390, margin: '0 auto', position: 'relative' }}>
+
+      {/* Background layer */}
       <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0, overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle, rgba(195,0,47,0.06) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
       </div>
-      <div style={{ position: 'fixed', top: -10, right: -18, fontFamily: 'Bebas Neue,sans-serif', fontSize: 180, letterSpacing: -4, lineHeight: 1, color: 'transparent', WebkitTextStroke: '1px rgba(195,0,47,0.07)', transform: 'skewX(-8deg) rotate(-8deg)', pointerEvents: 'none', zIndex: 0, userSelect: 'none', whiteSpace: 'nowrap' }}>ARCANA</div>
+
+      {/* Background watermark */}
+      <div style={{
+        position: 'fixed', top: -10, right: -18,
+        fontFamily: 'Bebas Neue,sans-serif', fontSize: 180, letterSpacing: -4, lineHeight: 1,
+        color: 'transparent', WebkitTextStroke: '1px rgba(195,0,47,0.07)',
+        transform: 'skewX(-8deg) rotate(-8deg)',
+        pointerEvents: 'none', zIndex: 0, userSelect: 'none', whiteSpace: 'nowrap',
+      }}>ARCANA</div>
+
+      {/* Left diamond decoration */}
+      <div style={{ position: 'fixed', pointerEvents: 'none', zIndex: 0 }}>
+        <div style={{ position: 'absolute', width: 80, height: 80, top: 120, left: -30, border: '1px solid rgba(195,0,47,0.10)', transform: 'rotate(45deg)' }} />
+        <div style={{ position: 'absolute', width: 44, height: 44, top: 160, left: 12, border: '1px solid rgba(195,0,47,0.10)', transform: 'rotate(45deg)' }} />
+      </div>
 
       {/* Scanline */}
       <div style={{ position: 'fixed', left: 0, right: 0, height: 1, background: 'rgba(195,0,47,0.05)', pointerEvents: 'none', zIndex: 999, animation: 'scan 6s linear infinite' }} />
 
-      {/* Morgana FAB (shown everywhere except arcana page) */}
+      {/* Morgana FAB */}
       {showNav && (
         <button
           onClick={() => handleTabChange('arcana')}
           title="找莫尔加纳聊聊"
+          className="morgana-fab-ring"
           style={{
-            position: 'fixed', right: 16, bottom: 78, width: 48, height: 48,
+            position: 'fixed', right: 16, bottom: 78,
+            width: 48, height: 48,
             background: 'var(--card)', border: '1.5px solid rgba(195,0,47,0.5)',
             clipPath: 'polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px))',
             cursor: 'pointer', zIndex: 200,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 4px 20px rgba(195,0,47,0.2)',
           }}
         >
           <img src="/morgana-avatar.png" alt="莫尔加纳" style={{ width: 36, height: 36, objectFit: 'contain' }} />
         </button>
       )}
 
-      {/* Page Content */}
+      {/* Page content — NO overflow:hidden here, let body scroll naturally */}
       <AnimatePresence mode="wait">
         <motion.div
           key={activeTab}
@@ -79,13 +94,13 @@ function App() {
           animate="animate"
           exit="exit"
           transition={pageTransition}
-          style={{ flex: 1, overflow: 'hidden', position: 'relative', zIndex: 10 }}
+          style={{ position: 'relative', zIndex: 10 }}
         >
           {renderPage()}
         </motion.div>
       </AnimatePresence>
 
-      {/* Bottom Nav */}
+      {/* Bottom Nav — fixed at bottom */}
       {showNav && <BottomNav active={activeTab} onChange={handleTabChange} />}
     </div>
   )

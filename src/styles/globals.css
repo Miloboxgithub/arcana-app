@@ -1,10 +1,23 @@
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Share+Tech+Mono&family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Share+Tech+Mono&family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ── CSS Variables ── */
 :root {
+  /* Short names (match prototype) */
+  --red:   #C3002F;
+  --red2:  #FF1744;
+  --black: #080808;
+  --card:  #0E0E0E;
+  --card2: #161616;
+  --white: #EFEFEF;
+  --gold:  #E8C840;
+  --dim:   #3A3A3A;
+  --muted: #5A5A5A;
+
+  /* Aliases with arcana- prefix (for Tailwind config compatibility) */
   --arcana-red:   #C3002F;
   --arcana-red2:  #FF1744;
   --arcana-black: #080808;
@@ -16,71 +29,174 @@
   --arcana-muted: #5A5A5A;
 }
 
+/* ── Reset ── */
 @layer base {
   * {
+    margin: 0;
+    padding: 0;
     box-sizing: border-box;
     -webkit-tap-highlight-color: transparent;
   }
 
-  html, body {
+  html {
     height: 100%;
-    margin: 0;
-    padding: 0;
-    background-color: var(--arcana-black);
-    color: var(--arcana-white);
+  }
+
+  body {
+    background: var(--black);
+    color: var(--white);
     font-family: 'Noto Sans SC', sans-serif;
-    overscroll-behavior: none;
+    max-width: 390px;
+    margin: 0 auto;
+    min-height: 100%;
+    overflow-x: hidden;
+    position: relative;
   }
 
   #root {
-    height: 100%;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
   }
 
-  /* P5 斜切卡片 */
-  .card-skew-tr {
-    clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%);
-  }
-  .card-skew-tl {
-    clip-path: polygon(16px 0, 100% 0, 100% 100%, 0 100%, 0 16px);
-  }
-  .card-skew-br {
-    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%);
-  }
-
-  /* P5 风格滚动条 */
+  /* P5 Scrollbar */
   ::-webkit-scrollbar {
     width: 4px;
   }
   ::-webkit-scrollbar-track {
-    background: var(--arcana-black);
+    background: var(--black);
   }
   ::-webkit-scrollbar-thumb {
-    background: var(--arcana-red);
-  }
-
-  /* 半色调装饰点阵 */
-  .halftone {
-    background-image: radial-gradient(circle, var(--arcana-dim) 1px, transparent 1px);
-    background-size: 12px 12px;
+    background: var(--red);
   }
 }
 
-@layer components {
-  .btn-primary {
-    @apply bg-arcana-red text-arcana-white font-display tracking-widest px-6 py-3 card-skew-tr transition-all hover:bg-arcana-red2 active:scale-95;
-  }
+/* ── Animations ── */
+@keyframes scan {
+  0%   { top: -1px; }
+  100% { top: 100vh; }
+}
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(195,0,47,0.5); }
+  50%       { box-shadow: 0 0 0 5px rgba(195,0,47,0); }
+}
+@keyframes fabRing {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(195,0,47,0.4), 0 4px 20px rgba(195,0,47,0.2); }
+  50%       { box-shadow: 0 0 0 6px rgba(195,0,47,0), 0 4px 20px rgba(195,0,47,0.2); }
+}
 
-  .btn-ghost {
-    @apply border border-arcana-dim text-arcana-white font-display tracking-widest px-6 py-3 card-skew-tr transition-all hover:border-arcana-red active:scale-95;
-  }
+/* ── Slot button ── */
+.slot-btn {
+  flex: 1;
+  background: var(--card2);
+  border: none;
+  outline: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 10px 4px 8px;
+  clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+.slot-btn.active {
+  background: var(--red);
+  color: var(--white);
+  box-shadow: 0 0 20px rgba(195,0,47,0.45);
+}
+.slot-icon-wrap {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.slot-label {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 12px;
+  letter-spacing: 2px;
+}
 
-  .arcana-card {
-    @apply bg-arcana-card border border-arcana-dim card-skew-tr p-4;
-  }
+/* ── Stat cell icon ── */
+.stat-cell {
+  position: relative;
+  overflow: hidden;
+}
+.stat-cell::after {
+  content: attr(data-icon);
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  font-size: 20px;
+  opacity: 0.06;
+  user-select: none;
+  pointer-events: none;
+}
 
-  .page-container {
-    @apply flex-1 overflow-y-auto px-4 pt-4 pb-24 bg-arcana-black;
-  }
+/* ── Bar fill diamond tip ── */
+.bar-fill {
+  height: 100%;
+  background: var(--red);
+  position: relative;
+  transition: width 1.5s cubic-bezier(.22, 1, .36, 1);
+}
+.bar-fill::after {
+  content: '';
+  position: absolute;
+  right: -3px;
+  top: -3px;
+  width: 9px;
+  height: 9px;
+  background: var(--white);
+  border: 1.5px solid var(--red);
+  transform: rotate(45deg);
+}
+
+/* ── Section head tag ── */
+.section-tag::before {
+  content: '';
+  display: inline-block;
+  width: 3px;
+  height: 14px;
+  background: var(--red);
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+/* ── Status dot pulse ── */
+.status-dot {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ── Morgana FAB ring ── */
+.morgana-fab-ring {
+  animation: fabRing 2.5s infinite;
+}
+
+/* ── Halftone bg ── */
+.halftone {
+  background-image: radial-gradient(circle, var(--dim) 1px, transparent 1px);
+  background-size: 12px 12px;
+}
+
+/* ── Card clip variants ── */
+.card-skew-tr {
+  clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%);
+}
+.card-skew-tl {
+  clip-path: polygon(16px 0, 100% 0, 100% 100%, 0 100%, 0 16px);
+}
+
+/* ── Page container (scrollable) ── */
+.page-container {
+  padding: 0 0 120px;
+  position: relative;
+  z-index: 10;
+}
+
+/* ── Content wrapper inside page ── */
+.page-content {
+  padding: 18px 16px 0;
 }
