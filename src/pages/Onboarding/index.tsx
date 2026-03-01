@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react'
 import useAuthStore from '@/stores/useAuthStore'
 import useProfileStore from '@/stores/useProfileStore'
 import useHabitStore from '@/stores/useHabitStore'
-import { supabase } from '@/lib/supabase'
 import { pushOnboardingDims } from '@/lib/sync'
 import type { DimensionId } from '@/stores/useHabitStore'
 
@@ -123,7 +122,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   const [saving, setSaving] = useState(false)
   const rafRef = useRef<number>(0)
 
-  const username = user?.user_metadata?.username || 'PHANTOM'
+  const username = user?.username || 'PHANTOM'
 
   // Toggle dim selection
   const toggleDim = (id: DimensionId) => {
@@ -206,8 +205,8 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
     // Push initial dimension exp to cloud
     await pushOnboardingDims(expMap)
 
-    // Mark onboarding done in Supabase user_metadata
-    await supabase.auth.updateUser({ data: { onboarding_done: true } })
+    // Mark onboarding done via arcana-server
+    await useAuthStore.getState().updateUser({ onboarding_done: true })
 
     setSaving(false)
     onComplete()

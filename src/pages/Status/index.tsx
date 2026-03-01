@@ -154,8 +154,8 @@ export default function Status() {
   const [bars,setBars] = useState(false)
   const [open,setOpen] = useState<Set<string>>(new Set())
 
-  const username = (user?.user_metadata?.username || user?.email?.split('@')[0] || 'PHANTOM').toUpperCase()
-  const avatarId: string = user?.user_metadata?.avatar_id || 'joker'
+  const username = (user?.username || user?.email?.split('@')[0] || 'PHANTOM').toUpperCase()
+  const avatarId: string = user?.avatar_id || 'joker'
 
   // RAF-based radar animation: progress 0→1
   const [radarProgress, setRadarProgress] = useState(0)

@@ -12,7 +12,6 @@ import Onboarding from '@/pages/Onboarding'
 import useAuthStore from '@/stores/useAuthStore'
 import useUIStore from '@/stores/useUIStore'
 import { syncFromCloud } from '@/lib/sync'
-import { supabase } from '@/lib/supabase'
 
 const pageVariants = {
   initial: { opacity: 0, y: 6 },
@@ -34,15 +33,11 @@ function App() {
     if (user) syncFromCloud(user.id)
   }, [user?.id])
 
-  // 每5分钟验证一次session有效性
+  // 每30分钟验证一次token有效性
   useEffect(() => {
     const interval = setInterval(async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) {
-        // session 已失效（后台删除用户等）
-        useAuthStore.getState().signOut()
-      }
-    }, 5 * 60 * 1000)
+      await useAuthStore.getState().refreshUser()
+    }, 30 * 60 * 1000)
     return () => clearInterval(interval)
   }, [])
 
@@ -84,11 +79,10 @@ function App() {
   if (!user) return <AuthPage />
 
   // New user → show onboarding
-  const onboardingDone = user.user_metadata?.onboarding_done
+  const onboardingDone = user.onboarding_done
   if (!onboardingDone) {
     return <Onboarding onComplete={() => {
-      // Trigger re-render by refreshing session
-      supabase.auth.refreshSession()
+      useAuthStore.getState().refreshUser()
     }} />
   }
 

@@ -4,8 +4,6 @@ import useHabitStore from '@/stores/useHabitStore'
 import useAuthStore from '@/stores/useAuthStore'
 import useUIStore from '@/stores/useUIStore'
 import { toast } from '@/components/ui/Toast'
-import { supabase } from '@/lib/supabase'
-
 // ---- Preset SVG Avatars (P5 characters, zero external deps) ----
 const PRESET_AVATARS = [
   {
@@ -191,12 +189,12 @@ export default function Profile({ onOpenArcana }: ProfileProps) {
   const { user, signOut } = useAuthStore()
   const { openModal, closeModal } = useUIStore()
 
-  const username = user?.user_metadata?.username || user?.email?.split('@')[0] || 'PHANTOM'
+  const username = user?.username || user?.email?.split('@')[0] || 'PHANTOM'
 
   const [showAvatarPicker, setShowAvatarPicker] = useState(false)
-  // Read avatar from user_metadata first, fallback to localStorage, then default
+  // Read avatar from user state first, fallback to localStorage, then default
   const [avatarId, setAvatarId] = useState<string>(
-    () => user?.user_metadata?.avatar_id || localStorage.getItem(AVATAR_KEY) || 'joker'
+    () => user?.avatar_id || localStorage.getItem(AVATAR_KEY) || 'joker'
   )
   // Username editing inside the picker
   const [editingName, setEditingName] = useState(false)
@@ -217,13 +215,15 @@ export default function Profile({ onOpenArcana }: ProfileProps) {
     return preset.node
   }
 
-  // Save avatar_id to Supabase + localStorage
+  // Save avatar_id to arcana-server + localStorage
   const saveAvatar = async (id: string) => {
     setAvatarId(id)
     localStorage.setItem(AVATAR_KEY, id)
-    // Persist to cloud (data: URLs are stored as-is; preset ids are short strings)
-    const { error } = await supabase.auth.updateUser({ data: { avatar_id: id } })
-    if (error) toast.error('头像同步失败，仅本地保存')
+    try {
+      await useAuthStore.getState().updateUser({ avatar_id: id })
+    } catch {
+      toast.error('头像同步失败，仅本地保存')
+    }
   }
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -252,14 +252,14 @@ export default function Profile({ onOpenArcana }: ProfileProps) {
   const handleSaveName = async () => {
     if (!newName.trim()) return
     setSavingProfile(true)
-    const { error } = await supabase.auth.updateUser({ data: { username: newName.trim() } })
-    setSavingProfile(false)
-    if (error) {
-      toast.error('修改失败')
-    } else {
+    try {
+      await useAuthStore.getState().updateUser({ username: newName.trim() })
       toast.success('用户名已更新', '✦')
       setEditingName(false)
+    } catch {
+      toast.error('修改失败')
     }
+    setSavingProfile(false)
   }
 
   return (

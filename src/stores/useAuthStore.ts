@@ -1,57 +1,74 @@
 import { create } from 'zustand'
-import { supabase } from '@/lib/supabase'
-import type { User, Session } from '@supabase/supabase-js'
+import { api, type ApiUser } from '@/lib/api'
 
 interface AuthState {
-  user: User | null
-  session: Session | null
+  user: ApiUser | null
   loading: boolean
-  // actions
   signUp: (email: string, password: string, username: string) => Promise<{ error: string | null }>
   signIn: (email: string, password: string) => Promise<{ error: string | null }>
-  signOut: () => Promise<void>
+  signOut: () => void
   init: () => Promise<void>
+  refreshUser: () => Promise<void>
+  updateUser: (updates: Partial<Pick<ApiUser, 'username' | 'avatar_id' | 'onboarding_done'>>) => Promise<void>
 }
 
-const useAuthStore = create<AuthState>((set) => ({
+const TOKEN_KEY = 'arcana_token'
+
+const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
-  session: null,
   loading: true,
 
   init: async () => {
-    const { data: { session } } = await supabase.auth.getSession()
-    set({ session, user: session?.user ?? null, loading: false })
-
-    supabase.auth.onAuthStateChange((_event, session) => {
-      set({ session, user: session?.user ?? null })
-    })
+    const token = localStorage.getItem(TOKEN_KEY)
+    if (!token) { set({ loading: false }); return }
+    try {
+      const { user } = await api.auth.me()
+      set({ user, loading: false })
+    } catch {
+      localStorage.removeItem(TOKEN_KEY)
+      set({ user: null, loading: false })
+    }
   },
 
   signUp: async (email, password, username) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { username } },
-    })
-    if (error) return { error: error.message }
-    if (data.user) {
-      await supabase.from('profiles').insert({
-        id: data.user.id,
-        username,
-      })
+    try {
+      const { token, user } = await api.auth.signup(email, password, username)
+      localStorage.setItem(TOKEN_KEY, token)
+      set({ user })
+      return { error: null }
+    } catch (e: unknown) {
+      return { error: (e as Error).message }
     }
-    return { error: null }
   },
 
   signIn: async (email, password) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) return { error: error.message }
-    return { error: null }
+    try {
+      const { token, user } = await api.auth.signin(email, password)
+      localStorage.setItem(TOKEN_KEY, token)
+      set({ user })
+      return { error: null }
+    } catch (e: unknown) {
+      return { error: (e as Error).message }
+    }
   },
 
-  signOut: async () => {
-    await supabase.auth.signOut()
-    set({ user: null, session: null })
+  signOut: () => {
+    localStorage.removeItem(TOKEN_KEY)
+    set({ user: null })
+  },
+
+  refreshUser: async () => {
+    try {
+      const { user } = await api.auth.me()
+      set({ user })
+    } catch { /* ignore */ }
+  },
+
+  updateUser: async (updates) => {
+    await api.auth.patchMe(updates)
+    // Optimistically update local state
+    const current = get().user
+    if (current) set({ user: { ...current, ...updates } })
   },
 }))
 

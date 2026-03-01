@@ -81,7 +81,7 @@ export async function askMorgana(
   ]
 
   try {
-    const res = await fetch('https://api.minimax.chat/v1/text/chatcompletion_v2', {
+    const res = await fetch('https://api.minimaxi.com/v1/text/chatcompletion_v2', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -83,7 +83,7 @@ const useHabitStore = create<HabitStore>()(
         const full: Habit = { ...habit, id, streak: 0, createdAt: Date.now() }
         set(s => ({ habits: [...s.habits, full] }))
         // cloud
-        pushAddHabit({ id, name: habit.name, timeSlot: habit.timeSlot, exp: habit.exp, dimension: habit.dimension, isAnchor: habit.isAnchor })
+        pushAddHabit({ id, name: habit.name, timeSlot: habit.timeSlot, exp: habit.exp, dimension: habit.dimension, isAnchor: habit.isAnchor, streak: 0 })
         return id
       },
 

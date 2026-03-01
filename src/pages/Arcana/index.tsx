@@ -20,7 +20,7 @@ export default function ArcanaPage({ onBack }: ArcanaPageProps) {
   const { habits, todayCompleted, checkRecords } = useHabitStore()
   const { user } = useAuthStore()
 
-  const username = (user?.user_metadata?.username || user?.email?.split('@')[0] || 'PHANTOM').toUpperCase()
+  const username = (user?.username || user?.email?.split('@')[0] || 'PHANTOM').toUpperCase()
   const streak = useHabitStore(s => s.getStreak())
 
   // 本周打卡次数
