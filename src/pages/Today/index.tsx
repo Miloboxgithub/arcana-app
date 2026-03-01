@@ -137,8 +137,10 @@ function HabitCard({ habit, done, onToggle, index }: { habit: Habit; done: boole
 function ChainConn() {
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', padding: '0 0 0 21px', height: 18, position: 'relative' }}>
-      <div style={{ position: 'absolute', left: 22, top: 0, bottom: 0, width: 2, background: 'rgba(195,0,47,0.2)' }} />
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ position: 'relative', zIndex: 1 }}>
+      {/* vertical line behind arrow */}
+      <div style={{ position: 'absolute', left: 27, top: 0, bottom: 0, width: 2, background: 'rgba(195,0,47,0.2)' }} />
+      {/* arrow on top */}
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ position: 'relative', zIndex: 1, flexShrink: 0 }}>
         <polygon points="7,14 0,0 14,0" fill="rgba(195,0,47,0.35)" />
       </svg>
     </div>
@@ -292,7 +294,7 @@ export default function Today() {
         </div>
 
         {/* ── SLASH DIVIDER ── */}
-        <div style={{ position: 'relative', padding: '14px 20px 0' }}>
+        <div style={{ position: 'relative', padding: '14px 0 0' }}>
           <div style={{ height: 2, background: 'var(--red)', transform: 'skewX(-12deg)', boxShadow: '0 0 16px rgba(195,0,47,0.6)', position: 'relative' }}>
             <div style={{ position: 'absolute', top: 4, left: 0, right: 20, height: 1, background: 'rgba(195,0,47,0.2)' }} />
             <div style={{ position: 'absolute', top: 7, left: 0, right: 60, height: 1, background: 'rgba(195,0,47,0.08)' }} />
@@ -307,9 +309,11 @@ export default function Today() {
             <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg,var(--red),transparent 70%)' }} />
             <div style={{ position: 'absolute', right: -8, top: '50%', transform: 'translateY(-50%)', fontFamily: 'Bebas Neue,sans-serif', fontSize: 96, lineHeight: 1, color: 'rgba(195,0,47,0.05)', letterSpacing: -4, userSelect: 'none', pointerEvents: 'none' }}>{streak}</div>
             <div style={{ display: 'flex', alignItems: 'center', padding: '12px 18px', gap: 16 }}>
-              <div style={{ fontFamily: 'Bebas Neue,sans-serif', fontSize: 56, lineHeight: 1, color: 'var(--red)', textShadow: '0 0 30px rgba(195,0,47,0.5)', position: 'relative' }}>
-                {streak}
-                <span style={{ position: 'absolute', bottom: 2, right: -28, fontSize: 10, letterSpacing: 2, color: 'var(--muted)', fontFamily: 'Share Tech Mono,monospace' }}>DAY</span>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexShrink: 0 }}>
+                <div style={{ fontFamily: 'Bebas Neue,sans-serif', fontSize: 56, lineHeight: 1, color: 'var(--red)', textShadow: '0 0 30px rgba(195,0,47,0.5)' }}>
+                  {streak}
+                </div>
+                <span style={{ fontFamily: 'Share Tech Mono,monospace', fontSize: 10, letterSpacing: 2, color: 'var(--muted)' }}>DAY</span>
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontFamily: 'Share Tech Mono,monospace', fontSize: 9, letterSpacing: 3, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 3 }}>连续打卡</div>

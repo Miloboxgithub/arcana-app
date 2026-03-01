@@ -193,6 +193,10 @@
   padding: 0 0 120px;
   position: relative;
   z-index: 10;
+  width: 100%;
+  max-width: 390px;
+  margin: 0 auto;
+  box-sizing: border-box;
 }
 
 /* ── Content wrapper inside page ── */
