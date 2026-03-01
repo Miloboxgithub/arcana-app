@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import useProfileStore from '@/stores/useProfileStore'
 import useHabitStore from '@/stores/useHabitStore'
 
@@ -57,13 +57,31 @@ export default function Status() {
   const {dimensions,getTotalLevel} = useProfileStore()
   const {getStreak} = useHabitStore()
   const [bars,setBars] = useState(false)
-  const [radar,setRadar] = useState(false)
   const [open,setOpen] = useState<Set<string>>(new Set())
 
+  // RAF-based radar animation: progress 0→1
+  const [radarProgress, setRadarProgress] = useState(0)
+  const rafRef = useRef<number>(0)
+
   useEffect(()=>{
-    const t1=setTimeout(()=>setBars(true),100)
-    const t2=setTimeout(()=>setRadar(true),300)
-    return ()=>{clearTimeout(t1);clearTimeout(t2)}
+    const t1 = setTimeout(()=>setBars(true), 100)
+    // Start radar animation after 400ms delay
+    const t2 = setTimeout(()=>{
+      const start = performance.now()
+      const DURATION = 1400 // ms
+      const ease = (t:number) => t<0.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2 // easeInOutCubic
+      const tick = (now:number) => {
+        const t = Math.min(1, (now - start) / DURATION)
+        setRadarProgress(ease(t))
+        if (t < 1) rafRef.current = requestAnimationFrame(tick)
+      }
+      rafRef.current = requestAnimationFrame(tick)
+    }, 400)
+    return ()=>{
+      clearTimeout(t1)
+      clearTimeout(t2)
+      cancelAnimationFrame(rafRef.current)
+    }
   },[])
 
   const dmap = Object.fromEntries(dimensions.map(d=>[d.id,d]))
@@ -73,7 +91,9 @@ export default function Status() {
   const wk = Math.ceil((Date.now()-new Date(new Date().getFullYear(),0,1).getTime())/(7*86400000))
 
   const ratios = DIM_ORDER.map(id=>{ const d=dmap[id]; return d ? d.exp/d.maxExp : 0 })
-  const pts = buildPts(radar ? ratios : [0,0,0,0,0,0])
+  // Interpolate from 0 to actual ratios using radarProgress
+  const animatedRatios = ratios.map(r => r * radarProgress)
+  const pts = buildPts(animatedRatios)
 
   const toggle = (id:string) => setOpen(p=>{const n=new Set(p); n.has(id)?n.delete(id):n.add(id); return n})
 
@@ -144,13 +164,14 @@ export default function Status() {
               stroke="var(--red)"
               strokeWidth="1.5"
               strokeLinejoin="round"
-              style={{transition:'all 1.4s cubic-bezier(0.22,1,0.36,1)',filter:radar?'drop-shadow(0 0 6px rgba(195,0,47,0.4))':'none'}}
+              style={{filter:radarProgress>0.1?'drop-shadow(0 0 6px rgba(195,0,47,0.4))':'none'}}
             />
-            {/* Data points (diamonds) — appear after expand */}
-            {radar && TIPS.map(([tx,ty],i)=>{
-              const t=Math.max(0,Math.min(1,ratios[i]))
+            {/* Data points (diamonds) — appear near end of animation */}
+            {radarProgress > 0.85 && TIPS.map(([tx,ty],i)=>{
+              const t=Math.max(0,Math.min(1,animatedRatios[i]))
               const px=CX+(tx-CX)*t,py=CY+(ty-CY)*t
-              return <rect key={i} x={px-4} y={py-4} width={8} height={8} fill="var(--white)" stroke="var(--red)" strokeWidth="1" transform={`rotate(45,${px},${py})`}/>
+              const fadeIn = Math.min(1,(radarProgress-0.85)/0.15)
+              return <rect key={i} x={px-4} y={py-4} width={8} height={8} fill="var(--white)" stroke="var(--red)" strokeWidth="1" transform={`rotate(45,${px},${py})`} opacity={fadeIn}/>
             })}
             {/* Labels */}
             <text x={CX}         y={CY-R-12}   textAnchor="middle" fill="var(--white)" fontFamily="Share Tech Mono,monospace" fontSize="9" letterSpacing="1">专业力</text>

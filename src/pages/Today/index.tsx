@@ -21,8 +21,8 @@ const MORGANA_LINES = [
   '完美执行！这就是怪盗团的行动力！',
 ]
 let morganaIdx = 0
-const SLOTS: TimeSlot[] = ['morning', 'afternoon', 'evening']
-const SLOT_LABELS: Record<TimeSlot, string> = { morning: '早晨', afternoon: '下午', evening: '夜晚' }
+const SLOTS: TimeSlot[] = ['morning', 'afternoon', 'evening', 'night']
+const SLOT_LABELS: Record<TimeSlot, string> = { morning: '早晨', afternoon: '白天', evening: '傍晚', night: '夜晚' }
 
 function getDateStr() {
   const d = new Date()
@@ -146,32 +146,56 @@ function ChainConn() {
 
 // ── Slot Button ───────────────────────────────────────────
 function SlotBtn({ slot, active, onClick }: { slot: TimeSlot; active: boolean; onClick: () => void }) {
+  const icons: Record<TimeSlot, JSX.Element> = {
+    morning: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="4" fill="currentColor"/>
+        <line x1="12" y1="2" x2="12" y2="5" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="12" y1="19" x2="12" y2="22" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="4.22" y1="4.22" x2="6.34" y2="6.34" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="17.66" y1="17.66" x2="19.78" y2="19.78" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="2" y1="12" x2="5" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="19" y1="12" x2="22" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      </svg>
+    ),
+    afternoon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="5" fill="currentColor"/>
+        <line x1="12" y1="2" x2="12" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="12" y1="18" x2="12" y2="22" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="4.22" y1="4.22" x2="7.05" y2="7.05" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="16.95" y1="16.95" x2="19.78" y2="19.78" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="2" y1="12" x2="6" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="18" y1="12" x2="22" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="4.22" y1="19.78" x2="7.05" y2="16.95" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="16.95" y1="7.05" x2="19.78" y2="4.22" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      </svg>
+    ),
+    evening: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path d="M12 3a9 9 0 0 0 0 18 9 9 0 0 0 6.36-2.64A7 7 0 0 1 9 8a7 7 0 0 1 6.36-5A9 9 0 0 0 12 3z" fill="currentColor" opacity="0.6"/>
+        <circle cx="12" cy="12" r="3" fill="currentColor"/>
+        <line x1="12" y1="2" x2="12" y2="5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" opacity="0.5"/>
+        <line x1="20" y1="12" x2="22" y2="12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" opacity="0.5"/>
+      </svg>
+    ),
+    night: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z" fill="currentColor"/>
+        <circle cx="18" cy="5" r="0.9" fill="currentColor" opacity="0.6"/>
+        <circle cx="21" cy="9" r="0.6" fill="currentColor" opacity="0.4"/>
+        <circle cx="19" cy="3" r="0.5" fill="currentColor" opacity="0.35"/>
+      </svg>
+    ),
+  }
   return (
-    <button className={`slot-btn${active ? ' active' : ''}`} onClick={onClick}>
-      <div className="slot-icon-wrap">
-        {slot === 'morning' && (
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="4" fill="currentColor"/>
-            <line x1="12" y1="2" x2="12" y2="5" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            <line x1="12" y1="19" x2="12" y2="22" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            <line x1="4.22" y1="4.22" x2="6.34" y2="6.34" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            <line x1="17.66" y1="17.66" x2="19.78" y2="19.78" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            <line x1="2" y1="12" x2="5" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            <line x1="19" y1="12" x2="22" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-          </svg>
-        )}
-        {slot === 'afternoon' && (
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <polygon points="12,2 15,9 22,9 16.5,14 18.5,21 12,17 5.5,21 7.5,14 2,9 9,9" fill="currentColor" opacity="0.9"/>
-          </svg>
-        )}
-        {slot === 'evening' && (
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z" fill="currentColor"/>
-            <circle cx="17" cy="5" r="1" fill="currentColor" opacity="0.6"/>
-            <circle cx="20" cy="9" r="0.7" fill="currentColor" opacity="0.4"/>
-          </svg>
-        )}
+    <button
+      className={`slot-btn${active ? ' active' : ''}`}
+      onClick={onClick}
+      style={{ flex: 1, minWidth: 0 }}
+    >
+      <div className="slot-icon-wrap" style={{ transform: 'scale(0.85)' }}>
+        {icons[slot]}
       </div>
       <span className="slot-label">{SLOT_LABELS[slot]}</span>
     </button>

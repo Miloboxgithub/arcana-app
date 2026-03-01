@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-export type TimeSlot = 'morning' | 'afternoon' | 'evening'
+export type TimeSlot = 'morning' | 'afternoon' | 'evening' | 'night'
 export type DimensionId = 'pro' | 'fitness' | 'social' | 'create' | 'self' | 'charm'
 
 export interface Habit {
