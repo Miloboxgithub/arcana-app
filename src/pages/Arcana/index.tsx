@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import useProfileStore from '@/stores/useProfileStore'
+import { classifyInput } from '@/utils/classifyInput'
 
 interface ArcanaPageProps {
   onBack: () => void
@@ -16,6 +18,7 @@ let replyIdx = 0
 interface Message { role: 'ai' | 'user'; text: string }
 
 export default function ArcanaPage({ onBack }: ArcanaPageProps) {
+  const { addExp } = useProfileStore()
   const [input, setInput] = useState('')
   const [messages, setMessages] = useState<Message[]>([
     { role: 'ai', text: '侦探，今天你完成了下午的习惯链。专业力又涨了，不错。但我注意到你 3 天没有社交记录了……是在闭关修炼？' },
@@ -28,8 +31,16 @@ export default function ArcanaPage({ onBack }: ArcanaPageProps) {
     const userMsg = input.trim()
     setInput('')
     setMessages(m => [...m, { role: 'user', text: userMsg }])
+
+    // Classify input and award EXP
+    const { dimension, exp, label } = classifyInput(userMsg)
+    addExp(dimension, exp)
+
+    // Generate contextual reply mentioning the EXP
     setTimeout(() => {
-      setMessages(m => [...m, { role: 'ai', text: MORGANA_REPLIES[replyIdx++ % MORGANA_REPLIES.length] }])
+      const baseReply = MORGANA_REPLIES[replyIdx++ % MORGANA_REPLIES.length]
+      const expNote = `\n\n[系统] 识别为「${label}」，+${exp} EXP 已记录。`
+      setMessages(m => [...m, { role: 'ai', text: baseReply + expNote }])
     }, 900)
   }
 

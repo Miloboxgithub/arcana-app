@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react'
 import useHabitStore, { type TimeSlot, type Habit } from '@/stores/useHabitStore'
 import useProfileStore from '@/stores/useProfileStore'
 import { useStarBurst } from '@/hooks/useStarBurst'
+import { classifyInput } from '@/utils/classifyInput'
 
 // ── Constants ─────────────────────────────────────────────
 const DIM_LABELS: Record<string, string> = {
@@ -20,7 +21,6 @@ const MORGANA_LINES = [
   '完美执行！这就是怪盗团的行动力！',
 ]
 let morganaIdx = 0
-const AI_DIMS = ['pro', 'fitness', 'create', 'self'] as const
 const SLOTS: TimeSlot[] = ['morning', 'afternoon', 'evening']
 const SLOT_LABELS: Record<TimeSlot, string> = { morning: '早晨', afternoon: '下午', evening: '夜晚' }
 
@@ -254,13 +254,12 @@ export default function Today() {
     }
   }, [toggleToday, addExp, removeExp, burst, showToast, showMorgana])
 
-  const handleAI = useCallback((_text: string) => {
-    const dimId = AI_DIMS[Math.floor(Math.random() * AI_DIMS.length)]
-    const exp = 10 + Math.floor(Math.random() * 20)
+  const handleAI = useCallback((text: string) => {
+    const { dimension, exp, label } = classifyInput(text)
     burst(window.innerWidth / 2, window.innerHeight / 2, 14)
-    addExp(dimId, exp)
-    showToast(exp, DIM_LABELS[dimId])
-    setTimeout(() => showMorgana(`收到！AI 已识别：${DIM_LABELS[dimId]} +${exp} EXP，记录在案。`), 500)
+    addExp(dimension, exp)
+    showToast(exp, label)
+    setTimeout(() => showMorgana(`收到！识别为「${label}」，+${exp} EXP 已记录在案。`), 500)
   }, [addExp, burst, showToast, showMorgana])
 
   const previewDims = dimensions.slice(0, 4)
