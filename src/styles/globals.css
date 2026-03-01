@@ -38,8 +38,9 @@
     -webkit-tap-highlight-color: transparent;
   }
 
+  /* Override Tailwind preflight which sets html { height: 100% } — that locks scroll */
   html {
-    height: 100%;
+    height: auto !important;
   }
 
   body {
@@ -48,15 +49,13 @@
     font-family: 'Noto Sans SC', sans-serif;
     max-width: 390px;
     margin: 0 auto;
-    min-height: 100%;
+    min-height: 100vh;
     overflow-x: hidden;
     position: relative;
   }
 
   #root {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
+    /* No height/flex/min-height constraints — body must scroll naturally */
   }
 
   /* P5 Scrollbar */

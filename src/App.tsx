@@ -41,7 +41,7 @@ function App() {
   const showNav = activeTab !== 'arcana'
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--black)', maxWidth: 390, margin: '0 auto', position: 'relative' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--black)', position: 'relative' }}>
 
       {/* Background layer */}
       <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0, overflow: 'hidden' }}>
