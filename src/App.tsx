@@ -9,6 +9,7 @@ import ArcanaPage from '@/pages/Arcana'
 import Profile from '@/pages/Profile'
 import AuthPage from '@/pages/Auth'
 import useAuthStore from '@/stores/useAuthStore'
+import { syncFromCloud } from '@/lib/sync'
 
 const pageVariants = {
   initial: { opacity: 0, y: 6 },
@@ -23,6 +24,11 @@ function App() {
   const { user, loading, init } = useAuthStore()
 
   useEffect(() => { init() }, [init])
+
+  // 登录后自动从云端同步数据
+  useEffect(() => {
+    if (user) syncFromCloud(user.id)
+  }, [user?.id])
 
   const handleTabChange = (id: TabId) => {
     if (id === 'arcana') setPrevArcana(activeTab)

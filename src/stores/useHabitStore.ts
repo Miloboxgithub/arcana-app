@@ -35,6 +35,9 @@ interface HabitStore {
   getStreak: () => number
   getTodayDate: () => string
   initDay: () => void // reset todayCompleted if it's a new day
+  // Cloud sync setters
+  setHabits: (habits: Omit<Habit, 'streak' | 'createdAt' | 'isAnchor'>[]) => void
+  setCheckRecords: (map: Record<string, string[]>) => void
 }
 
 function todayStr() {
@@ -108,6 +111,31 @@ const useHabitStore = create<HabitStore>()(
       },
 
       getHabitsBySlot: (slot) => get().habits.filter(h => h.timeSlot === slot),
+
+      setHabits: (incoming) => {
+        set(s => ({
+          habits: incoming.map(h => ({
+            ...h,
+            timeSlot: (h as any).slot ?? (h as any).timeSlot ?? 'morning',
+            isAnchor: false,
+            streak: s.habits.find(x => x.id === h.id)?.streak ?? 0,
+            createdAt: s.habits.find(x => x.id === h.id)?.createdAt ?? Date.now(),
+          }))
+        }))
+      },
+
+      setCheckRecords: (map) => {
+        const records: CheckRecord[] = []
+        const today = todayStr()
+        const completed: string[] = []
+        for (const [habitId, dates] of Object.entries(map)) {
+          for (const date of dates) {
+            records.push({ habitId, date, completedAt: Date.now() })
+          }
+          if (dates.includes(today)) completed.push(habitId)
+        }
+        set({ checkRecords: records, todayCompleted: completed })
+      },
 
       getStreak: () => {
         // Count consecutive days with at least 1 check

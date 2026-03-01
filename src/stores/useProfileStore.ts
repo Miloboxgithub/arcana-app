@@ -22,6 +22,8 @@ interface ProfileStore {
   addExp: (dimensionId: DimensionId, amount: number) => void
   removeExp: (dimensionId: DimensionId, amount: number) => void
   getTotalLevel: () => number
+  // Cloud sync
+  setDimensionExp: (map: Record<string, number>) => void
 }
 
 const defaultDimensions: Dimension[] = [
@@ -67,6 +69,23 @@ const useProfileStore = create<ProfileStore>()(
       getTotalLevel: () => {
         return Math.floor(get().dimensions.reduce((sum, d) => sum + d.level, 0) / get().dimensions.length)
       },
+
+      setDimensionExp: (map) => set(s => ({
+        dimensions: s.dimensions.map(d => {
+          const exp = map[d.id]
+          if (exp === undefined) return d
+          let newExp = exp
+          let newLevel = 1
+          let newMax = 1000
+          while (newExp >= newMax) {
+            newExp -= newMax
+            newLevel++
+            newMax = Math.floor(newMax * 1.3)
+          }
+          return { ...d, exp: newExp, level: newLevel, maxExp: newMax }
+        }),
+        totalExp: Object.values(map).reduce((a, b) => a + b, 0),
+      })),
     }),
     { name: 'arcana-profile' }
   )
