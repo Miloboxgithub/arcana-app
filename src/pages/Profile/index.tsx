@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 import useProfileStore from '@/stores/useProfileStore'
 import useHabitStore from '@/stores/useHabitStore'
 import useAuthStore from '@/stores/useAuthStore'
+import useUIStore from '@/stores/useUIStore'
 import { toast } from '@/components/ui/Toast'
 import { supabase } from '@/lib/supabase'
 
@@ -188,6 +189,7 @@ export default function Profile({ onOpenArcana }: ProfileProps) {
   const { dimensions, getTotalLevel } = useProfileStore()
   const { getStreak } = useHabitStore()
   const { user, signOut } = useAuthStore()
+  const { openModal, closeModal } = useUIStore()
 
   const username = user?.user_metadata?.username || user?.email?.split('@')[0] || 'PHANTOM'
 
@@ -235,7 +237,7 @@ export default function Profile({ onOpenArcana }: ProfileProps) {
     reader.onload = async (ev) => {
       const dataUrl = ev.target?.result as string
       await saveAvatar(dataUrl)
-      setShowAvatarPicker(false)
+      setShowAvatarPicker(false); closeModal()
       toast.success('头像已更新', '✦')
     }
     reader.readAsDataURL(file)
@@ -283,7 +285,7 @@ export default function Profile({ onOpenArcana }: ProfileProps) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 14 }}>
             {/* Clickable avatar */}
             <div
-              onClick={() => setShowAvatarPicker(true)}
+              onClick={() => { setShowAvatarPicker(true); openModal() }}
               style={{
                 position: 'relative', width: 72, height: 72,
                 border: '2px solid rgba(195,0,47,0.4)',
@@ -338,7 +340,7 @@ export default function Profile({ onOpenArcana }: ProfileProps) {
               alignItems: 'center', justifyContent: 'flex-end',
               backdropFilter: 'blur(4px)',
             }}
-            onClick={() => { setShowAvatarPicker(false); setEditingName(false) }}
+            onClick={() => { setShowAvatarPicker(false); setEditingName(false); closeModal() }}
           >
             <div
               style={{
@@ -350,7 +352,7 @@ export default function Profile({ onOpenArcana }: ProfileProps) {
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                 <span style={{ fontFamily: 'Bebas Neue,sans-serif', fontSize: 16, letterSpacing: 4, color: 'var(--white)', transform: 'skewX(-4deg)', display: 'inline-block' }}>编辑档案</span>
-                <div onClick={() => { setShowAvatarPicker(false); setEditingName(false) }} style={{ cursor: 'pointer', color: 'var(--muted)', fontSize: 22, lineHeight: 1, padding: 4 }}>×</div>
+                <div onClick={() => { setShowAvatarPicker(false); setEditingName(false); closeModal() }} style={{ cursor: 'pointer', color: 'var(--muted)', fontSize: 22, lineHeight: 1, padding: 4 }}>×</div>
               </div>
 
               {/* Username edit — always visible inside picker */}

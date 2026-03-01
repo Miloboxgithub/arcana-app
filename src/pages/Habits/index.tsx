@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import useHabitStore, { type TimeSlot, type DimensionId } from '@/stores/useHabitStore'
+import useUIStore from '@/stores/useUIStore'
 
 // ── Constants ──────────────────────────────────────────────
 const DIM_LABELS: Record<DimensionId, string> = {
@@ -299,7 +300,11 @@ function AddModal({ open, onClose, onAdd }: AddModalProps) {
 // ── MAIN: Habits Page ──────────────────────────────────────
 export default function Habits() {
   const { getHabitsBySlot, addHabit, removeHabit } = useHabitStore()
+  const { openModal, closeModal } = useUIStore()
   const [modalOpen, setModalOpen] = useState(false)
+
+  const openAddModal = () => { setModalOpen(true); openModal() }
+  const closeAddModal = () => { setModalOpen(false); closeModal() }
 
   const handleAdd = (name: string, dimension: DimensionId, slot: TimeSlot, exp: number) => {
     addHabit({ name, dimension, timeSlot: slot, exp, isAnchor: false })
@@ -351,7 +356,7 @@ export default function Habits() {
 
           {/* Add button */}
           <button
-            onClick={() => setModalOpen(true)}
+            onClick={openAddModal}
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               gap: 8, background: 'transparent',
@@ -527,7 +532,7 @@ export default function Habits() {
       {/* ── ADD HABIT MODAL ── */}
       <AddModal
         open={modalOpen}
-        onClose={() => setModalOpen(false)}
+        onClose={closeAddModal}
         onAdd={handleAdd}
       />
     </>

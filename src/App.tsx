@@ -10,6 +10,7 @@ import Profile from '@/pages/Profile'
 import AuthPage from '@/pages/Auth'
 import Onboarding from '@/pages/Onboarding'
 import useAuthStore from '@/stores/useAuthStore'
+import useUIStore from '@/stores/useUIStore'
 import { syncFromCloud } from '@/lib/sync'
 import { supabase } from '@/lib/supabase'
 
@@ -24,6 +25,7 @@ function App() {
   const [activeTab, setActiveTab] = useState<TabId>('today')
   const [prevArcana, setPrevArcana] = useState<TabId>('profile')
   const { user, loading, init } = useAuthStore()
+  const { modalOpen } = useUIStore()
 
   useEffect(() => { init() }, [init])
 
@@ -63,7 +65,7 @@ function App() {
     }
   }
 
-  const showNav = activeTab !== 'arcana'
+  const showNav = activeTab !== 'arcana' && !modalOpen
 
   // Loading state
   if (loading) {
