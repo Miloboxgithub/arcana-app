@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import BottomNav, { type TabId } from '@/components/layout/BottomNav'
 import Today from '@/pages/Today'
@@ -7,6 +7,8 @@ import Habits from '@/pages/Habits'
 import Growth from '@/pages/Growth'
 import ArcanaPage from '@/pages/Arcana'
 import Profile from '@/pages/Profile'
+import AuthPage from '@/pages/Auth'
+import useAuthStore from '@/stores/useAuthStore'
 
 const pageVariants = {
   initial: { opacity: 0, y: 6 },
@@ -18,6 +20,9 @@ const pageTransition = { duration: 0.18, ease: 'easeInOut' as const }
 function App() {
   const [activeTab, setActiveTab] = useState<TabId>('today')
   const [prevArcana, setPrevArcana] = useState<TabId>('profile')
+  const { user, loading, init } = useAuthStore()
+
+  useEffect(() => { init() }, [init])
 
   const handleTabChange = (id: TabId) => {
     if (id === 'arcana') setPrevArcana(activeTab)
@@ -39,6 +44,20 @@ function App() {
   }
 
   const showNav = activeTab !== 'arcana'
+
+  // Loading state
+  if (loading) {
+    return (
+      <div style={{ minHeight: '100vh', background: 'var(--black)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 24, letterSpacing: 6, color: 'var(--red)', opacity: 0.7 }}>
+          ARCANA
+        </div>
+      </div>
+    )
+  }
+
+  // Not logged in → show auth page
+  if (!user) return <AuthPage />
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--black)', position: 'relative' }}>
