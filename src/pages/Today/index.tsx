@@ -1,52 +1,350 @@
-import Card from '@/components/ui/Card'
+import { useState, useCallback } from 'react'
+import useHabitStore, { type TimeSlot, type Habit } from '@/stores/useHabitStore'
+import useProfileStore from '@/stores/useProfileStore'
+import { useStarBurst } from '@/hooks/useStarBurst'
 
-const Today = () => {
-  const today = new Date().toLocaleDateString('zh-CN', {
-    month: 'long', day: 'numeric', weekday: 'long'
-  })
+// ── Constants ─────────────────────────────────────────────
+const DIM_LABELS: Record<string, string> = {
+  pro: '专业力', fitness: '体能', social: '社交',
+  create: '创造力', self: '自律', charm: '魅力',
+}
+const MORGANA_LINES = [
+  '干得不错！每次打卡都是怪盗的行动证明。继续！',
+  '经验值到手！你的成长我都记录在案了，侦探。',
+  '连击还在继续——别停下来，怪盗不会轻易放弃的！',
+  '这个习惯正在改变你，数据不会说谎。',
+  '又完成了一个！今天的你比昨天的你更强。',
+  '完美执行！这就是怪盗团的行动力！',
+]
+let morganaIdx = 0
+const AI_DIMS = ['pro', 'fitness', 'create', 'self'] as const
+const SLOTS: TimeSlot[] = ['morning', 'afternoon', 'evening']
+const SLOT_LABELS: Record<TimeSlot, string> = { morning: '早晨', afternoon: '下午', evening: '夜晚' }
 
+// ── EXP Toast ─────────────────────────────────────────────
+function ExpToast({ visible, exp, dim }: { visible: boolean; exp: number; dim: string }) {
   return (
-    <div className="page-container space-y-4">
-      {/* Header */}
-      <div className="flex items-end justify-between mb-6">
-        <div>
-          <p className="text-arcana-muted text-xs font-mono tracking-widest">TODAY</p>
-          <h1 className="font-display text-3xl text-arcana-white tracking-wider">{today}</h1>
-        </div>
-        <div className="text-right">
-          <p className="text-arcana-gold font-mono text-xs">DAY 1</p>
-          <p className="text-arcana-muted text-xs">连续打卡</p>
-        </div>
-      </div>
-
-      {/* Time Slots */}
-      {['早晨', '下午', '夜晚'].map((slot, i) => (
-        <Card key={slot} variant={i === 0 ? 'red' : 'default'} className="mb-3">
-          <div className="flex items-center justify-between mb-3">
-            <span className="font-display text-lg tracking-widest text-arcana-white">{slot}</span>
-            {i === 0 && (
-              <span className="text-xs text-arcana-red font-mono border border-arcana-red px-2 py-0.5">
-                CURRENT
-              </span>
-            )}
-          </div>
-          <p className="text-arcana-muted text-sm">暂无习惯，点击添加</p>
-        </Card>
-      ))}
-
-      {/* AI Quick Input */}
-      <div className="fixed bottom-20 right-4 z-40">
-        <button className="w-14 h-14 bg-arcana-red card-skew-tr flex items-center justify-center shadow-lg shadow-arcana-red/30 hover:bg-arcana-red2 transition-colors">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-          </svg>
-        </button>
-      </div>
-
-      {/* Halftone decoration */}
-      <div className="halftone opacity-10 h-24 w-full mt-4 rounded" />
+    <div style={{
+      position: 'fixed', top: '50%', left: '50%', zIndex: 300,
+      transform: `translate(-50%,-50%) scale(${visible ? 1 : 0}) rotate(-1deg)`,
+      transition: 'transform 0.3s cubic-bezier(0.175,0.885,0.32,1.275)',
+      pointerEvents: 'none',
+      background: 'var(--card)', border: '2px solid var(--gold)',
+      padding: '16px 40px', textAlign: 'center',
+      clipPath: 'polygon(10px 0,100% 0,calc(100% - 10px) 100%,0 100%)',
+      boxShadow: '0 0 40px rgba(232,200,64,0.15)',
+    }}>
+      <div style={{ fontFamily: 'Share Tech Mono', fontSize: 9, letterSpacing: 3, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 2 }}>获得经验</div>
+      <div style={{ fontFamily: 'Bebas Neue', fontSize: 56, color: 'var(--gold)', letterSpacing: 4, lineHeight: 1 }}>+{exp}</div>
+      <div style={{ fontFamily: 'Share Tech Mono', fontSize: 10, color: 'var(--red)', letterSpacing: 2, textTransform: 'uppercase', marginTop: 3 }}>{dim}</div>
     </div>
   )
 }
 
-export default Today
+// ── Morgana Dialog ────────────────────────────────────────
+function MorganaDialog({ visible, text, onClose }: { visible: boolean; text: string; onClose: () => void }) {
+  return (
+    <div style={{
+      position: 'fixed', bottom: 80, left: '50%', zIndex: 500,
+      transform: `translateX(-50%) translateY(${visible ? 0 : 20}px)`,
+      opacity: visible ? 1 : 0,
+      transition: 'all 0.35s cubic-bezier(0.175,0.885,0.32,1.275)',
+      pointerEvents: visible ? 'auto' : 'none',
+      width: 'calc(min(390px,100vw) - 32px)',
+      background: 'var(--card)', border: '1px solid rgba(195,0,47,0.4)',
+      clipPath: 'polygon(0 0,calc(100% - 16px) 0,100% 16px,100% 100%,16px 100%,0 calc(100% - 16px))',
+      display: 'flex', alignItems: 'flex-start', gap: 12, padding: '14px 16px',
+      boxShadow: '0 8px 40px rgba(195,0,47,0.15)',
+    }}>
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg,var(--red),var(--gold) 50%,transparent)' }} />
+      <div style={{ width: 52, height: 52, flexShrink: 0, borderRadius: 4, overflow: 'hidden', border: '1px solid rgba(195,0,47,0.25)', background: 'rgba(195,0,47,0.05)' }}>
+        <img src="/morgana-avatar.png" alt="莫尔加纳" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontFamily: 'Bebas Neue', fontSize: 13, letterSpacing: 3, color: 'var(--red)', marginBottom: 5, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ width: 5, height: 5, background: 'var(--gold)', transform: 'rotate(45deg)', display: 'inline-block' }} />
+          莫尔加纳
+        </div>
+        <div style={{ fontSize: 12, color: 'var(--white)', lineHeight: 1.65 }}>{text}</div>
+      </div>
+      <button onClick={onClose} style={{ position: 'absolute', top: 8, right: 8, background: 'none', border: 'none', color: 'var(--muted)', fontSize: 14, cursor: 'pointer', padding: '2px 4px', lineHeight: 1 }}>✕</button>
+    </div>
+  )
+}
+
+// ── Habit Card ─────────────────────────────────────────────
+function HabitCard({ habit, done, onToggle, index }: { habit: Habit; done: boolean; onToggle: () => void; index: number }) {
+  return (
+    <div
+      onClick={onToggle}
+      style={{
+        position: 'relative',
+        background: done ? 'rgba(195,0,47,0.06)' : 'var(--card)',
+        borderLeft: `3px solid ${done ? '#1DB954' : 'var(--red)'}`,
+        padding: '12px 14px',
+        display: 'flex', alignItems: 'center', gap: 12,
+        cursor: 'pointer',
+        clipPath: 'polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,0 100%)',
+        marginBottom: 2, overflow: 'hidden',
+        userSelect: 'none', transition: 'all 0.2s',
+        WebkitTapHighlightColor: 'transparent',
+      }}
+    >
+      <div style={{ position: 'absolute', top: 0, right: 0, borderTop: '12px solid var(--card2)', borderLeft: '12px solid transparent' }} />
+      <div style={{ position: 'absolute', right: 20, top: '50%', transform: 'translateY(-50%)', fontFamily: 'Bebas Neue', fontSize: 48, color: 'rgba(255,255,255,0.03)', userSelect: 'none', pointerEvents: 'none', lineHeight: 1 }}>
+        {String(index + 1).padStart(2, '0')}
+      </div>
+      <div style={{
+        width: 28, height: 28,
+        border: `2px solid ${done ? '#1DB954' : 'var(--red)'}`,
+        background: done ? '#1DB954' : 'transparent',
+        transform: 'rotate(45deg)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        flexShrink: 0, transition: 'all 0.2s', position: 'relative', zIndex: 1,
+      }}>
+        <span style={{ transform: 'rotate(-45deg)', fontSize: 12, color: 'var(--white)', opacity: done ? 1 : 0, transition: 'opacity 0.2s' }}>✓</span>
+      </div>
+      <div style={{ flex: 1, position: 'relative', zIndex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--white)', marginBottom: 5, opacity: done ? 0.4 : 1, textDecoration: done ? 'line-through' : 'none', transition: 'all 0.2s' }}>
+          {habit.name}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 9, fontFamily: 'Share Tech Mono', letterSpacing: 1, padding: '2px 8px', background: 'rgba(195,0,47,0.12)', color: 'var(--red)', clipPath: 'polygon(4px 0,100% 0,calc(100% - 4px) 100%,0 100%)', border: '1px solid rgba(195,0,47,0.25)' }}>
+            {DIM_LABELS[habit.dimension] || habit.dimension}
+          </span>
+          <span style={{ fontSize: 10, fontFamily: 'Share Tech Mono', color: 'var(--gold)' }}>+{habit.exp} EXP</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── AI Input Bar ───────────────────────────────────────────
+function AIInputBar({ onSubmit }: { onSubmit: (text: string) => void }) {
+  const [val, setVal] = useState('')
+  const send = () => { if (val.trim()) { onSubmit(val.trim()); setVal('') } }
+  return (
+    <div style={{ position: 'fixed', bottom: 64, left: '50%', transform: 'translateX(-50%)', width: 'calc(min(390px,100vw) - 24px)', zIndex: 50 }}>
+      <div style={{ background: 'rgba(14,14,14,0.97)', border: '1px solid var(--red)', display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', clipPath: 'polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%)', boxShadow: '0 0 24px rgba(195,0,47,0.3),0 8px 32px rgba(0,0,0,0.7)', backdropFilter: 'blur(12px)' }}>
+        <span style={{ fontFamily: 'Share Tech Mono', fontSize: 10, color: 'var(--red)', letterSpacing: 1, whiteSpace: 'nowrap', flexShrink: 0 }}>// 输入</span>
+        <input
+          value={val}
+          onChange={e => setVal(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && send()}
+          placeholder="今天做了什么？AI 自动分配经验值…"
+          style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: 'var(--white)', fontSize: 13, fontFamily: 'Noto Sans SC,sans-serif' }}
+        />
+        <button onClick={send} style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 2, opacity: 0.7 }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><polygon points="5,3 19,12 5,21" fill="var(--red)" /></svg>
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ── MAIN TODAY PAGE ────────────────────────────────────────
+export default function Today() {
+  const { habits, todayCompleted, toggleToday, getHabitsBySlot, getStreak } = useHabitStore()
+  const { dimensions, addExp, removeExp } = useProfileStore()
+  const { burst } = useStarBurst()
+
+  const [activeSlot, setActiveSlot] = useState<TimeSlot>('afternoon')
+  const [toast, setToast] = useState({ visible: false, exp: 0, dim: '' })
+  const [morgana, setMorgana] = useState({ visible: false, text: '' })
+
+  const streak = getStreak()
+  const slotHabits = getHabitsBySlot(activeSlot)
+  const todayExp = habits.filter(h => todayCompleted.includes(h.id)).reduce((s, h) => s + h.exp, 0)
+
+  const showToast = useCallback((exp: number, dim: string) => {
+    setToast({ visible: true, exp, dim })
+    setTimeout(() => setToast(t => ({ ...t, visible: false })), 1800)
+  }, [])
+
+  const showMorgana = useCallback((text?: string) => {
+    const t = text || MORGANA_LINES[morganaIdx++ % MORGANA_LINES.length]
+    setMorgana({ visible: true, text: t })
+    setTimeout(() => setMorgana(m => ({ ...m, visible: false })), 4000)
+  }, [])
+
+  const handleToggle = useCallback((habit: Habit) => {
+    const checked = toggleToday(habit.id)
+    if (checked) {
+      burst(window.innerWidth / 2, window.innerHeight * 0.45, 22)
+      addExp(habit.dimension as any, habit.exp)
+      showToast(habit.exp, DIM_LABELS[habit.dimension] || habit.dimension)
+      setTimeout(() => showMorgana(), 600)
+    } else {
+      removeExp(habit.dimension as any, habit.exp)
+    }
+  }, [toggleToday, addExp, removeExp, burst, showToast, showMorgana])
+
+  const handleAI = useCallback((text: string) => {
+    const dimId = AI_DIMS[Math.floor(Math.random() * AI_DIMS.length)]
+    const exp = 10 + Math.floor(Math.random() * 20)
+    burst(window.innerWidth / 2, window.innerHeight / 2, 14)
+    addExp(dimId, exp)
+    showToast(exp, DIM_LABELS[dimId])
+    setTimeout(() => showMorgana(`收到！AI 已识别：${DIM_LABELS[dimId]} +${exp} EXP，记录在案。`), 500)
+  }, [addExp, burst, showToast, showMorgana])
+
+  const previewDims = dimensions.slice(0, 4)
+
+  return (
+    <>
+      <div className="page-container" style={{ paddingBottom: 140 }}>
+
+        {/* HEADER */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div style={{ position: 'relative' }}>
+            <div style={{ fontFamily: 'Bebas Neue,sans-serif', fontSize: 52, lineHeight: 0.9, letterSpacing: 6, color: 'var(--white)', transform: 'skewX(-5deg)', display: 'inline-block', position: 'relative' }}>
+              ARC<span style={{ color: 'var(--red)' }}>A</span>NA
+              <div style={{ position: 'absolute', top: 3, left: 3, fontFamily: 'Bebas Neue,sans-serif', fontSize: 52, letterSpacing: 6, lineHeight: 0.9, color: 'var(--red)', opacity: 0.2, pointerEvents: 'none', userSelect: 'none' }}>ARCANA</div>
+            </div>
+            <span style={{ fontFamily: 'Share Tech Mono,monospace', fontSize: 9, letterSpacing: 4, color: 'var(--muted)', textTransform: 'uppercase', marginTop: 4, transform: 'skewX(-3deg)', display: 'block' }}>命运由你书写 · YOUR ARCANA</span>
+          </div>
+          <div style={{ textAlign: 'right', paddingTop: 6 }}>
+            <div style={{ fontFamily: 'Share Tech Mono,monospace', fontSize: 9, color: 'var(--red)', letterSpacing: 2, lineHeight: 1.6 }}>
+              {new Date().toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase()} · {String(new Date().getDate()).padStart(2, '0')} {new Date().toLocaleDateString('en-US', { month: 'short' }).toUpperCase()}<br />{new Date().getFullYear()}
+            </div>
+            <div style={{ fontFamily: 'Share Tech Mono,monospace', fontSize: 9, color: 'var(--muted)', letterSpacing: 1, display: 'flex', alignItems: 'center', gap: 5, justifyContent: 'flex-end', marginTop: 2 }}>
+              <span style={{ width: 6, height: 6, background: 'var(--red)', transform: 'rotate(45deg)', display: 'inline-block' }} />
+              运行中
+            </div>
+          </div>
+        </div>
+
+        {/* SLASH DIVIDER */}
+        <div style={{ margin: '14px 0 18px', position: 'relative' }}>
+          <div style={{ height: 2, background: 'var(--red)', transform: 'skewX(-12deg)', boxShadow: '0 0 16px rgba(195,0,47,0.6)' }} />
+          <div style={{ position: 'absolute', top: 6, left: 0, right: 20, height: 1, background: 'rgba(195,0,47,0.2)' }} />
+          <div style={{ position: 'absolute', top: 9, left: 0, right: 60, height: 1, background: 'rgba(195,0,47,0.08)' }} />
+        </div>
+
+        {/* STREAK BANNER */}
+        <div style={{ position: 'relative', background: 'var(--card)', marginBottom: 14, overflow: 'hidden', clipPath: 'polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px))' }}>
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg,var(--red),transparent 70%)' }} />
+          <div style={{ position: 'absolute', right: -8, top: '50%', transform: 'translateY(-50%)', fontFamily: 'Bebas Neue,sans-serif', fontSize: 96, lineHeight: 1, color: 'rgba(195,0,47,0.05)', letterSpacing: -4, userSelect: 'none', pointerEvents: 'none' }}>{streak}</div>
+          <div style={{ display: 'flex', alignItems: 'center', padding: '12px 18px', gap: 16 }}>
+            <div style={{ fontFamily: 'Bebas Neue,sans-serif', fontSize: 56, lineHeight: 1, color: 'var(--red)', textShadow: '0 0 30px rgba(195,0,47,0.5)', position: 'relative' }}>
+              {streak}
+              <span style={{ position: 'absolute', bottom: 2, right: -28, fontSize: 10, letterSpacing: 2, color: 'var(--muted)', fontFamily: 'Share Tech Mono,monospace' }}>DAY</span>
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontFamily: 'Share Tech Mono,monospace', fontSize: 9, letterSpacing: 3, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 3 }}>连续打卡</div>
+              <div style={{ fontSize: 12, color: 'var(--white)', marginBottom: 6 }}>加油，今天也不能停！</div>
+              <div style={{ display: 'flex', gap: 4 }}>
+                {Array.from({ length: 7 }).map((_, i) => (
+                  <div key={i} style={{ width: 8, height: 8, background: i < (streak % 7 || (streak > 0 ? 7 : 0)) ? 'var(--red)' : 'var(--dim)', transform: 'rotate(45deg)' }} />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* STATUS PANEL */}
+        <div style={{ position: 'relative', background: 'var(--card)', marginBottom: 14, overflow: 'hidden', clipPath: 'polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%)' }}>
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg,var(--red),transparent 60%)' }} />
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px 9px', borderBottom: '1px solid var(--dim)' }}>
+            <div style={{ fontFamily: 'Bebas Neue,sans-serif', fontSize: 12, letterSpacing: 4, color: 'var(--red)', transform: 'skewX(-6deg)', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ width: 3, height: 14, background: 'var(--red)', display: 'inline-block' }} />属性面板
+            </div>
+            <div style={{ fontFamily: 'Share Tech Mono,monospace', fontSize: 11, color: 'var(--gold)', display: 'flex', alignItems: 'baseline', gap: 3 }}>
+              <span style={{ fontSize: 20, fontWeight: 'bold', lineHeight: 1 }}>{todayExp}</span>
+              <span style={{ fontSize: 9, opacity: 0.7 }}>今日经验值</span>
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, background: 'var(--dim)' }}>
+            {previewDims.map(dim => (
+              <div key={dim.id} style={{ background: 'var(--card)', padding: '10px 14px' }}>
+                <div style={{ fontFamily: 'Share Tech Mono,monospace', fontSize: 9, color: 'var(--muted)', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 5 }}>{dim.name}</div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 5, marginBottom: 6 }}>
+                  <span style={{ fontFamily: 'Bebas Neue,sans-serif', fontSize: 28, lineHeight: 1, color: 'var(--white)' }}>{dim.level}</span>
+                  <span style={{ fontFamily: 'Share Tech Mono,monospace', fontSize: 10, color: 'var(--muted)' }}>/ {dim.level + 1}</span>
+                </div>
+                <div style={{ height: 3, background: 'var(--dim)', position: 'relative' }}>
+                  <div style={{ height: '100%', background: 'var(--red)', width: `${Math.min(100, (dim.exp / dim.maxExp) * 100)}%`, transition: 'width 1.5s cubic-bezier(.22,1,.36,1)' }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* SECTION HEAD: 今日计划 */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '20px 0 10px' }}>
+          <div style={{ fontFamily: 'Bebas Neue,sans-serif', fontSize: 13, letterSpacing: 4, color: 'var(--white)', transform: 'skewX(-5deg)', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ width: 3, height: 14, background: 'var(--red)', display: 'inline-block' }} />今日计划
+          </div>
+          <div style={{ flex: 1, height: 1, background: 'linear-gradient(90deg,var(--dim),transparent)' }} />
+        </div>
+
+        {/* TIME SLOTS */}
+        <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
+          {SLOTS.map(slot => {
+            const active = activeSlot === slot
+            return (
+              <button key={slot} onClick={() => setActiveSlot(slot)} style={{ flex: 1, border: 'none', outline: 'none', background: active ? 'var(--red)' : 'var(--card2)', color: active ? 'var(--white)' : 'var(--muted)', cursor: 'pointer', padding: '10px 4px 8px', clipPath: 'polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%)', transition: 'all 0.2s', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, boxShadow: active ? '0 0 20px rgba(195,0,47,0.45)' : 'none' }}>
+                <div style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {slot === 'morning' && <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4" fill="currentColor"/><line x1="12" y1="2" x2="12" y2="5" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/><line x1="12" y1="19" x2="12" y2="22" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/><line x1="2" y1="12" x2="5" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/><line x1="19" y1="12" x2="22" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/><line x1="4.22" y1="4.22" x2="6.34" y2="6.34" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/><line x1="17.66" y1="17.66" x2="19.78" y2="19.78" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>}
+                  {slot === 'afternoon' && <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><polygon points="12,2 15,9 22,9 16.5,14 18.5,21 12,17 5.5,21 7.5,14 2,9 9,9" fill="currentColor" opacity="0.9"/></svg>}
+                  {slot === 'evening' && <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z" fill="currentColor"/><circle cx="17" cy="5" r="1" fill="currentColor" opacity="0.6"/><circle cx="20" cy="9" r="0.7" fill="currentColor" opacity="0.4"/></svg>}
+                </div>
+                <span style={{ fontFamily: 'Bebas Neue,sans-serif', fontSize: 12, letterSpacing: 2 }}>{SLOT_LABELS[slot]}</span>
+              </button>
+            )
+          })}
+        </div>
+
+        {/* SECTION HEAD: 习惯链 */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '0 0 10px' }}>
+          <div style={{ fontFamily: 'Bebas Neue,sans-serif', fontSize: 13, letterSpacing: 4, color: 'var(--white)', transform: 'skewX(-5deg)', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ width: 3, height: 14, background: 'var(--red)', display: 'inline-block' }} />习惯链
+          </div>
+          <div style={{ flex: 1, height: 1, background: 'linear-gradient(90deg,var(--dim),transparent)' }} />
+        </div>
+
+        {/* HABIT CHAIN */}
+        {slotHabits.length === 0 ? (
+          <div style={{ background: 'var(--card)', padding: '24px', textAlign: 'center', clipPath: 'polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,0 100%)' }}>
+            <div style={{ color: 'var(--muted)', fontFamily: 'Share Tech Mono,monospace', fontSize: 12, letterSpacing: 2 }}>暂无习惯，去习惯页面添加</div>
+          </div>
+        ) : (
+          <div>
+            {slotHabits.map((habit, i) => (
+              <div key={habit.id}>
+                <HabitCard
+                  habit={habit}
+                  done={todayCompleted.includes(habit.id)}
+                  onToggle={() => handleToggle(habit)}
+                  index={i}
+                />
+                {i < slotHabits.length - 1 && (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', padding: '0 0 0 21px', height: 18, position: 'relative' }}>
+                    <div style={{ position: 'absolute', left: 22, top: 0, bottom: 0, width: 2, background: 'rgba(195,0,47,0.2)' }} />
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ position: 'relative', zIndex: 1 }}>
+                      <polygon points="7,14 0,0 14,0" fill="rgba(195,0,47,0.35)" />
+                    </svg>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+      </div>
+
+      {/* AI INPUT BAR */}
+      <AIInputBar onSubmit={handleAI} />
+
+      {/* EXP TOAST */}
+      <ExpToast visible={toast.visible} exp={toast.exp} dim={toast.dim} />
+
+      {/* MORGANA DIALOG */}
+      <MorganaDialog
+        visible={morgana.visible}
+        text={morgana.text}
+        onClose={() => setMorgana(m => ({ ...m, visible: false }))}
+      />
+    </>
+  )
+}

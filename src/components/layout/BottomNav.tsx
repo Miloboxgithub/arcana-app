@@ -1,95 +1,74 @@
 import React from 'react'
 
-type TabId = 'today' | 'status' | 'habits' | 'growth' | 'arcana'
-
-interface NavItem {
-  id: TabId
-  label: string
-  icon: React.ReactNode
-}
+export type TabId = 'today' | 'status' | 'habits' | 'growth' | 'profile' | 'arcana'
 
 interface BottomNavProps {
   active: TabId
   onChange: (id: TabId) => void
 }
 
-const TodayIcon = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <rect x="3" y="4" width="18" height="18" rx="2"/>
-    <line x1="3" y1="9" x2="21" y2="9"/>
-    <line x1="8" y1="2" x2="8" y2="6"/>
-    <line x1="16" y1="2" x2="16" y2="6"/>
-  </svg>
-)
-
-const StatusIcon = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/>
-  </svg>
-)
-
-const HabitsIcon = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <polyline points="9,11 12,14 22,4"/>
-    <path d="M21,12v7a2,2,0,0,1-2,2H5a2,2,0,0,1-2-2V5a2,2,0,0,1,2-2h11"/>
-  </svg>
-)
-
-const GrowthIcon = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/>
-  </svg>
-)
-
-const ArcanaIcon = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M12,2 L15.5,8.5 L22,9.5 L17,14.5 L18.5,21 L12,17.5 L5.5,21 L7,14.5 L2,9.5 L8.5,8.5 Z"/>
-    <circle cx="12" cy="12" r="3"/>
-  </svg>
-)
-
-const navItems: NavItem[] = [
-  { id: 'today',  label: '今日',  icon: <TodayIcon /> },
-  { id: 'status', label: '属性',  icon: <StatusIcon /> },
-  { id: 'habits', label: '习惯',  icon: <HabitsIcon /> },
-  { id: 'growth', label: '成长',  icon: <GrowthIcon /> },
-  { id: 'arcana', label: 'ARCANA', icon: <ArcanaIcon /> },
+const navItems = [
+  {
+    id: 'today' as TabId, label: '今日',
+    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><polygon points="12,2 22,20 2,20" fill="currentColor"/></svg>
+  },
+  {
+    id: 'status' as TabId, label: '属性',
+    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="8" height="8" fill="currentColor" transform="rotate(15 7 7)"/><rect x="13" y="3" width="8" height="8" fill="currentColor" opacity="0.6" transform="rotate(-10 17 7)"/><rect x="3" y="13" width="8" height="8" fill="currentColor" opacity="0.6" transform="rotate(-5 7 17)"/><rect x="13" y="13" width="8" height="8" fill="currentColor" opacity="0.4" transform="rotate(10 17 17)"/></svg>
+  },
+  {
+    id: 'habits' as TabId, label: '习惯',
+    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="2.5" fill="currentColor" transform="skewX(-8)"/><rect x="3" y="10" width="13" height="2.5" fill="currentColor" opacity="0.7" transform="skewX(-8)"/><rect x="3" y="16" width="16" height="2.5" fill="currentColor" opacity="0.5" transform="skewX(-8)"/></svg>
+  },
+  {
+    id: 'growth' as TabId, label: '成长',
+    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><polyline points="3,17 8,11 13,14 21,5" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/><line x1="3" y1="21" x2="21" y2="21" stroke="currentColor" strokeWidth="1.5" opacity="0.4"/></svg>
+  },
+  {
+    id: 'profile' as TabId, label: '档案',
+    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" fill="currentColor"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round"/></svg>
+  },
 ]
 
 const BottomNav: React.FC<BottomNavProps> = ({ active, onChange }) => {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-arcana-card border-t border-arcana-dim">
-      <div className="flex items-center justify-around h-16 max-w-md mx-auto">
-        {navItems.map((item) => {
-          const isActive = item.id === active
-          return (
-            <button
-              key={item.id}
-              onClick={() => onChange(item.id)}
-              className={`flex flex-col items-center gap-0.5 px-2 py-1 transition-all ${
-                isActive
-                  ? 'text-arcana-red'
-                  : 'text-arcana-muted hover:text-arcana-white'
-              }`}
-            >
-              <span className={`transition-transform ${isActive ? 'scale-110' : ''}`}>
-                {item.icon}
-              </span>
-              <span className={`text-[10px] font-display tracking-wider ${
-                item.id === 'arcana' ? 'text-[9px]' : ''
-              }`}>
-                {item.label}
-              </span>
-              {isActive && (
-                <span className="absolute bottom-0 w-8 h-0.5 bg-arcana-red" />
-              )}
-            </button>
-          )
-        })}
-      </div>
+    <nav style={{
+      position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
+      width: 'min(390px, 100vw)',
+      background: 'rgba(10,10,10,0.98)',
+      borderTop: '1px solid var(--dim)',
+      display: 'flex', zIndex: 100,
+      backdropFilter: 'blur(10px)',
+    }}>
+      {navItems.map(item => {
+        const isActive = item.id === active
+        return (
+          <button
+            key={item.id}
+            onClick={() => onChange(item.id)}
+            style={{
+              flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
+              padding: '8px 0 10px', gap: 4,
+              cursor: 'pointer', background: 'none', border: 'none',
+              color: isActive ? 'var(--red)' : 'var(--muted)',
+              position: 'relative', transition: 'color 0.2s',
+            }}
+          >
+            {isActive && (
+              <div style={{ position: 'absolute', top: 0, left: '20%', right: '20%', height: 2, background: 'var(--red)', boxShadow: '0 0 10px rgba(195,0,47,0.8)' }} />
+            )}
+            <span style={{ transform: isActive ? 'scale(1.1)' : 'scale(1)', transition: 'transform 0.2s', display: 'flex' }}>
+              {item.icon}
+            </span>
+            <span style={{ fontFamily: 'Share Tech Mono,monospace', fontSize: 8, letterSpacing: 1.5, textTransform: 'uppercase' }}>
+              {item.label}
+            </span>
+          </button>
+        )
+      })}
     </nav>
   )
 }
 
 export default BottomNav
-export type { TabId }
+export type { BottomNavProps }
