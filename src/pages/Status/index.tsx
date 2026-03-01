@@ -1,6 +1,100 @@
 import { useState, useEffect, useRef } from 'react'
 import useProfileStore from '@/stores/useProfileStore'
 import useHabitStore from '@/stores/useHabitStore'
+import useAuthStore from '@/stores/useAuthStore'
+
+// ── Preset avatar nodes for Status page ──────────────────
+const STATUS_PRESETS: Record<string, JSX.Element> = {
+  joker: (
+    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style={{width:'100%',height:'100%'}}>
+      <rect width="100" height="100" fill="#0a0a0a"/>
+      <polygon points="0,0 22,0 0,22" fill="#C3002F" opacity="0.8"/>
+      <path d="M20 100 Q25 72 50 68 Q75 72 80 100 Z" fill="#1a1a2e"/>
+      <path d="M36 100 Q41 76 50 73 Q59 76 64 100 Z" fill="#f0f0f0" opacity="0.9"/>
+      <path d="M48 74 L52 74 L54 100 L46 100 Z" fill="#C3002F"/>
+      <ellipse cx="50" cy="44" rx="18" ry="20" fill="#f5dcc8"/>
+      <ellipse cx="50" cy="30" rx="19" ry="14" fill="#111"/>
+      <path d="M68 30 Q74 26 70 38 Q66 34 64 40" fill="#111"/>
+      <path d="M32 30 Q28 26 31 40 Q34 36 36 42" fill="#111"/>
+      <rect x="35" y="44" width="11" height="7" rx="3" fill="none" stroke="#333" strokeWidth="1.2"/>
+      <rect x="54" y="44" width="11" height="7" rx="3" fill="none" stroke="#333" strokeWidth="1.2"/>
+      <line x1="46" y1="47" x2="54" y2="47" stroke="#333" strokeWidth="1.2"/>
+      <ellipse cx="40" cy="48" rx="3" ry="3.5" fill="#1a1a1a"/>
+      <ellipse cx="59" cy="48" rx="3" ry="3.5" fill="#1a1a1a"/>
+      <circle cx="41" cy="47" r="0.8" fill="white" opacity="0.8"/>
+      <circle cx="60" cy="47" r="0.8" fill="white" opacity="0.8"/>
+      <path d="M35 42 Q40 40 45 41" stroke="#111" strokeWidth="1.8" fill="none" strokeLinecap="round"/>
+      <path d="M54 41 Q59 40 64 42" stroke="#111" strokeWidth="1.8" fill="none" strokeLinecap="round"/>
+      <path d="M44 59 Q50 62 56 58" stroke="#c08060" strokeWidth="1.2" fill="none" strokeLinecap="round"/>
+    </svg>
+  ),
+  ryuji: (
+    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style={{width:'100%',height:'100%'}}>
+      <rect width="100" height="100" fill="#0a0a0a"/>
+      <polygon points="0,0 22,0 0,22" fill="#E8C840" opacity="0.8"/>
+      <path d="M22 100 Q26 72 50 68 Q74 72 78 100 Z" fill="#1a1220"/>
+      <ellipse cx="50" cy="44" rx="18" ry="20" fill="#f0c880"/>
+      <ellipse cx="50" cy="29" rx="19" ry="13" fill="#E8C840"/>
+      <path d="M31 26 Q28 14 35 22" fill="#E8C840"/>
+      <path d="M35 22 Q33 8 41 19" fill="#E8C840"/>
+      <path d="M52 18 Q55 7 58 19" fill="#E8C840"/>
+      <path d="M68 26 Q74 16 70 28" fill="#E8C840"/>
+      <ellipse cx="40" cy="48" rx="4" ry="4" fill="#1a1a1a"/>
+      <ellipse cx="60" cy="48" rx="4" ry="4" fill="#1a1a1a"/>
+      <circle cx="42" cy="46" r="1.2" fill="white" opacity="0.9"/>
+      <circle cx="62" cy="46" r="1.2" fill="white" opacity="0.9"/>
+      <path d="M34 42 Q40 39 46 42" stroke="#6b4400" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+      <path d="M54 42 Q60 39 66 42" stroke="#6b4400" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+      <path d="M38 59 Q50 68 62 59" stroke="#c08060" strokeWidth="1.5" fill="rgba(200,100,80,0.3)" strokeLinecap="round"/>
+    </svg>
+  ),
+  ann: (
+    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style={{width:'100%',height:'100%'}}>
+      <rect width="100" height="100" fill="#0a0a0a"/>
+      <polygon points="0,0 22,0 0,22" fill="#ff4466" opacity="0.8"/>
+      <path d="M22 100 Q26 72 50 68 Q74 72 78 100 Z" fill="#1a0a10"/>
+      <ellipse cx="50" cy="44" rx="18" ry="20" fill="#fde8d8"/>
+      <path d="M28 34 Q24 60 26 85 Q32 70 34 60" fill="#f0d060"/>
+      <path d="M72 34 Q76 60 74 85 Q68 70 66 60" fill="#f0d060"/>
+      <ellipse cx="50" cy="28" rx="20" ry="12" fill="#f0d060"/>
+      <ellipse cx="40" cy="47" rx="4" ry="4.5" fill="#1a1a1a"/>
+      <ellipse cx="60" cy="47" rx="4" ry="4.5" fill="#1a1a1a"/>
+      <ellipse cx="40" cy="46" rx="2" ry="2.5" fill="#5588ff"/>
+      <ellipse cx="60" cy="46" rx="2" ry="2.5" fill="#5588ff"/>
+      <circle cx="41" cy="45" r="0.8" fill="white" opacity="0.9"/>
+      <circle cx="61" cy="45" r="0.8" fill="white" opacity="0.9"/>
+      <path d="M42 59 Q50 64 58 59" stroke="#ff4466" strokeWidth="1.5" fill="rgba(255,68,102,0.3)" strokeLinecap="round"/>
+    </svg>
+  ),
+  makoto: (
+    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style={{width:'100%',height:'100%'}}>
+      <rect width="100" height="100" fill="#0a0a0a"/>
+      <polygon points="0,0 22,0 0,22" fill="#888" opacity="0.8"/>
+      <path d="M22 100 Q26 72 50 68 Q74 72 78 100 Z" fill="#1a1a20"/>
+      <ellipse cx="50" cy="44" rx="18" ry="20" fill="#f0d0c0"/>
+      <ellipse cx="50" cy="28" rx="19" ry="12" fill="#4a2800"/>
+      <path d="M31 30 Q30 50 32 58" fill="#4a2800"/>
+      <path d="M69 30 Q70 50 68 58" fill="#4a2800"/>
+      <ellipse cx="40" cy="47" rx="4" ry="4" fill="#1a1a1a"/>
+      <ellipse cx="60" cy="47" rx="4" ry="4" fill="#1a1a1a"/>
+      <ellipse cx="40" cy="47" rx="2" ry="2" fill="#8b4513"/>
+      <ellipse cx="60" cy="47" rx="2" ry="2" fill="#8b4513"/>
+      <circle cx="41" cy="46" r="0.8" fill="white" opacity="0.8"/>
+      <circle cx="61" cy="46" r="0.8" fill="white" opacity="0.8"/>
+      <path d="M34 42 Q40 39 46 41" stroke="#4a2800" strokeWidth="2" fill="none" strokeLinecap="round"/>
+      <path d="M54 41 Q60 39 66 42" stroke="#4a2800" strokeWidth="2" fill="none" strokeLinecap="round"/>
+      <path d="M44 59 Q50 61 56 59" stroke="#c08060" strokeWidth="1.2" fill="none" strokeLinecap="round"/>
+      <path d="M36 20 L40 14 L44 20 L50 12 L56 20 L60 14 L64 20" stroke="#888" strokeWidth="1.5" fill="none"/>
+    </svg>
+  ),
+}
+
+function AvatarNode({ avatarId }: { avatarId: string }) {
+  if (avatarId && avatarId.startsWith('data:')) {
+    return <img src={avatarId} alt="头像" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+  }
+  return STATUS_PRESETS[avatarId] || STATUS_PRESETS['joker']
+}
 
 // 正六边形，宽屏 viewBox: 280x240，CX=140 CY=120
 // 6个顶点从顶部开始顺时针: top, top-right, bottom-right, bottom, bottom-left, top-left
@@ -56,8 +150,12 @@ function SH({label}:{label:string}) {
 export default function Status() {
   const {dimensions,getTotalLevel} = useProfileStore()
   const {getStreak} = useHabitStore()
+  const {user} = useAuthStore()
   const [bars,setBars] = useState(false)
   const [open,setOpen] = useState<Set<string>>(new Set())
+
+  const username = (user?.user_metadata?.username || user?.email?.split('@')[0] || 'PHANTOM').toUpperCase()
+  const avatarId: string = user?.user_metadata?.avatar_id || 'joker'
 
   // RAF-based radar animation: progress 0→1
   const [radarProgress, setRadarProgress] = useState(0)
@@ -114,17 +212,12 @@ export default function Status() {
           <div style={{display:'flex',alignItems:'center',gap:16,padding:'18px 18px 14px'}}>
             <div style={{position:'relative',flexShrink:0}}>
               <div style={{width:72,height:72,background:'var(--card2)',clipPath:'polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px))',display:'flex',alignItems:'center',justifyContent:'center',position:'relative',overflow:'hidden',border:'1px solid var(--dim)'}}>
-                <div style={{position:'absolute',inset:0,background:'linear-gradient(135deg,rgba(195,0,47,0.15),transparent 50%)'}}/>
-                <svg viewBox="0 0 48 48" fill="none" width="48" height="48" opacity="0.9">
-                  <path d="M24 8C20 8 17 11 17 15C17 19 20 22 24 22C28 22 31 19 31 15C31 11 28 8 24 8Z" fill="var(--white)" opacity="0.9"/>
-                  <path d="M14 44C14 36 18 30 24 28C30 30 34 36 34 44Z" fill="var(--white)" opacity="0.85"/>
-                  <path d="M24 28L20 34L24 32L28 34Z" fill="var(--red)" opacity="0.8"/>
-                </svg>
+                <AvatarNode avatarId={avatarId}/>
               </div>
               <div style={{position:'absolute',bottom:-4,right:-4,background:'var(--red)',fontFamily:'Bebas Neue,sans-serif',fontSize:11,letterSpacing:1,color:'var(--white)',padding:'2px 6px',clipPath:'polygon(4px 0,100% 0,calc(100% - 4px) 100%,0 100%)'}}>LV·{totalLevel}</div>
             </div>
             <div style={{flex:1,minWidth:0}}>
-              <div style={{fontFamily:'Bebas Neue,sans-serif',fontSize:28,lineHeight:1,color:'var(--white)',letterSpacing:3,transform:'skewX(-3deg)',display:'inline-block'}}>MILO</div>
+              <div style={{fontFamily:'Bebas Neue,sans-serif',fontSize:28,lineHeight:1,color:'var(--white)',letterSpacing:3,transform:'skewX(-3deg)',display:'inline-block'}}>{username}</div>
               <div style={{fontFamily:'Share Tech Mono,monospace',fontSize:9,color:'var(--red)',letterSpacing:2,textTransform:'uppercase',margin:'3px 0 8px'}}>// 怪盗团见习成员</div>
               <div style={{display:'flex',justifyContent:'space-between',fontFamily:'Share Tech Mono,monospace',fontSize:9,color:'var(--muted)',letterSpacing:1,marginBottom:4}}>
                 <span>累计经验</span><span style={{color:'var(--gold)'}}>{totalExp.toLocaleString()}</span>

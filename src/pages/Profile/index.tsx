@@ -191,10 +191,15 @@ export default function Profile({ onOpenArcana }: ProfileProps) {
 
   const username = user?.user_metadata?.username || user?.email?.split('@')[0] || 'PHANTOM'
 
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false)
+  // Read avatar from user_metadata first, fallback to localStorage, then default
+  const [avatarId, setAvatarId] = useState<string>(
+    () => user?.user_metadata?.avatar_id || localStorage.getItem(AVATAR_KEY) || 'joker'
+  )
+  // Username editing inside the picker
   const [editingName, setEditingName] = useState(false)
   const [newName, setNewName] = useState('')
-  const [showAvatarPicker, setShowAvatarPicker] = useState(false)
-  const [avatarId, setAvatarId] = useState<string>(() => localStorage.getItem(AVATAR_KEY) || 'joker')
+  const [savingProfile, setSavingProfile] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   const streak = getStreak()
@@ -210,6 +215,15 @@ export default function Profile({ onOpenArcana }: ProfileProps) {
     return preset.node
   }
 
+  // Save avatar_id to Supabase + localStorage
+  const saveAvatar = async (id: string) => {
+    setAvatarId(id)
+    localStorage.setItem(AVATAR_KEY, id)
+    // Persist to cloud (data: URLs are stored as-is; preset ids are short strings)
+    const { error } = await supabase.auth.updateUser({ data: { avatar_id: id } })
+    if (error) toast.error('头像同步失败，仅本地保存')
+  }
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -218,10 +232,9 @@ export default function Profile({ onOpenArcana }: ProfileProps) {
       return
     }
     const reader = new FileReader()
-    reader.onload = (ev) => {
+    reader.onload = async (ev) => {
       const dataUrl = ev.target?.result as string
-      setAvatarId(dataUrl)
-      localStorage.setItem(AVATAR_KEY, dataUrl)
+      await saveAvatar(dataUrl)
       setShowAvatarPicker(false)
       toast.success('头像已更新', '✦')
     }
@@ -229,11 +242,22 @@ export default function Profile({ onOpenArcana }: ProfileProps) {
     e.target.value = ''
   }
 
-  const selectPreset = (id: string) => {
-    setAvatarId(id)
-    localStorage.setItem(AVATAR_KEY, id)
-    setShowAvatarPicker(false)
+  const selectPreset = async (id: string) => {
+    await saveAvatar(id)
     toast.success('头像已更新', '✦')
+  }
+
+  const handleSaveName = async () => {
+    if (!newName.trim()) return
+    setSavingProfile(true)
+    const { error } = await supabase.auth.updateUser({ data: { username: newName.trim() } })
+    setSavingProfile(false)
+    if (error) {
+      toast.error('修改失败')
+    } else {
+      toast.success('用户名已更新', '✦')
+      setEditingName(false)
+    }
   }
 
   return (
@@ -314,7 +338,7 @@ export default function Profile({ onOpenArcana }: ProfileProps) {
               alignItems: 'center', justifyContent: 'flex-end',
               backdropFilter: 'blur(4px)',
             }}
-            onClick={() => setShowAvatarPicker(false)}
+            onClick={() => { setShowAvatarPicker(false); setEditingName(false) }}
           >
             <div
               style={{
@@ -325,11 +349,58 @@ export default function Profile({ onOpenArcana }: ProfileProps) {
               onClick={e => e.stopPropagation()}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                <span style={{ fontFamily: 'Bebas Neue,sans-serif', fontSize: 16, letterSpacing: 4, color: 'var(--white)', transform: 'skewX(-4deg)', display: 'inline-block' }}>选择头像</span>
-                <div onClick={() => setShowAvatarPicker(false)} style={{ cursor: 'pointer', color: 'var(--muted)', fontSize: 22, lineHeight: 1, padding: 4 }}>×</div>
+                <span style={{ fontFamily: 'Bebas Neue,sans-serif', fontSize: 16, letterSpacing: 4, color: 'var(--white)', transform: 'skewX(-4deg)', display: 'inline-block' }}>编辑档案</span>
+                <div onClick={() => { setShowAvatarPicker(false); setEditingName(false) }} style={{ cursor: 'pointer', color: 'var(--muted)', fontSize: 22, lineHeight: 1, padding: 4 }}>×</div>
               </div>
 
-              <div style={{ fontFamily: 'Share Tech Mono,monospace', fontSize: 9, color: 'var(--muted)', letterSpacing: 2, marginBottom: 12 }}>// 怪盗团成员</div>
+              {/* Username edit — always visible inside picker */}
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontFamily: 'Share Tech Mono,monospace', fontSize: 9, color: 'var(--muted)', letterSpacing: 2, marginBottom: 8 }}>// 用户名</div>
+                {!editingName ? (
+                  <div
+                    onClick={() => { setEditingName(true); setNewName(username) }}
+                    style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      background: 'var(--card2)', padding: '10px 14px', cursor: 'pointer',
+                      border: '1px solid var(--dim)',
+                    }}
+                  >
+                    <span style={{ fontFamily: 'Bebas Neue,sans-serif', fontSize: 18, letterSpacing: 3, color: 'var(--white)' }}>{username.toUpperCase()}</span>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                      <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="var(--muted)" strokeWidth="2" strokeLinecap="round"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="var(--muted)" strokeWidth="2" strokeLinecap="round"/>
+                    </svg>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <input
+                      autoFocus
+                      value={newName}
+                      onChange={e => setNewName(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && handleSaveName()}
+                      placeholder="输入新用户名"
+                      style={{
+                        flex: 1, background: 'var(--card2)', border: '1px solid var(--red)',
+                        color: 'var(--white)', fontSize: 13, padding: '10px 12px', outline: 'none',
+                      }}
+                    />
+                    <button
+                      onClick={handleSaveName}
+                      disabled={savingProfile}
+                      style={{
+                        background: 'var(--red)', border: 'none', color: 'var(--white)',
+                        fontFamily: 'Bebas Neue,sans-serif', fontSize: 13, letterSpacing: 2,
+                        padding: '0 16px', cursor: 'pointer', opacity: savingProfile ? 0.6 : 1,
+                        clipPath: 'polygon(0 0,calc(100% - 4px) 0,100% 4px,100% 100%,4px 100%,0 calc(100% - 4px))',
+                      }}
+                    >
+                      {savingProfile ? '...' : '确认'}
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div style={{ fontFamily: 'Share Tech Mono,monospace', fontSize: 9, color: 'var(--muted)', letterSpacing: 2, marginBottom: 12 }}>// 选择头像</div>
 
               {/* Preset grid */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 20 }}>
@@ -467,48 +538,7 @@ export default function Profile({ onOpenArcana }: ProfileProps) {
             </div>
           ))}
 
-          {/* Edit username */}
-          <div style={{ background: 'var(--card)', clipPath: 'polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%)', marginTop: 2, overflow: 'hidden' }}>
-            <div
-              onClick={() => { setEditingName(!editingName); setNewName(username) }}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', cursor: 'pointer' }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ width: 28, height: 28, background: 'rgba(195,0,47,0.08)', clipPath: 'polygon(4px 0,100% 0,calc(100% - 4px) 100%,0 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--muted)' }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
-                </div>
-                <span style={{ fontSize: 13, color: 'var(--white)' }}>修改用户名</span>
-              </div>
-              <span style={{ fontFamily: 'Share Tech Mono,monospace', fontSize: 9, color: 'var(--muted)', letterSpacing: 1 }}>{username}</span>
-            </div>
-            {editingName && (
-              <div style={{ padding: '0 16px 14px', borderTop: '1px solid var(--dim)' }}>
-                <input
-                  value={newName}
-                  onChange={e => setNewName(e.target.value)}
-                  placeholder="新用户名"
-                  style={{ width: '100%', background: 'var(--card2)', border: '1px solid var(--dim)', color: 'var(--white)', fontSize: 13, padding: '8px 12px', outline: 'none', boxSizing: 'border-box', marginBottom: 8 }}
-                  onFocus={e => e.target.style.borderColor = 'var(--red)'}
-                  onBlur={e => e.target.style.borderColor = 'var(--dim)'}
-                />
-                <button
-                  onClick={async () => {
-                    if (!newName.trim()) return
-                    const { error } = await supabase.auth.updateUser({ data: { username: newName.trim() } })
-                    if (error) {
-                      toast.error('修改失败')
-                    } else {
-                      toast.success('用户名已更新', '✦')
-                      setEditingName(false)
-                    }
-                  }}
-                  style={{ background: 'var(--red)', border: 'none', color: 'var(--white)', fontFamily: 'Bebas Neue,sans-serif', fontSize: 14, letterSpacing: 3, padding: '8px 20px', cursor: 'pointer', clipPath: 'polygon(0 0,calc(100% - 6px) 0,100% 6px,100% 100%,6px 100%,0 calc(100% - 6px))' }}
-                >
-                  确认
-                </button>
-              </div>
-            )}
-          </div>
+          {/* Edit username — moved into avatar picker, remove standalone entry */}
 
           {/* Sign out */}
           <div
