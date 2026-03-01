@@ -136,11 +136,8 @@ function HabitCard({ habit, done, onToggle, index }: { habit: Habit; done: boole
 // ── Chain Connector ───────────────────────────────────────
 function ChainConn() {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', padding: '0 0 0 21px', height: 18, position: 'relative' }}>
-      {/* vertical line behind arrow */}
-      <div style={{ position: 'absolute', left: 27, top: 0, bottom: 0, width: 2, background: 'rgba(195,0,47,0.2)' }} />
-      {/* arrow on top */}
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ position: 'relative', zIndex: 1, flexShrink: 0 }}>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', padding: '0 0 0 21px', height: 18 }}>
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
         <polygon points="7,14 0,0 14,0" fill="rgba(195,0,47,0.35)" />
       </svg>
     </div>
