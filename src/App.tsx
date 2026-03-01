@@ -10,6 +10,7 @@ import Profile from '@/pages/Profile'
 import AuthPage from '@/pages/Auth'
 import useAuthStore from '@/stores/useAuthStore'
 import { syncFromCloud } from '@/lib/sync'
+import { supabase } from '@/lib/supabase'
 
 const pageVariants = {
   initial: { opacity: 0, y: 6 },
@@ -29,6 +30,18 @@ function App() {
   useEffect(() => {
     if (user) syncFromCloud(user.id)
   }, [user?.id])
+
+  // 每5分钟验证一次session有效性
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        // session 已失效（后台删除用户等）
+        useAuthStore.getState().signOut()
+      }
+    }, 5 * 60 * 1000)
+    return () => clearInterval(interval)
+  }, [])
 
   const handleTabChange = (id: TabId) => {
     if (id === 'arcana') setPrevArcana(activeTab)

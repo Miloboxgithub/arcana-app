@@ -1,5 +1,9 @@
+import { useState } from 'react'
 import useProfileStore from '@/stores/useProfileStore'
 import useHabitStore from '@/stores/useHabitStore'
+import useAuthStore from '@/stores/useAuthStore'
+import { toast } from '@/components/ui/Toast'
+import { supabase } from '@/lib/supabase'
 
 function PageHeader({ title, badge }: { title: string; badge: string }) {
   return (
@@ -59,6 +63,12 @@ interface ProfileProps {
 export default function Profile({ onOpenArcana }: ProfileProps) {
   const { dimensions, getTotalLevel } = useProfileStore()
   const { getStreak } = useHabitStore()
+  const { user, signOut } = useAuthStore()
+
+  const username = user?.user_metadata?.username || user?.email?.split('@')[0] || 'PHANTOM'
+
+  const [editingName, setEditingName] = useState(false)
+  const [newName, setNewName] = useState('')
 
   const streak = getStreak()
   const totalLevel = getTotalLevel()
@@ -88,7 +98,7 @@ export default function Profile({ onOpenArcana }: ProfileProps) {
               <img src="/morgana-avatar.png" alt="头像" style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'hue-rotate(200deg) brightness(0.8) contrast(1.2)' }} />
             </div>
             <div>
-              <div style={{ fontFamily: 'Bebas Neue,sans-serif', fontSize: 28, letterSpacing: 4, color: 'var(--white)', transform: 'skewX(-3deg)', display: 'inline-block', lineHeight: 1 }}>MILO</div>
+              <div style={{ fontFamily: 'Bebas Neue,sans-serif', fontSize: 28, letterSpacing: 4, color: 'var(--white)', transform: 'skewX(-3deg)', display: 'inline-block', lineHeight: 1 }}>{username.toUpperCase()}</div>
               <div style={{ fontFamily: 'Share Tech Mono,monospace', fontSize: 9, letterSpacing: 2, color: 'var(--gold)', marginTop: 3 }}>◆ 怪盗团见习成员 · Lv.{totalLevel}</div>
               <div style={{ fontFamily: 'Share Tech Mono,monospace', fontSize: 8, color: 'var(--muted)', letterSpacing: 1, marginTop: 2 }}>ID·2026·PHANTOM·007</div>
             </div>
@@ -180,8 +190,58 @@ export default function Profile({ onOpenArcana }: ProfileProps) {
               )}
             </div>
           ))}
+
+          {/* Edit username */}
+          <div style={{ background: 'var(--card)', clipPath: 'polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%)', marginTop: 2, overflow: 'hidden' }}>
+            <div
+              onClick={() => { setEditingName(!editingName); setNewName(username) }}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', cursor: 'pointer' }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ width: 28, height: 28, background: 'rgba(195,0,47,0.08)', clipPath: 'polygon(4px 0,100% 0,calc(100% - 4px) 100%,0 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--muted)' }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+                </div>
+                <span style={{ fontSize: 13, color: 'var(--white)' }}>修改用户名</span>
+              </div>
+              <span style={{ fontFamily: 'Share Tech Mono,monospace', fontSize: 9, color: 'var(--muted)', letterSpacing: 1 }}>{username}</span>
+            </div>
+            {editingName && (
+              <div style={{ padding: '0 16px 14px', borderTop: '1px solid var(--dim)' }}>
+                <input
+                  value={newName}
+                  onChange={e => setNewName(e.target.value)}
+                  placeholder="新用户名"
+                  style={{ width: '100%', background: 'var(--card2)', border: '1px solid var(--dim)', color: 'var(--white)', fontSize: 13, padding: '8px 12px', outline: 'none', boxSizing: 'border-box', marginBottom: 8 }}
+                  onFocus={e => e.target.style.borderColor = 'var(--red)'}
+                  onBlur={e => e.target.style.borderColor = 'var(--dim)'}
+                />
+                <button
+                  onClick={async () => {
+                    if (!newName.trim()) return
+                    const { error } = await supabase.auth.updateUser({ data: { username: newName.trim() } })
+                    if (error) {
+                      toast.error('修改失败')
+                    } else {
+                      toast.success('用户名已更新', '✦')
+                      setEditingName(false)
+                    }
+                  }}
+                  style={{ background: 'var(--red)', border: 'none', color: 'var(--white)', fontFamily: 'Bebas Neue,sans-serif', fontSize: 14, letterSpacing: 3, padding: '8px 20px', cursor: 'pointer', clipPath: 'polygon(0 0,calc(100% - 6px) 0,100% 6px,100% 100%,6px 100%,0 calc(100% - 6px))' }}
+                >
+                  确认
+                </button>
+              </div>
+            )}
+          </div>
+
           {/* Danger row */}
-          <div style={{ display: 'flex', alignItems: 'center', background: 'var(--card)', padding: '14px 16px', borderTop: '1px solid var(--dim)', marginTop: 2, clipPath: 'polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%)', cursor: 'pointer' }}>
+          <div
+            onClick={async () => {
+              await signOut()
+              toast.success('已安全退出', '◆')
+            }}
+            style={{ display: 'flex', alignItems: 'center', background: 'var(--card)', padding: '14px 16px', borderTop: '1px solid var(--dim)', marginTop: 2, clipPath: 'polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%)', cursor: 'pointer' }}
+          >
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ width: 28, height: 28, background: 'rgba(195,0,47,0.1)', clipPath: 'polygon(4px 0,100% 0,calc(100% - 4px) 100%,0 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="var(--red)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>

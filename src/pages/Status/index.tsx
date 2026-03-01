@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react'
 import useProfileStore from '@/stores/useProfileStore'
 import useHabitStore from '@/stores/useHabitStore'
 
-const CX = 110, CY = 77
-const TIPS: [number,number][] = [[110,10],[165,57],[165,97],[110,144],[55,97],[55,57]]
+const CX = 115, CY = 115
+const TIPS: [number,number][] = [[115,20],[178,77],[178,134],[115,210],[52,134],[52,77]]
 const DIM_ORDER = ['pro','fitness','social','create','self','charm'] as const
 type DId = typeof DIM_ORDER[number]
 
@@ -116,16 +116,16 @@ export default function Status() {
         <SH label="奥义雷达"/>
         <div style={{position:'relative',background:'var(--card)',marginBottom:16,padding:'24px 20px',clipPath:'polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px))',overflow:'hidden'}}>
           <div style={{position:'absolute',top:0,left:0,right:0,height:2,background:'linear-gradient(90deg,var(--red),transparent 70%)'}}/>
-          <svg viewBox="0 0 220 220" fill="none" style={{display:'block',margin:'0 auto',width:220,height:220}}>
+          <svg viewBox="0 0 230 230" fill="none" style={{display:'block',margin:'0 auto',width:220,height:220}}>
+            {/* Grid polygons: 5 layers t=0.2..1.0 */}
             <g opacity="0.15" stroke="var(--red)" strokeWidth="0.5">
-              <polygon points="110,88 126.6,98 126.6,118 110,128 93.4,118 93.4,98" fill="none"/>
-              <polygon points="110,66 133.2,79 133.2,105 110,118 86.8,105 86.8,79" fill="none"/>
-              <polygon points="110,44 143.8,71 143.8,99 110,126 76.2,99 76.2,71" fill="none"/>
-              <polygon points="110,24 154.4,62 154.4,96 110,134 65.6,96 65.6,62" fill="none"/>
-              <polygon points="110,10 165,57 165,97 110,144 55,97 55,57" fill="none"/>
-              <line x1="110" y1="10" x2="110" y2="144"/><line x1="110" y1="77" x2="165" y2="57"/>
-              <line x1="110" y1="77" x2="165" y2="97"/><line x1="110" y1="77" x2="110" y2="144"/>
-              <line x1="110" y1="77" x2="55" y2="97"/><line x1="110" y1="77" x2="55" y2="57"/>
+              {[0.2,0.4,0.6,0.8,1.0].map(t=>(
+                <polygon key={t} points={TIPS.map(([tx,ty])=>`${(CX+(tx-CX)*t).toFixed(1)},${(CY+(ty-CY)*t).toFixed(1)}`).join(' ')} fill="none"/>
+              ))}
+              {/* Grid lines from center to tips */}
+              {TIPS.map(([tx,ty],i)=>(
+                <line key={i} x1={CX} y1={CY} x2={tx} y2={ty}/>
+              ))}
             </g>
             <polygon points={pts} fill="rgba(195,0,47,0.25)" stroke="var(--red)" strokeWidth="1.5" strokeLinejoin="round" style={{transition:'all 1.2s cubic-bezier(0.22,1,0.36,1)'}}/>
             {radar && TIPS.map(([tx,ty],i)=>{
@@ -133,12 +133,13 @@ export default function Status() {
               const px=CX+(tx-CX)*t,py=CY+(ty-CY)*t
               return <rect key={i} x={px-4} y={py-4} width={8} height={8} fill="var(--white)" stroke="var(--red)" strokeWidth="1" transform={`rotate(45,${px},${py})`}/>
             })}
-            <text x="110" y="6" textAnchor="middle" fill="var(--white)" fontFamily="Share Tech Mono,monospace" fontSize="9" letterSpacing="1">专业力</text>
-            <text x="170" y="55" textAnchor="start" fill="var(--white)" fontFamily="Share Tech Mono,monospace" fontSize="9" letterSpacing="1">体能</text>
-            <text x="170" y="102" textAnchor="start" fill="var(--white)" fontFamily="Share Tech Mono,monospace" fontSize="9" letterSpacing="1">社交</text>
-            <text x="110" y="157" textAnchor="middle" fill="var(--white)" fontFamily="Share Tech Mono,monospace" fontSize="9" letterSpacing="1">创造力</text>
-            <text x="50" y="102" textAnchor="end" fill="var(--white)" fontFamily="Share Tech Mono,monospace" fontSize="9" letterSpacing="1">自律</text>
-            <text x="50" y="55" textAnchor="end" fill="var(--white)" fontFamily="Share Tech Mono,monospace" fontSize="9" letterSpacing="1">魅力</text>
+            {/* Labels */}
+            <text x="115" y="12" textAnchor="middle" fill="var(--white)" fontFamily="Share Tech Mono,monospace" fontSize="9" letterSpacing="1">专业力</text>
+            <text x="188" y="77" textAnchor="start" fill="var(--white)" fontFamily="Share Tech Mono,monospace" fontSize="9" letterSpacing="1">体能</text>
+            <text x="188" y="136" textAnchor="start" fill="var(--white)" fontFamily="Share Tech Mono,monospace" fontSize="9" letterSpacing="1">社交</text>
+            <text x="115" y="222" textAnchor="middle" fill="var(--white)" fontFamily="Share Tech Mono,monospace" fontSize="9" letterSpacing="1">创造力</text>
+            <text x="42" y="136" textAnchor="end" fill="var(--white)" fontFamily="Share Tech Mono,monospace" fontSize="9" letterSpacing="1">自律</text>
+            <text x="42" y="77" textAnchor="end" fill="var(--white)" fontFamily="Share Tech Mono,monospace" fontSize="9" letterSpacing="1">魅力</text>
           </svg>
         </div>
 

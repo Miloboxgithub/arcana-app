@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import useAuthStore from '@/stores/useAuthStore'
+import { toast } from '@/components/ui/Toast'
 
 export default function AuthPage() {
   const [mode, setMode] = useState<'login' | 'signup'>('login')
@@ -18,12 +19,27 @@ export default function AuthPage() {
     setLoading(true)
     if (mode === 'login') {
       const { error } = await signIn(email, password)
-      if (error) setError(error)
+      if (error) {
+        toast.error('登录失败：' + error)
+        setError(error)
+      } else {
+        toast.success('欢迎回来，怪盗团员', '⚡')
+      }
     } else {
-      if (!username.trim()) { setError('请输入用户名'); setLoading(false); return }
+      if (!username.trim()) {
+        toast.error('请输入用户名')
+        setError('请输入用户名')
+        setLoading(false)
+        return
+      }
       const { error } = await signUp(email, password, username)
-      if (error) setError(error)
-      else setSuccess(true)
+      if (error) {
+        toast.error('注册失败：' + error)
+        setError(error)
+      } else {
+        toast.success('角色创建成功！请验证邮箱', '✦')
+        setSuccess(true)
+      }
     }
     setLoading(false)
   }
