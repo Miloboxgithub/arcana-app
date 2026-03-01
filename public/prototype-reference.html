@@ -1,0 +1,5140 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ARCANA</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+SC:wght@400;700;900&family=Share+Tech+Mono&display=swap');
+
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+SC:wght@400;700;900&family=Share+Tech+Mono&display=swap');
+
+:root {
+  --red: #C3002F;
+  --red2: #FF1744;
+  --black: #080808;
+  --card: #0E0E0E;
+  --card2: #161616;
+  --white: #EFEFEF;
+  --gold: #E8C840;
+  --dim: #3A3A3A;
+  --muted: #5A5A5A;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+
+body{
+  background:var(--black);
+  color:var(--white);
+  font-family:'Noto Sans SC',sans-serif;
+  max-width:390px;
+  margin:0 auto;
+  min-height:100vh;
+  overflow-x:hidden;
+  position:relative;
+}
+
+/* ═══════════════════════════════
+   BACKGROUND TEXTURE
+═══════════════════════════════ */
+.bg-layer{
+  position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;
+}
+/* 半色调网点 */
+.bg-layer::before{
+  content:'';
+  position:absolute;inset:0;
+  background-image:radial-gradient(circle, rgba(195,0,47,0.06) 1px, transparent 1px);
+  background-size:20px 20px;
+}
+/* 右上角：大型水印文字 ARCANA */
+.bg-watermark{
+  position:fixed;
+  top:-10px;right:-18px;
+  font-family:'Bebas Neue',sans-serif;
+  font-size:180px;letter-spacing:-4px;line-height:1;
+  color:transparent;
+  -webkit-text-stroke:1px rgba(195,0,47,0.07);
+  transform:skewX(-8deg) rotate(-8deg);
+  pointer-events:none;z-index:0;
+  user-select:none;
+  white-space:nowrap;
+}
+/* 透视格栅 SVG */
+.bg-grid{
+  position:fixed;bottom:0;left:0;right:0;
+  height:260px;
+  pointer-events:none;z-index:0;
+  opacity:0.55;
+}
+/* 左侧菱形装饰 */
+.bg-diamond{
+  position:fixed;
+  pointer-events:none;z-index:0;
+}
+.bg-diamond::before,.bg-diamond::after{
+  content:'';
+  position:absolute;
+  border:1px solid rgba(195,0,47,0.10);
+  transform:rotate(45deg);
+}
+.bg-diamond::before{
+  width:80px;height:80px;
+  top:120px;left:-30px;
+}
+.bg-diamond::after{
+  width:44px;height:44px;
+  top:160px;left:12px;
+}
+
+/* ═══════════════════════════════
+   SCAN LINE
+═══════════════════════════════ */
+@keyframes scan{0%{top:-1px}100%{top:100vh}}
+.scanline{
+  position:fixed;left:0;right:0;height:1px;
+  background:rgba(195,0,47,0.05);
+  pointer-events:none;z-index:999;
+  animation:scan 6s linear infinite;
+}
+
+/* ═══════════════════════════════
+   HEADER
+═══════════════════════════════ */
+.header{
+  position:relative;z-index:10;
+  padding:16px 20px 0;
+  display:flex;justify-content:space-between;align-items:flex-start;
+}
+.logo-block{}
+.logo-text{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:52px;line-height:0.9;
+  letter-spacing:6px;
+  color:var(--white);
+  transform:skewX(-5deg);
+  display:inline-block;
+  position:relative;
+}
+.logo-text .accent{color:var(--red);}
+/* 字体阴影叠层 */
+.logo-shadow{
+  position:absolute;top:3px;left:3px;
+  font-family:'Bebas Neue',sans-serif;
+  font-size:52px;letter-spacing:6px;line-height:0.9;
+  color:var(--red);opacity:0.2;
+  transform:skewX(-5deg);
+  pointer-events:none;
+  user-select:none;
+}
+.logo-sub{
+  font-family:'Share Tech Mono',monospace;
+  font-size:9px;letter-spacing:4px;
+  color:var(--muted);
+  text-transform:uppercase;
+  margin-top:4px;
+  transform:skewX(-3deg);
+  display:block;
+}
+
+/* 右上：日期+状态 */
+.header-right{
+  text-align:right;
+  padding-top:6px;
+}
+.hdate{
+  font-family:'Share Tech Mono',monospace;
+  font-size:9px;color:var(--red);
+  letter-spacing:2px;line-height:1.6;
+}
+.hstatus{
+  font-family:'Share Tech Mono',monospace;
+  font-size:9px;color:var(--muted);
+  letter-spacing:1px;
+  display:flex;align-items:center;gap:5px;justify-content:flex-end;
+  margin-top:2px;
+}
+.status-dot{
+  width:6px;height:6px;
+  background:var(--red);
+  transform:rotate(45deg);
+  display:inline-block;
+  animation:pulse 2s ease-in-out infinite;
+}
+@keyframes pulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(195,0,47,0.5);}
+  50%{box-shadow:0 0 0 5px rgba(195,0,47,0);}
+}
+
+/* ═══════════════════════════════
+   SLASH DIVIDER (P5 스타일)
+═══════════════════════════════ */
+.slash-wrap{
+  position:relative;z-index:10;
+  padding:14px 0 0;
+  margin:0;
+}
+.slash-main{
+  height:2px;
+  background:var(--red);
+  transform:skewX(-12deg);
+  box-shadow:0 0 16px rgba(195,0,47,0.6);
+  position:relative;
+}
+.slash-main::before{
+  content:'';
+  position:absolute;top:4px;left:0;right:20px;
+  height:1px;
+  background:rgba(195,0,47,0.2);
+  transform:skewX(0);
+}
+.slash-main::after{
+  content:'';
+  position:absolute;top:7px;left:0;right:60px;
+  height:1px;
+  background:rgba(195,0,47,0.08);
+}
+
+/* ═══════════════════════════════
+   MAIN CONTENT
+═══════════════════════════════ */
+.content{
+  position:relative;z-index:10;
+  padding:18px 16px 120px;
+}
+
+/* ═══════════════════════════════
+   STREAK BANNER
+═══════════════════════════════ */
+.streak-banner{
+  position:relative;
+  background:var(--card);
+  margin-bottom:14px;
+  overflow:hidden;
+  clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px));
+}
+.streak-banner::before{
+  content:'';
+  position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--red),transparent 70%);
+}
+/* 大数字背景水印 */
+.streak-watermark{
+  position:absolute;right:-8px;top:50%;transform:translateY(-50%);
+  font-family:'Bebas Neue',sans-serif;
+  font-size:96px;line-height:1;
+  color:rgba(195,0,47,0.05);
+  letter-spacing:-4px;
+  user-select:none;pointer-events:none;
+}
+.streak-inner{
+  display:flex;align-items:center;
+  padding:12px 18px;gap:16px;
+}
+.streak-num{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:56px;line-height:1;
+  color:var(--red);
+  text-shadow:0 0 30px rgba(195,0,47,0.5);
+  position:relative;
+}
+.streak-num::after{
+  content:'DAY';
+  position:absolute;bottom:2px;right:-28px;
+  font-size:10px;letter-spacing:2px;
+  color:var(--muted);font-family:'Share Tech Mono',monospace;
+  line-height:1;
+}
+.streak-right{flex:1;}
+.streak-title{
+  font-family:'Share Tech Mono',monospace;
+  font-size:9px;letter-spacing:3px;color:var(--muted);
+  text-transform:uppercase;margin-bottom:3px;
+}
+.streak-desc{font-size:12px;color:var(--white);margin-bottom:6px;}
+.streak-pips{display:flex;gap:4px;}
+.pip{
+  width:8px;height:8px;
+  background:var(--dim);
+  transform:rotate(45deg);
+  transition:all 0.3s;
+}
+.pip.on{background:var(--red);box-shadow:0 0 6px rgba(195,0,47,0.7);}
+.pip.today{background:var(--gold);box-shadow:0 0 8px rgba(232,200,64,0.6);}
+
+/* ═══════════════════════════════
+   STATUS PANEL
+═══════════════════════════════ */
+.panel{
+  position:relative;
+  background:var(--card);
+  margin-bottom:14px;
+  overflow:hidden;
+  clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%);
+}
+.panel::before{
+  content:'';
+  position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--red),transparent 60%);
+}
+.panel-head{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:10px 16px 9px;
+  border-bottom:1px solid var(--dim);
+  position:relative;
+}
+/* P5 风格标题条 */
+.panel-label{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:12px;letter-spacing:4px;
+  color:var(--red);
+  transform:skewX(-6deg);
+  display:flex;align-items:center;gap:8px;
+}
+.panel-label-bar{
+  width:3px;height:14px;
+  background:var(--red);
+  display:inline-block;
+}
+.panel-exp{
+  font-family:'Share Tech Mono',monospace;
+  font-size:11px;color:var(--gold);
+  display:flex;align-items:baseline;gap:3px;
+}
+.panel-exp .big{font-size:20px;font-weight:bold;line-height:1;}
+.panel-exp .unit{font-size:9px;opacity:0.7;}
+
+/* 属性格子 */
+.stats-grid{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:1px;background:var(--dim);
+}
+.stat-cell{
+  background:var(--card);
+  padding:10px 14px;
+  position:relative;overflow:hidden;
+}
+/* 单元格角标 */
+.stat-cell::after{
+  content:attr(data-icon);
+  position:absolute;right:6px;top:6px;
+  font-size:20px;opacity:0.06;
+  user-select:none;pointer-events:none;
+}
+.stat-n{
+  font-family:'Share Tech Mono',monospace;
+  font-size:9px;color:var(--muted);letter-spacing:2px;
+  text-transform:uppercase;margin-bottom:5px;
+}
+.stat-lv-row{
+  display:flex;align-items:baseline;gap:5px;margin-bottom:6px;
+}
+.stat-lv{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:28px;line-height:1;color:var(--white);
+}
+.stat-max{
+  font-family:'Share Tech Mono',monospace;
+  font-size:10px;color:var(--muted);
+}
+.bar-track{height:3px;background:var(--dim);position:relative;overflow:visible;}
+.bar-fill{
+  height:100%;background:var(--red);
+  position:relative;transition:width 1.5s cubic-bezier(.22,1,.36,1);
+}
+/* 菱形端点 */
+.bar-fill::after{
+  content:'';position:absolute;right:-3px;top:-3px;
+  width:9px;height:9px;
+  background:var(--white);border:1.5px solid var(--red);
+  transform:rotate(45deg);
+}
+
+/* ═══════════════════════════════
+   TIME SLOTS
+═══════════════════════════════ */
+.section-head{
+  display:flex;align-items:center;gap:10px;
+  margin:20px 0 10px;
+}
+.section-tag{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:13px;letter-spacing:4px;
+  color:var(--white);
+  transform:skewX(-5deg);
+  white-space:nowrap;
+  display:flex;align-items:center;gap:6px;
+}
+.section-tag::before{
+  content:'';
+  display:inline-block;
+  width:3px;height:14px;
+  background:var(--red);
+}
+.section-rule{
+  flex:1;height:1px;
+  background:linear-gradient(90deg,var(--dim),transparent);
+}
+
+.slots{display:flex;gap:6px;margin-bottom:14px;}
+.slot-btn{
+  flex:1;
+  background:var(--card2);
+  border:none;outline:none;
+  color:var(--muted);
+  cursor:pointer;
+  position:relative;
+  padding:10px 4px 8px;
+  clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%);
+  transition:all 0.2s;
+  display:flex;flex-direction:column;align-items:center;gap:5px;
+}
+.slot-btn.active{
+  background:var(--red);color:var(--white);
+  box-shadow:0 0 20px rgba(195,0,47,0.45);
+}
+.slot-icon-wrap{
+  width:28px;height:28px;
+  display:flex;align-items:center;justify-content:center;
+}
+.slot-label{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:12px;letter-spacing:2px;
+}
+
+/* ═══════════════════════════════
+   HABIT CHAIN
+═══════════════════════════════ */
+.chain-list{display:flex;flex-direction:column;}
+
+.habit-card{
+  position:relative;
+  background:var(--card);
+  border-left:3px solid var(--red);
+  padding:12px 14px;
+  display:flex;align-items:center;gap:12px;
+  cursor:pointer;
+  transition:all 0.2s;
+  clip-path:polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,0 100%);
+  margin-bottom:2px;
+  overflow:hidden;
+  user-select:none;
+}
+/* 角标三角 */
+.habit-card::after{
+  content:'';position:absolute;top:0;right:0;
+  border-top:12px solid var(--card2);
+  border-left:12px solid transparent;
+}
+/* 完成态 */
+.habit-card.done{border-left-color:#1DB954;}
+.habit-card.done .habit-name{opacity:0.4;text-decoration:line-through;}
+.habit-card.done .hcheck{background:#1DB954;border-color:#1DB954;}
+.habit-card:active{transform:scale(0.985);}
+
+/* 背景序号水印 */
+.habit-card .num-bg{
+  position:absolute;right:20px;top:50%;transform:translateY(-50%);
+  font-family:'Bebas Neue',sans-serif;font-size:48px;
+  color:rgba(255,255,255,0.03);user-select:none;pointer-events:none;
+  line-height:1;
+}
+
+.hcheck{
+  width:28px;height:28px;
+  border:2px solid var(--red);
+  transform:rotate(45deg);
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;transition:all 0.2s;position:relative;z-index:1;
+  background:transparent;
+}
+.hcheck-inner{
+  transform:rotate(-45deg);
+  font-size:12px;line-height:1;color:var(--white);
+  opacity:0;transition:opacity 0.2s;
+}
+.habit-card.done .hcheck-inner{opacity:1;}
+
+.habit-body{flex:1;position:relative;z-index:1;min-width:0;}
+.habit-name{
+  font-size:14px;font-weight:700;color:var(--white);
+  margin-bottom:5px;
+  transition:all 0.2s;
+}
+.habit-tags{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.htag{
+  font-size:9px;font-family:'Share Tech Mono',monospace;
+  letter-spacing:1px;padding:2px 8px;
+  background:rgba(195,0,47,0.12);
+  color:var(--red);
+  clip-path:polygon(4px 0,100% 0,calc(100% - 4px) 100%,0 100%);
+  display:inline-block;
+  border:1px solid rgba(195,0,47,0.25);
+}
+.hexp{
+  font-size:10px;font-family:'Share Tech Mono',monospace;
+  color:var(--gold);
+}
+
+/* 链条箭头 */
+.chain-conn{
+  display:flex;align-items:center;justify-content:flex-start;
+  padding:0 0 0 21px;
+  height:18px;position:relative;
+}
+.chain-conn::before{
+  content:'';
+  position:absolute;left:22px;top:0;bottom:0;
+  width:2px;background:rgba(195,0,47,0.2);
+}
+.chain-arrow-svg{
+  position:relative;z-index:1;
+}
+
+/* ═══════════════════════════════
+   AI INPUT BAR
+═══════════════════════════════ */
+.ai-bar{
+  position:fixed;bottom:64px;left:50%;
+  transform:translateX(-50%);
+  width:calc(min(390px,100vw) - 24px);
+  z-index:50;
+}
+.ai-inner{
+  background:rgba(14,14,14,0.97);
+  border:1px solid var(--red);
+  display:flex;align-items:center;gap:10px;
+  padding:9px 12px;
+  clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%);
+  box-shadow:0 0 24px rgba(195,0,47,0.3),0 8px 32px rgba(0,0,0,0.7);
+  backdrop-filter:blur(12px);
+}
+.ai-prefix{
+  font-family:'Share Tech Mono',monospace;
+  font-size:10px;color:var(--red);letter-spacing:1px;
+  white-space:nowrap;flex-shrink:0;
+}
+.ai-input{
+  flex:1;background:transparent;border:none;outline:none;
+  color:var(--white);font-size:13px;
+  font-family:'Noto Sans SC',sans-serif;
+}
+.ai-input::placeholder{color:var(--muted);font-size:12px;}
+.ai-send{
+  flex-shrink:0;
+  background:none;border:none;cursor:pointer;
+  display:flex;align-items:center;
+  padding:2px;
+  opacity:0.7;transition:opacity 0.2s;
+}
+.ai-send:active{opacity:1;transform:scale(0.9);}
+
+/* ═══════════════════════════════
+   BOTTOM NAV
+═══════════════════════════════ */
+.nav{
+  position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+  width:min(390px,100vw);
+  background:rgba(10,10,10,0.98);
+  border-top:1px solid var(--dim);
+  display:flex;z-index:100;
+  backdrop-filter:blur(10px);
+}
+.nav-btn{
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  padding:8px 0 10px;gap:4px;
+  cursor:pointer;background:none;border:none;
+  color:var(--muted);position:relative;transition:color 0.2s;
+}
+.nav-btn.on{color:var(--red);}
+.nav-btn.on::before{
+  content:'';position:absolute;top:0;left:20%;right:20%;height:2px;
+  background:var(--red);box-shadow:0 0 10px rgba(195,0,47,0.8);
+}
+.nav-lbl{
+  font-family:'Share Tech Mono',monospace;
+  font-size:8px;letter-spacing:1.5px;text-transform:uppercase;
+}
+
+/* ═══════════════════════════════
+   EXP TOAST
+═══════════════════════════════ */
+.exp-toast{
+  position:fixed;top:50%;left:50%;
+  transform:translate(-50%,-50%) scale(0) rotate(-2deg);
+  background:var(--card);
+  border:2px solid var(--gold);
+  padding:16px 40px;text-align:center;z-index:300;
+  clip-path:polygon(10px 0,100% 0,calc(100% - 10px) 100%,0 100%);
+  transition:transform 0.3s cubic-bezier(0.175,0.885,0.32,1.275);
+  pointer-events:none;
+  box-shadow:0 0 40px rgba(232,200,64,0.15);
+}
+.exp-toast.on{transform:translate(-50%,-50%) scale(1) rotate(-1deg);}
+.toast-pre{
+  font-family:'Share Tech Mono',monospace;
+  font-size:9px;letter-spacing:3px;color:var(--muted);
+  text-transform:uppercase;margin-bottom:2px;
+}
+.toast-num{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:56px;color:var(--gold);letter-spacing:4px;line-height:1;
+}
+.toast-dim{
+  font-family:'Share Tech Mono',monospace;
+  font-size:10px;color:var(--red);letter-spacing:2px;
+  text-transform:uppercase;margin-top:3px;
+}
+
+/* ═══════════════════════════════
+   ANIMATIONS
+═══════════════════════════════ */
+@keyframes fadeSlide{
+  from{opacity:0;transform:translateY(10px);}
+  to{opacity:1;transform:translateY(0);}
+}
+@keyframes slideLeft{
+  from{opacity:0;transform:translateX(-20px);}
+  to{opacity:1;transform:translateX(0);}
+}
+.fs{opacity:0;animation:fadeSlide 0.5s ease forwards;}
+.sl{opacity:0;animation:slideLeft 0.4s ease forwards;}
+.d0{animation-delay:0s;}
+.d1{animation-delay:0.08s;}
+.d2{animation-delay:0.16s;}
+.d3{animation-delay:0.24s;}
+.d4{animation-delay:0.32s;}
+.d5{animation-delay:0.40s;}
+.d6{animation-delay:0.48s;}
+
+/* ─── STATUS PAGE CSS ─── */
+
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+SC:wght@400;700;900&family=Share+Tech+Mono&display=swap');
+
+:root {
+  --red: #C3002F;
+  --red2: #FF1744;
+  --black: #080808;
+  --card: #0E0E0E;
+  --card2: #161616;
+  --white: #EFEFEF;
+  --gold: #E8C840;
+  --dim: #2A2A2A;
+  --muted: #5A5A5A;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+
+body{
+  background:var(--black);
+  color:var(--white);
+  font-family:'Noto Sans SC',sans-serif;
+  max-width:390px;
+  margin:0 auto;
+  min-height:100vh;
+  overflow-x:hidden;
+  position:relative;
+}
+
+/* 半色调背景 */
+.bg-layer{
+  position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;
+}
+.bg-layer::before{
+  content:'';position:absolute;inset:0;
+  background-image:radial-gradient(circle,rgba(195,0,47,0.06) 1px,transparent 1px);
+  background-size:18px 18px;
+}
+
+@keyframes scan{0%{top:-1px}100%{top:100vh}}
+.scanline{
+  position:fixed;left:0;right:0;height:1px;
+  background:rgba(195,0,47,0.04);
+  pointer-events:none;z-index:999;
+  animation:scan 6s linear infinite;
+}
+
+/* ═══ HEADER ═══ */
+.header{
+  position:relative;z-index:10;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 20px 12px;
+}
+.back-btn{
+  display:flex;align-items:center;gap:8px;
+  background:none;border:none;color:var(--muted);
+  cursor:pointer;font-family:'Share Tech Mono',monospace;
+  font-size:10px;letter-spacing:2px;
+  text-transform:uppercase;
+}
+.page-title{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:18px;letter-spacing:5px;
+  color:var(--white);transform:skewX(-4deg);
+}
+.header-badge{
+  font-family:'Share Tech Mono',monospace;
+  font-size:9px;color:var(--red);
+  letter-spacing:2px;
+  border:1px solid rgba(195,0,47,0.4);
+  padding:3px 8px;
+  clip-path:polygon(4px 0,100% 0,calc(100% - 4px) 100%,0 100%);
+}
+
+.slash-wrap{position:relative;z-index:10;padding:0;}
+.slash-main{
+  height:2px;background:var(--red);
+  transform:skewX(-12deg);
+  box-shadow:0 0 16px rgba(195,0,47,0.6);
+}
+.slash-main::before{
+  content:'';position:absolute;top:4px;left:0;right:20px;
+  height:1px;background:rgba(195,0,47,0.2);
+}
+
+/* ═══ CONTENT ═══ */
+.content{
+  position:relative;z-index:10;
+  padding:20px 16px 110px;
+}
+
+/* ═══ CHARACTER CARD ═══ */
+.char-card{
+  position:relative;
+  background:var(--card);
+  margin-bottom:16px;
+  overflow:hidden;
+  clip-path:polygon(0 0,calc(100% - 18px) 0,100% 18px,100% 100%,18px 100%,0 calc(100% - 18px));
+}
+.char-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--red),rgba(195,0,47,0.2),transparent);
+}
+/* 大背景字 */
+.char-watermark{
+  position:absolute;right:-12px;bottom:-16px;
+  font-family:'Bebas Neue',sans-serif;
+  font-size:110px;line-height:1;
+  color:rgba(195,0,47,0.04);
+  letter-spacing:-4px;
+  user-select:none;pointer-events:none;
+}
+
+.char-inner{
+  display:flex;align-items:center;gap:16px;
+  padding:18px 18px 14px;
+}
+
+/* 头像框 */
+.avatar-wrap{
+  position:relative;flex-shrink:0;
+}
+.avatar-frame{
+  width:72px;height:72px;
+  background:var(--card2);
+  clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px));
+  display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;
+  border:1px solid var(--dim);
+}
+.avatar-frame::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(195,0,47,0.15),transparent 50%);
+}
+.avatar-svg{
+  width:48px;height:48px;opacity:0.9;
+}
+/* 等级徽章 */
+.lv-badge{
+  position:absolute;bottom:-4px;right:-4px;
+  background:var(--red);
+  font-family:'Bebas Neue',sans-serif;
+  font-size:11px;letter-spacing:1px;
+  color:var(--white);padding:2px 6px;
+  clip-path:polygon(4px 0,100% 0,calc(100% - 4px) 100%,0 100%);
+}
+
+/* 角色信息 */
+.char-info{flex:1;min-width:0;}
+.char-name{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:28px;line-height:1;
+  color:var(--white);letter-spacing:3px;
+  transform:skewX(-3deg);display:inline-block;
+}
+.char-title{
+  font-family:'Share Tech Mono',monospace;
+  font-size:9px;color:var(--red);
+  letter-spacing:2px;text-transform:uppercase;
+  margin:3px 0 8px;
+}
+/* 总经验条 */
+.total-bar-wrap{}
+.total-bar-label{
+  display:flex;justify-content:space-between;
+  font-family:'Share Tech Mono',monospace;
+  font-size:9px;color:var(--muted);letter-spacing:1px;
+  margin-bottom:4px;
+}
+.total-bar-track{height:4px;background:var(--dim);position:relative;}
+.total-bar-fill{
+  height:100%;
+  background:linear-gradient(90deg,var(--red),var(--red2));
+  position:relative;
+  width:0;
+  transition:width 1.5s cubic-bezier(.22,1,.36,1);
+}
+.total-bar-fill::after{
+  content:'';position:absolute;right:-2px;top:-3px;
+  width:10px;height:10px;
+  background:var(--white);border:1.5px solid var(--red);
+  transform:rotate(45deg);
+}
+
+/* 标签行 */
+.char-tags{
+  display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;
+}
+.ctag{
+  font-family:'Share Tech Mono',monospace;
+  font-size:9px;letter-spacing:1px;
+  padding:2px 8px;
+  clip-path:polygon(4px 0,100% 0,calc(100% - 4px) 100%,0 100%);
+}
+.ctag.red{
+  background:rgba(195,0,47,0.15);
+  color:var(--red);border:1px solid rgba(195,0,47,0.3);
+}
+.ctag.gold{
+  background:rgba(232,200,64,0.1);
+  color:var(--gold);border:1px solid rgba(232,200,64,0.25);
+}
+.ctag.dim{
+  background:var(--dim);
+  color:var(--muted);border:1px solid transparent;
+}
+
+/* ═══ RADAR SECTION ═══ */
+.section-head{
+  display:flex;align-items:center;gap:10px;
+  margin:20px 0 14px;
+}
+.section-tag{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:13px;letter-spacing:4px;color:var(--white);
+  transform:skewX(-5deg);white-space:nowrap;
+  display:flex;align-items:center;gap:6px;
+}
+.section-tag::before{
+  content:'';display:inline-block;
+  width:3px;height:14px;background:var(--red);
+}
+.section-rule{flex:1;height:1px;background:linear-gradient(90deg,var(--dim),transparent);}
+
+.radar-wrap{
+  position:relative;
+  background:var(--card);
+  margin-bottom:16px;
+  padding:24px 20px;
+  clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px));
+  overflow:hidden;
+}
+.radar-wrap::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--red),transparent 70%);
+}
+/* 背景装饰圈 */
+.radar-bg-ring{
+  position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  width:260px;height:260px;
+  border:1px solid rgba(195,0,47,0.04);
+  border-radius:50%;
+  pointer-events:none;
+}
+.radar-svg{
+  display:block;
+  margin:0 auto;
+  width:220px;height:220px;
+}
+
+/* ═══ STAT ROWS ═══ */
+.stat-rows{
+  display:flex;flex-direction:column;gap:2px;
+}
+.stat-row{
+  position:relative;
+  background:var(--card);
+  padding:12px 16px;
+  display:flex;align-items:center;gap:14px;
+  overflow:hidden;
+  clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,0 100%);
+  cursor:pointer;transition:all 0.2s;
+}
+.stat-row:active{transform:scale(0.99);}
+.stat-row::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;
+  width:2px;background:var(--red);
+}
+/* hover展开指示 */
+.stat-row::after{
+  content:'';position:absolute;top:0;right:0;
+  border-top:10px solid var(--card2);
+  border-left:10px solid transparent;
+}
+/* 展开状态 */
+.stat-row.open{background:var(--card2);}
+
+/* 维度图标 */
+.stat-icon{
+  width:36px;height:36px;flex-shrink:0;
+  background:var(--card2);
+  display:flex;align-items:center;justify-content:center;
+  clip-path:polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%);
+  transition:background 0.2s;
+}
+.stat-row.open .stat-icon{background:rgba(195,0,47,0.15);}
+
+.stat-main{flex:1;min-width:0;}
+.stat-name-row{
+  display:flex;align-items:baseline;gap:8px;
+  margin-bottom:6px;
+}
+.stat-name{
+  font-size:13px;font-weight:700;color:var(--white);
+}
+.stat-lv{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:20px;color:var(--red);line-height:1;
+}
+.stat-title{
+  font-family:'Share Tech Mono',monospace;
+  font-size:9px;color:var(--muted);letter-spacing:1px;
+  margin-left:auto;
+}
+
+/* 进度条 */
+.stat-bar-track{height:3px;background:var(--dim);position:relative;overflow:visible;}
+.stat-bar-fill{
+  height:100%;background:var(--red);
+  position:relative;transition:width 1.5s cubic-bezier(.22,1,.36,1);
+}
+.stat-bar-fill::after{
+  content:'';position:absolute;right:-2px;top:-3px;
+  width:9px;height:9px;
+  background:var(--white);border:1.5px solid var(--red);
+  transform:rotate(45deg);
+}
+
+/* 展开详情 */
+.stat-detail{
+  max-height:0;overflow:hidden;
+  transition:max-height 0.35s ease;
+  padding:0 16px;
+  background:var(--card2);
+}
+.stat-detail.open{max-height:120px;}
+.detail-inner{
+  padding:10px 0 14px;
+  border-top:1px solid var(--dim);
+}
+.detail-row{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:6px;
+}
+.detail-key{
+  font-family:'Share Tech Mono',monospace;
+  font-size:9px;color:var(--muted);letter-spacing:1px;
+}
+.detail-val{
+  font-family:'Share Tech Mono',monospace;
+  font-size:10px;color:var(--white);
+}
+.detail-val.gold{color:var(--gold);}
+.detail-val.red{color:var(--red);}
+
+/* ═══ BOTTOM NAV ═══ */
+.nav{
+  position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+  width:min(390px,100vw);
+  background:rgba(10,10,10,0.98);
+  border-top:1px solid var(--dim);
+  display:flex;z-index:100;
+  backdrop-filter:blur(10px);
+}
+.nav-btn{
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  padding:8px 0 10px;gap:4px;
+  cursor:pointer;background:none;border:none;
+  color:var(--muted);position:relative;transition:color 0.2s;
+}
+.nav-btn.on{color:var(--red);}
+.nav-btn.on::before{
+  content:'';position:absolute;top:0;left:20%;right:20%;height:2px;
+  background:var(--red);box-shadow:0 0 10px rgba(195,0,47,0.8);
+}
+.nav-lbl{font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:1.5px;}
+
+/* ═══ ANIMATIONS ═══ */
+@keyframes fadeSlide{
+  from{opacity:0;transform:translateY(12px);}
+  to{opacity:1;transform:translateY(0);}
+}
+@keyframes drawRadar{
+  from{opacity:0;transform:scale(0.6);}
+  to{opacity:1;transform:scale(1);}
+}
+.fs{opacity:0;animation:fadeSlide 0.5s ease forwards;}
+.d0{animation-delay:0s;}
+.d1{animation-delay:0.08s;}
+.d2{animation-delay:0.16s;}
+.d3{animation-delay:0.24s;}
+.d4{animation-delay:0.32s;}
+.d5{animation-delay:0.40s;}
+
+.radar-anim{
+  animation:drawRadar 0.8s cubic-bezier(.22,1,.36,1) 0.2s both;
+}
+
+/* 数字滚动动画 */
+@keyframes countUp{
+  from{opacity:0.3;}
+  to{opacity:1;}
+}
+
+
+/* SPA PAGE SWITCHING */
+.page { display: none; }
+.page.active { display: block; animation: pageIn 0.25s ease forwards; }
+@keyframes pageIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
+/* NAV */
+.nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(390px,100vw);background:rgba(10,10,10,0.98);border-top:1px solid var(--dim);display:flex;z-index:100;backdrop-filter:blur(10px);}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;padding:8px 0 10px;gap:4px;cursor:pointer;background:none;border:none;color:var(--muted);position:relative;transition:color 0.2s;}
+.nav-btn.on{color:var(--red);}
+.nav-btn.on::before{content:'';position:absolute;top:0;left:20%;right:20%;height:2px;background:var(--red);box-shadow:0 0 10px rgba(195,0,47,0.8);}
+.nav-lbl{font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:1.5px;}
+
+/* Coming soon page */
+.soon-page { display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:70vh;gap:16px; }
+.soon-label { font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:4px;color:var(--muted); }
+.soon-title { font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:6px;color:var(--white);transform:skewX(-4deg); }
+.soon-bar { width:80px;height:2px;background:var(--red);box-shadow:0 0 12px rgba(195,0,47,0.5); }
+
+
+/* ── HABITS PAGE ── */
+.add-btn{display:flex;align-items:center;justify-content:center;gap:8px;background:transparent;border:1px dashed rgba(195,0,47,0.35);color:var(--red);padding:11px;cursor:pointer;font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:3px;margin-bottom:16px;clip-path:polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%);transition:all 0.2s;width:100%;}
+.add-btn:active{background:rgba(195,0,47,0.06);}
+.slot-cnt{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);white-space:nowrap;padding:2px 8px;border:1px solid var(--dim);}
+.hm-list{display:flex;flex-direction:column;margin-bottom:4px;}
+.hm-card{position:relative;background:var(--card);padding:11px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,0 100%);margin-bottom:2px;overflow:hidden;border-left:2px solid var(--dim);}
+.anchor-card{border-left-color:var(--gold);}
+.anchor-lbl{position:absolute;top:5px;right:12px;font-family:'Share Tech Mono',monospace;font-size:7px;letter-spacing:2px;color:var(--gold);opacity:0.6;}
+.hm-left{display:flex;align-items:center;gap:10px;flex:1;min-width:0;}
+.hm-ico{width:30px;height:30px;display:flex;align-items:center;justify-content:center;flex-shrink:0;clip-path:polygon(4px 0,100% 0,calc(100% - 4px) 100%,0 100%);}
+.hm-ico.morning{background:rgba(255,175,0,0.1);color:rgba(255,175,0,0.75);}
+.hm-ico.afternoon{background:rgba(195,0,47,0.1);color:var(--red);}
+.hm-ico.night{background:rgba(110,100,200,0.1);color:rgba(150,140,230,0.75);}
+.hm-name{font-size:13px;font-weight:700;color:var(--white);margin-bottom:4px;}
+.hm-meta{display:flex;align-items:center;gap:6px;}
+.hm-freq{font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--muted);letter-spacing:1px;}
+.hm-stk{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--red);line-height:1;display:flex;flex-direction:column;align-items:center;text-align:center;flex-shrink:0;}
+.hm-stk span{font-family:'Share Tech Mono',monospace;font-size:7px;color:var(--muted);letter-spacing:1px;}
+.chain-sm{display:flex;padding:0 0 0 15px;height:12px;align-items:center;position:relative;}
+.chain-sm::before{content:'';position:absolute;left:16px;top:0;bottom:0;width:1px;background:rgba(195,0,47,0.12);}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:200;display:none;align-items:flex-end;backdrop-filter:blur(6px);}
+.modal-overlay.open{display:flex;}
+.modal-box{background:var(--card);width:100%;max-width:390px;margin:0 auto;padding:22px 20px 36px;clip-path:polygon(10px 0,100% 0,100% 100%,0 100%,0 10px);border-top:2px solid var(--red);}
+.modal-ttl{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:5px;color:var(--white);margin-bottom:18px;display:flex;align-items:center;gap:10px;}
+.modal-bar{width:3px;height:18px;background:var(--red);display:inline-block;}
+.mfield{margin-bottom:14px;}
+.mlabel{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;display:block;margin-bottom:7px;}
+.minput{width:100%;background:var(--card2);border:1px solid var(--dim);color:var(--white);padding:9px 14px;font-size:13px;font-family:'Noto Sans SC',sans-serif;outline:none;clip-path:polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%);transition:border-color 0.2s;}
+.minput:focus{border-color:var(--red);}
+.mchips{display:flex;gap:5px;flex-wrap:wrap;}
+.mchip{background:var(--card2);border:1px solid var(--dim);color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px;padding:5px 11px;cursor:pointer;clip-path:polygon(4px 0,100% 0,calc(100% - 4px) 100%,0 100%);transition:all 0.15s;}
+.mchip.active{background:rgba(195,0,47,0.15);border-color:var(--red);color:var(--red);}
+.mconfirm{width:100%;background:var(--red);border:none;color:var(--white);font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:4px;padding:14px;cursor:pointer;clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%);margin-top:4px;transition:opacity 0.2s;}
+.mconfirm:active{opacity:0.8;}
+
+/* ── GROWTH PAGE ── */
+.ov-row{display:flex;background:var(--card);margin-bottom:14px;clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%);overflow:hidden;position:relative;}
+.ov-row::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--red),transparent 70%);}
+.ov-item{flex:1;padding:16px 12px;text-align:center;}
+.ov-num{font-family:'Bebas Neue',sans-serif;font-size:34px;color:var(--white);line-height:1;}
+.ov-lbl{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;margin-top:4px;}
+.ov-div{width:1px;background:var(--dim);margin:12px 0;}
+.hmap-card{background:var(--card);padding:14px 16px;margin-bottom:14px;clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%);position:relative;overflow:hidden;}
+.hmap-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--red),transparent 70%);}
+.hmap-months{display:flex;justify-content:space-between;font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--muted);letter-spacing:1px;margin-bottom:8px;padding:0 2px;}
+.hmap-grid{display:grid;grid-template-columns:repeat(15,1fr);gap:3px;margin-bottom:10px;}
+.hmap-grid .hc{width:100%;aspect-ratio:1;}
+.hmap-legend{display:flex;align-items:center;gap:6px;}
+.leg-txt{font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--muted);letter-spacing:1px;}
+.lc{width:12px;height:12px;}
+.gchart-card{background:var(--card);padding:16px;margin-bottom:14px;clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%);position:relative;overflow:hidden;}
+.gchart-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--red),transparent 70%);}
+.clegend{display:flex;gap:16px;margin-top:10px;}
+.cl-item{display:flex;align-items:center;gap:5px;font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;}
+.cl-dot{width:8px;height:8px;border-radius:50%;}
+.ms-list{display:flex;flex-direction:column;gap:2px;}
+.ms-card{display:flex;align-items:center;gap:12px;background:var(--card);padding:12px 16px;clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,0 100%);position:relative;}
+.ms-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--dim);}
+.ms-card.ms-done::before{background:var(--gold);}
+.ms-ico{font-size:15px;color:var(--dim);flex-shrink:0;}
+.ms-done-ico{color:var(--gold);}
+.ms-body{flex:1;}
+.ms-name{font-size:13px;font-weight:700;color:var(--white);margin-bottom:2px;}
+.ms-desc{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;}
+.ms-badge{font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:2px;color:var(--muted);background:var(--dim);padding:3px 10px;clip-path:polygon(4px 0,100% 0,calc(100% - 4px) 100%,0 100%);}
+.ms-done-badge{color:var(--gold);background:rgba(232,200,64,0.1);}
+.ms-prog-badge{color:var(--red);background:rgba(195,0,47,0.12);}
+
+/* ── AI ARCANA PAGE ── */
+.morgana-card{display:flex;align-items:center;justify-content:space-between;background:var(--card);padding:14px 16px;margin-bottom:14px;clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%);position:relative;overflow:hidden;}
+.morgana-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--red),transparent 70%);}
+.morgana-av{width:44px;height:44px;background:rgba(195,0,47,0.08);clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,8px 100%,0 calc(100% - 8px));display:flex;align-items:center;justify-content:center;border:1px solid rgba(195,0,47,0.25);flex-shrink:0;}
+@keyframes aipulse{0%,100%{opacity:1}50%{opacity:0.3}}
+.online-dot{width:7px;height:7px;background:#1DB954;border-radius:50%;animation:aipulse 2s ease-in-out infinite;}
+.wr-card{background:var(--card);padding:14px 16px;margin-bottom:14px;clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%);position:relative;overflow:hidden;}
+.wr-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--red),transparent 70%);}
+.wr-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+.wr-share-btn{display:flex;align-items:center;gap:5px;background:var(--dim);border:none;color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:1px;padding:4px 10px;cursor:pointer;clip-path:polygon(4px 0,100% 0,calc(100% - 4px) 100%,0 100%);}
+.wr-p{font-size:12px;color:var(--white);line-height:1.7;}
+.wr-hi{color:var(--gold);font-weight:700;}
+.wr-warn{color:var(--red);}
+.chat-wrap{display:flex;flex-direction:column;gap:12px;margin-bottom:8px;}
+.cmsg{display:flex;align-items:flex-end;gap:8px;}
+.user-msg{flex-direction:row-reverse;}
+.cav{width:26px;height:26px;background:rgba(195,0,47,0.12);border:1px solid rgba(195,0,47,0.25);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:11px;color:var(--red);clip-path:polygon(0 0,calc(100% - 5px) 0,100% 5px,100% 100%,5px 100%,0 calc(100% - 5px));}
+.cbubble{background:var(--card);border:1px solid var(--dim);padding:9px 13px;font-size:12px;color:var(--white);line-height:1.65;max-width:82%;clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px);}
+.user-b{background:rgba(195,0,47,0.1);border-color:rgba(195,0,47,0.25);clip-path:polygon(0 0,calc(100% - 6px) 0,100% 6px,100% 100%,6px 100%,0 calc(100% - 6px));}
+
+/* ═══════════════════════════════
+   莫纳对话弹框 (打卡完成后弹出)
+═══════════════════════════════ */
+.morgana-dialog{
+  position:fixed;bottom:80px;left:50%;
+  transform:translateX(-50%) translateY(20px);
+  width:calc(min(390px,100vw) - 32px);
+  background:var(--card);
+  border:1px solid rgba(195,0,47,0.4);
+  clip-path:polygon(0 0,calc(100% - 16px) 0,100% 16px,100% 100%,16px 100%,0 calc(100% - 16px));
+  z-index:500;
+  display:flex;align-items:flex-start;gap:12px;
+  padding:14px 16px;
+  opacity:0;pointer-events:none;
+  transition:all 0.35s cubic-bezier(0.175,0.885,0.32,1.275);
+  box-shadow:0 8px 40px rgba(195,0,47,0.15);
+}
+.morgana-dialog::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--red),var(--gold) 50%,transparent);
+}
+.morgana-dialog.show{
+  opacity:1;pointer-events:auto;
+  transform:translateX(-50%) translateY(0);
+}
+.md-avatar{
+  width:52px;height:52px;flex-shrink:0;
+  border-radius:4px;overflow:hidden;
+  border:1px solid rgba(195,0,47,0.25);
+  background:rgba(195,0,47,0.05);
+}
+.md-avatar img{width:100%;height:100%;object-fit:cover;}
+.md-body{flex:1;min-width:0;}
+.md-name{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:13px;letter-spacing:3px;color:var(--red);
+  margin-bottom:5px;display:flex;align-items:center;gap:6px;
+}
+.md-name-dot{width:5px;height:5px;background:var(--gold);transform:rotate(45deg);display:inline-block;}
+.md-text{font-size:12px;color:var(--white);line-height:1.65;}
+.md-close{
+  position:absolute;top:8px;right:8px;
+  background:none;border:none;color:var(--muted);
+  font-size:14px;cursor:pointer;padding:2px 4px;line-height:1;
+}
+
+/* ═══════════════════════════════
+   星星爆炸粒子
+═══════════════════════════════ */
+.star-canvas{
+  position:fixed;inset:0;pointer-events:none;z-index:450;
+}
+
+/* ═══════════════════════════════
+   EXP 条进度升级动效
+═══════════════════════════════ */
+@keyframes barPulse{
+  0%{box-shadow:0 0 0 rgba(232,200,64,0);}
+  50%{box-shadow:0 0 12px rgba(232,200,64,0.6);}
+  100%{box-shadow:0 0 0 rgba(232,200,64,0);}
+}
+.bar-fill.leveled{animation:barPulse 0.6s ease;}
+
+/* ═══════════════════════════════
+   莫纳 FAB 浮动按钮
+═══════════════════════════════ */
+.morgana-fab{
+  position:fixed;right:16px;bottom:78px;
+  width:48px;height:48px;
+  background:var(--card);
+  border:1.5px solid rgba(195,0,47,0.5);
+  clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px));
+  cursor:pointer;z-index:200;
+  display:flex;align-items:center;justify-content:center;
+  transition:transform 0.2s;
+  box-shadow:0 4px 20px rgba(195,0,47,0.2);
+}
+.morgana-fab:active{transform:scale(0.9);}
+.morgana-fab img{width:36px;height:36px;object-fit:contain;}
+/* FAB 呼吸光圈 */
+@keyframes fabRing{
+  0%{box-shadow:0 0 0 0 rgba(195,0,47,0.4);}
+  70%{box-shadow:0 0 0 10px rgba(195,0,47,0);}
+  100%{box-shadow:0 0 0 0 rgba(195,0,47,0);}
+}
+.morgana-fab{animation:fabRing 2.5s infinite;}
+
+/* ═══════════════════════════════
+   档案页 (个人中心)
+═══════════════════════════════ */
+.profile-hero{
+  position:relative;
+  margin:0 0 16px;
+  padding:20px 20px 24px;
+  background:var(--card);
+  clip-path:polygon(0 0,calc(100% - 20px) 0,100% 20px,100% 100%,0 100%);
+  overflow:hidden;
+}
+.profile-hero::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--red),var(--gold) 60%,transparent);
+}
+.profile-bg-text{
+  position:absolute;right:-10px;top:-10px;
+  font-family:'Bebas Neue',sans-serif;
+  font-size:100px;letter-spacing:-2px;
+  color:transparent;-webkit-text-stroke:1px rgba(195,0,47,0.08);
+  pointer-events:none;user-select:none;line-height:1;
+  transform:skewX(-5deg);
+}
+.profile-av-row{display:flex;align-items:center;gap:16px;margin-bottom:14px;}
+.profile-av{
+  width:72px;height:72px;
+  border:2px solid rgba(195,0,47,0.4);
+  clip-path:polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,12px 100%,0 calc(100% - 12px));
+  overflow:hidden;background:rgba(195,0,47,0.06);
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+}
+.profile-av img{width:100%;height:100%;object-fit:cover;}
+.profile-info{}
+.profile-name{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:28px;letter-spacing:4px;color:var(--white);
+  transform:skewX(-3deg);display:inline-block;line-height:1;
+}
+.profile-title{
+  font-family:'Share Tech Mono',monospace;
+  font-size:9px;letter-spacing:2px;color:var(--gold);
+  margin-top:3px;
+}
+.profile-code{
+  font-family:'Share Tech Mono',monospace;
+  font-size:8px;color:var(--muted);letter-spacing:1px;margin-top:2px;
+}
+.profile-stats{
+  display:grid;grid-template-columns:1fr 1fr 1fr;
+  gap:1px;background:var(--dim);
+}
+.pstat{
+  background:var(--black);
+  padding:10px 0;text-align:center;
+}
+.pstat-num{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:26px;color:var(--white);letter-spacing:2px;line-height:1;
+}
+.pstat-num span{font-size:12px;color:var(--red);}
+.pstat-lbl{
+  font-family:'Share Tech Mono',monospace;
+  font-size:8px;color:var(--muted);letter-spacing:1px;
+  margin-top:2px;
+}
+
+/* 成就列表 */
+.achieve-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;}
+.ach-card{
+  background:var(--card);
+  padding:12px 14px;
+  clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%);
+  position:relative;overflow:hidden;
+}
+.ach-card.locked{opacity:0.4;}
+.ach-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--dim);}
+.ach-card.done::before{background:var(--gold);}
+.ach-ico{
+  font-size:22px;margin-bottom:6px;
+  filter:drop-shadow(0 0 6px rgba(232,200,64,0.5));
+}
+.ach-card.locked .ach-ico{filter:none;}
+.ach-name{font-size:12px;font-weight:700;color:var(--white);margin-bottom:2px;}
+.ach-desc{font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--muted);letter-spacing:0.5px;line-height:1.4;}
+.ach-badge{
+  position:absolute;top:6px;right:6px;
+  font-family:'Bebas Neue',sans-serif;font-size:8px;letter-spacing:1px;
+  color:var(--gold);background:rgba(232,200,64,0.1);
+  padding:1px 5px;
+}
+
+/* 设置列表 */
+.setting-list{display:flex;flex-direction:column;gap:2px;}
+.setting-row{
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--card);padding:14px 16px;
+  clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%);
+  cursor:pointer;
+}
+.setting-row:active{opacity:0.7;}
+.setting-left{display:flex;align-items:center;gap:10px;}
+.setting-ico{
+  width:28px;height:28px;background:rgba(195,0,47,0.08);
+  clip-path:polygon(4px 0,100% 0,calc(100% - 4px) 100%,0 100%);
+  display:flex;align-items:center;justify-content:center;
+}
+.setting-name{font-size:13px;color:var(--white);}
+.setting-val{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;}
+.setting-arrow{color:var(--dim);}
+
+</style>
+</head>
+<body>
+<div class="scanline"></div>
+<div class="bg-layer"></div>
+<!-- 大型背景水印 -->
+<div class="bg-watermark" aria-hidden="true">ARCANA</div>
+<!-- 透视格栅 -->
+<svg class="bg-grid" viewBox="0 0 390 260" fill="none" preserveAspectRatio="none" aria-hidden="true">
+  <!-- 消失点透视线：从底部中心向上散射 -->
+  <line x1="195" y1="260" x2="0"   y2="0"   stroke="rgba(195,0,47,0.07)" stroke-width="1"/>
+  <line x1="195" y1="260" x2="65"  y2="0"   stroke="rgba(195,0,47,0.06)" stroke-width="1"/>
+  <line x1="195" y1="260" x2="130" y2="0"   stroke="rgba(195,0,47,0.05)" stroke-width="1"/>
+  <line x1="195" y1="260" x2="195" y2="0"   stroke="rgba(195,0,47,0.06)" stroke-width="1"/>
+  <line x1="195" y1="260" x2="260" y2="0"   stroke="rgba(195,0,47,0.05)" stroke-width="1"/>
+  <line x1="195" y1="260" x2="325" y2="0"   stroke="rgba(195,0,47,0.06)" stroke-width="1"/>
+  <line x1="195" y1="260" x2="390" y2="0"   stroke="rgba(195,0,47,0.07)" stroke-width="1"/>
+  <!-- 水平横截线 -->
+  <line x1="0" y1="200" x2="390" y2="200" stroke="rgba(255,255,255,0.02)" stroke-width="1"/>
+  <line x1="0" y1="150" x2="390" y2="150" stroke="rgba(255,255,255,0.015)" stroke-width="1"/>
+  <line x1="0" y1="100" x2="390" y2="100" stroke="rgba(255,255,255,0.01)" stroke-width="1"/>
+  <line x1="0" y1="50"  x2="390" y2="50"  stroke="rgba(255,255,255,0.008)" stroke-width="1"/>
+  <!-- 底部渐变遮罩感（用矩形模拟） -->
+  <rect x="0" y="220" width="390" height="40" fill="url(#fadeUp)" opacity="0.6"/>
+  <defs>
+    <linearGradient id="fadeUp" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="transparent"/>
+      <stop offset="100%" stop-color="#080808"/>
+    </linearGradient>
+  </defs>
+</svg>
+<!-- 左侧菱形装饰 -->
+<div class="bg-diamond" aria-hidden="true"></div>
+
+<!-- ★ 星星爆炸画布 -->
+<canvas class="star-canvas" id="star-canvas"></canvas>
+
+<!-- ★ 莫纳对话弹框 -->
+<div class="morgana-dialog" id="morgana-dialog">
+  <div class="md-avatar">
+    <img src="morgana-avatar.png" alt="莫尔加纳"/>
+  </div>
+  <div class="md-body">
+    <div class="md-name">
+      <span class="md-name-dot"></span>
+      莫尔加纳
+    </div>
+    <div class="md-text" id="morgana-dialog-text">干得不错！每一次打卡都是怪盗的行动证明。</div>
+  </div>
+  <button class="md-close" onclick="closeMorganaDialog()">✕</button>
+</div>
+
+<!-- ★ 莫纳 FAB 浮动按钮 -->
+<button class="morgana-fab" onclick="goPage('arcana')" title="找莫尔加纳聊聊">
+  <img src="morgana-avatar.png" alt="莫尔加纳"/>
+</button>
+<div class="exp-toast" id="toast">
+  <div class="toast-pre">获得经验</div>
+  <div class="toast-num" id="t-num">+30</div>
+  <div class="toast-dim" id="t-dim">专业力</div>
+</div>
+
+<!-- PAGE: TODAY -->
+<div class="page active" id="page-today">
+
+<!-- HEADER -->
+<div class="header fs d0">
+  <div class="logo-block" style="position:relative;">
+    <div class="logo-text">ARC<span class="accent">A</span>NA</div>
+    <div class="logo-shadow" aria-hidden="true">ARCANA</div>
+    <span class="logo-sub">命运由你书写 · YOUR ARCANA</span>
+  </div>
+  <div class="header-right">
+    <div class="hdate">SUN · 01 MAR<br>2026</div>
+    <div class="hstatus">
+      <span class="status-dot"></span>
+      <span>运行中</span>
+    </div>
+  </div>
+</div>
+
+<!-- SLASH -->
+<div class="slash-wrap fs d1">
+  <div class="slash-main"></div>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+
+  <!-- STREAK -->
+  <div class="streak-banner fs d2">
+    <div class="streak-watermark">7</div>
+    <div class="streak-inner">
+      <div class="streak-num">7</div>
+      <div class="streak-right">
+        <div class="streak-title">连续打卡</div>
+        <div class="streak-desc">本周进步最快</div>
+        <div class="streak-pips">
+          <div class="pip on"></div><div class="pip on"></div>
+          <div class="pip on"></div><div class="pip on"></div>
+          <div class="pip on"></div><div class="pip on"></div>
+          <div class="pip today"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATUS PANEL -->
+  <div class="panel fs d3">
+    <div class="panel-head">
+      <div class="panel-label">
+        <span class="panel-label-bar"></span>
+        属性面板
+      </div>
+      <div class="panel-exp">
+        <span class="big" id="total-exp">0</span>
+        <span class="unit">今日经验值</span>
+      </div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-cell" data-icon="⚙">
+        <div class="stat-n">专业力</div>
+        <div class="stat-lv-row">
+          <span class="stat-lv">4</span>
+          <span class="stat-max">/ 5</span>
+        </div>
+        <div class="bar-track"><div class="bar-fill" style="width:72%"></div></div>
+      </div>
+      <div class="stat-cell" data-icon="◈">
+        <div class="stat-n">体能</div>
+        <div class="stat-lv-row">
+          <span class="stat-lv">3</span>
+          <span class="stat-max">/ 5</span>
+        </div>
+        <div class="bar-track"><div class="bar-fill" style="width:45%"></div></div>
+      </div>
+      <div class="stat-cell" data-icon="◇">
+        <div class="stat-n">社交</div>
+        <div class="stat-lv-row">
+          <span class="stat-lv">2</span>
+          <span class="stat-max">/ 5</span>
+        </div>
+        <div class="bar-track"><div class="bar-fill" style="width:28%"></div></div>
+      </div>
+      <div class="stat-cell" data-icon="✦">
+        <div class="stat-n">创造力</div>
+        <div class="stat-lv-row">
+          <span class="stat-lv">3</span>
+          <span class="stat-max">/ 5</span>
+        </div>
+        <div class="bar-track"><div class="bar-fill" style="width:60%"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCHEDULE -->
+  <div class="section-head fs d3">
+    <div class="section-tag">今日计划</div>
+    <div class="section-rule"></div>
+  </div>
+
+  <div class="slots fs d4">
+    <!-- 早晨 -->
+    <button class="slot-btn" onclick="switchSlot(this,'morning')">
+      <div class="slot-icon-wrap">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="4" fill="currentColor"/>
+          <line x1="12" y1="2" x2="12" y2="5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <line x1="12" y1="19" x2="12" y2="22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <line x1="4.22" y1="4.22" x2="6.34" y2="6.34" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <line x1="17.66" y1="17.66" x2="19.78" y2="19.78" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <line x1="2" y1="12" x2="5" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <line x1="19" y1="12" x2="22" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <span class="slot-label">早晨</span>
+    </button>
+    <!-- 下午 -->
+    <button class="slot-btn active" onclick="switchSlot(this,'afternoon')">
+      <div class="slot-icon-wrap">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <polygon points="12,2 15,9 22,9 16.5,14 18.5,21 12,17 5.5,21 7.5,14 2,9 9,9" fill="currentColor" opacity="0.9"/>
+        </svg>
+      </div>
+      <span class="slot-label">下午</span>
+    </button>
+    <!-- 夜晚 -->
+    <button class="slot-btn" onclick="switchSlot(this,'night')">
+      <div class="slot-icon-wrap">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z" fill="currentColor"/>
+          <circle cx="17" cy="5" r="1" fill="currentColor" opacity="0.6"/>
+          <circle cx="20" cy="9" r="0.7" fill="currentColor" opacity="0.4"/>
+        </svg>
+      </div>
+      <span class="slot-label">夜晚</span>
+    </button>
+  </div>
+
+  <!-- HABIT CHAIN -->
+  <div class="section-head fs d4">
+    <div class="section-tag">习惯链</div>
+    <div class="section-rule"></div>
+  </div>
+
+  <div class="chain-list" id="chain-list">
+    <!-- 习惯1 -->
+    <div class="habit-card sl d4" onclick="toggleHabit(this,30,'专业力')">
+      <div class="num-bg">01</div>
+      <div class="hcheck"><div class="hcheck-inner">✕</div></div>
+      <div class="habit-body">
+        <div class="habit-name">刷 LeetCode 2题</div>
+        <div class="habit-tags">
+          <span class="htag">专业力</span>
+          <span class="hexp">+30 EXP</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 链条 -->
+    <div class="chain-conn">
+      <svg class="chain-arrow-svg" width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <polygon points="7,14 0,0 14,0" fill="rgba(195,0,47,0.35)"/>
+      </svg>
+    </div>
+
+    <!-- 习惯2 -->
+    <div class="habit-card sl d5" onclick="toggleHabit(this,20,'专业力')">
+      <div class="num-bg">02</div>
+      <div class="hcheck"><div class="hcheck-inner">✕</div></div>
+      <div class="habit-body">
+        <div class="habit-name">读技术文章 30min</div>
+        <div class="habit-tags">
+          <span class="htag">专业力</span>
+          <span class="hexp">+20 EXP</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="chain-conn">
+      <svg class="chain-arrow-svg" width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <polygon points="7,14 0,0 14,0" fill="rgba(195,0,47,0.35)"/>
+      </svg>
+    </div>
+
+    <!-- 习惯3 -->
+    <div class="habit-card sl d6" onclick="toggleHabit(this,25,'体能')">
+      <div class="num-bg">03</div>
+      <div class="hcheck"><div class="hcheck-inner">✕</div></div>
+      <div class="habit-body">
+        <div class="habit-name">跑步 5km</div>
+        <div class="habit-tags">
+          <span class="htag">体能</span>
+          <span class="hexp">+25 EXP</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- AI INPUT -->
+<div class="ai-bar">
+  <div class="ai-inner">
+    <span class="ai-prefix">// 输入</span>
+    <input class="ai-input" id="ai-input" placeholder="今天做了什么？AI 自动分配经验值…" />
+    <button class="ai-send" onclick="sendAI()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <polygon points="5,3 19,12 5,21" fill="var(--red)"/>
+      </svg>
+    </button>
+  </div>
+</div>
+</div>
+
+<!-- PAGE: STATUS -->
+<div class="page" id="page-status">
+<!-- HEADER -->
+<div class="header fs d0">
+  <button class="back-btn" onclick="goPage('today')">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <polyline points="10,2 4,8 10,14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    返回
+  </button>
+  <span class="page-title">属性</span>
+  <span class="header-badge">怪盗团</span>
+</div>
+
+<div class="slash-wrap fs d0">
+  <div class="slash-main"></div>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+
+  <!-- 角色卡 -->
+  <div class="char-card fs d1">
+    <div class="char-watermark">ARCANA</div>
+    <div class="char-inner">
+      <!-- 头像 -->
+      <div class="avatar-wrap">
+        <div class="avatar-frame">
+          <!-- P5 风格人物剪影 SVG -->
+          <svg class="avatar-svg" viewBox="0 0 48 48" fill="none">
+            <!-- 身体轮廓 -->
+            <path d="M24 8 C20 8 17 11 17 15 C17 19 20 22 24 22 C28 22 31 19 31 15 C31 11 28 8 24 8Z" fill="var(--white)" opacity="0.9"/>
+            <!-- 遮蔽阴影 -->
+            <path d="M24 14 C22 14 21 15 21 15 C21 15 22 22 24 22 C26 22 27 15 27 15 C27 15 26 14 24 14Z" fill="var(--red)" opacity="0.5"/>
+            <!-- 身体 -->
+            <path d="M14 44 C14 36 18 30 24 28 C30 30 34 36 34 44Z" fill="var(--white)" opacity="0.85"/>
+            <!-- 外套翻领 P5 风 -->
+            <path d="M24 28 L20 34 L24 32 L28 34 Z" fill="var(--red)" opacity="0.8"/>
+            <!-- 扫描线装饰 -->
+            <line x1="14" y1="38" x2="34" y2="38" stroke="rgba(195,0,47,0.2)" stroke-width="0.5"/>
+            <line x1="14" y1="41" x2="34" y2="41" stroke="rgba(195,0,47,0.1)" stroke-width="0.5"/>
+          </svg>
+        </div>
+        <div class="lv-badge">LV·7</div>
+      </div>
+
+      <!-- 信息 -->
+      <div class="char-info">
+        <div class="char-name">MILO</div>
+        <div class="char-title">// 怪盗团见习成员</div>
+        <div class="total-bar-wrap">
+          <div class="total-bar-label">
+            <span>累计经验</span>
+            <span id="exp-count" style="color:var(--gold)">0</span>
+          </div>
+          <div class="total-bar-track">
+            <div class="total-bar-fill" id="total-bar" style="width:0%"></div>
+          </div>
+        </div>
+        <div class="char-tags" style="margin-top:8px;">
+          <span class="ctag red">WEEK 7</span>
+          <span class="ctag gold">+340 THIS WEEK</span>
+          <span class="ctag dim">7 DAY STK</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 雷达图 -->
+  <div class="section-head fs d2">
+    <div class="section-tag">奥义雷达</div>
+    <div class="section-rule"></div>
+  </div>
+
+  <div class="radar-wrap fs d2">
+    <div class="radar-bg-ring"></div>
+    <svg class="radar-svg radar-anim" viewBox="0 0 220 220" fill="none" id="radar-svg">
+      <!-- 背景网格 -->
+      <!-- 5层六边形网格 -->
+      <g id="grid" opacity="0.15" stroke="var(--red)" stroke-width="0.5">
+        <!-- Layer 1 (20%) -->
+        <polygon points="110,88 126.6,98 126.6,118 110,128 93.4,118 93.4,98" fill="none"/>
+        <!-- Layer 2 (40%) -->
+        <polygon points="110,66 133.2,79 133.2,105 110,118 86.8,105 86.8,79" fill="none"/>
+        <!-- Layer 3 (60%) -->
+        <polygon points="110,44 143.8,71 143.8,99 110,126 76.2,99 76.2,71" fill="none"/>  
+        <!-- Layer 4 (80%) -->
+        <polygon points="110,24 154.4,62 154.4,96 110,134 65.6,96 65.6,62" fill="none"/>
+        <!-- Layer 5 (100%) -->
+        <polygon points="110,10 165,57 165,97 110,144 55,97 55,57" fill="none"/>
+        <!-- 轴线 -->
+        <line x1="110" y1="10" x2="110" y2="144"/>
+        <line x1="110" y1="77" x2="165" y2="57"/>
+        <line x1="110" y1="77" x2="165" y2="97"/>
+        <line x1="110" y1="77" x2="110" y2="144"/>
+        <line x1="110" y1="77" x2="55" y2="97"/>
+        <line x1="110" y1="77" x2="55" y2="57"/>
+      </g>
+
+      <!-- 数据填充多边形（动态绘制） -->
+      <polygon id="radar-fill"
+        points="110,77 110,77 110,77 110,77 110,77 110,77"
+        fill="rgba(195,0,47,0.25)"
+        stroke="var(--red)"
+        stroke-width="1.5"
+        stroke-linejoin="round"
+      />
+
+      <!-- 端点菱形 -->
+      <g id="radar-dots"></g>
+
+      <!-- 维度标签 -->
+      <text x="110" y="6" text-anchor="middle" fill="var(--white)" font-family="Share Tech Mono, monospace" font-size="9" letter-spacing="1">专业力</text>
+      <text x="170" y="55" text-anchor="start" fill="var(--white)" font-family="Share Tech Mono, monospace" font-size="9" letter-spacing="1">体能</text>
+      <text x="170" y="102" text-anchor="start" fill="var(--white)" font-family="Share Tech Mono, monospace" font-size="9" letter-spacing="1">社交</text>
+      <text x="110" y="157" text-anchor="middle" fill="var(--white)" font-family="Share Tech Mono, monospace" font-size="9" letter-spacing="1">创造力</text>
+      <text x="50" y="102" text-anchor="end" fill="var(--white)" font-family="Share Tech Mono, monospace" font-size="9" letter-spacing="1">自律</text>
+      <text x="50" y="55" text-anchor="end" fill="var(--white)" font-family="Share Tech Mono, monospace" font-size="9" letter-spacing="1">魅力</text>
+    </svg>
+  </div>
+
+  <!-- 维度详情列表 -->
+  <div class="section-head fs d3">
+    <div class="section-tag">维度详情</div>
+    <div class="section-rule"></div>
+  </div>
+
+  <div class="stat-rows fs d4">
+
+    <!-- 专业力 -->
+    <div class="stat-row" onclick="toggleDetail(this)">
+      <div class="stat-icon">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <rect x="2" y="14" width="3" height="4" fill="currentColor"/>
+          <rect x="6.5" y="10" width="3" height="8" fill="currentColor" opacity="0.8"/>
+          <rect x="11" y="6" width="3" height="12" fill="currentColor" opacity="0.6"/>
+          <rect x="15.5" y="2" width="3" height="16" fill="var(--red)"/>
+        </svg>
+      </div>
+      <div class="stat-main">
+        <div class="stat-name-row">
+          <span class="stat-name">专业力</span>
+          <span class="stat-lv">Lv4</span>
+          <span class="stat-title">SCHOLAR</span>
+        </div>
+        <div class="stat-bar-track">
+          <div class="stat-bar-fill" data-width="72" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+    <div class="stat-detail">
+      <div class="detail-inner">
+        <div class="detail-row">
+          <span class="detail-key">当前经验</span>
+          <span class="detail-val gold">720 / 1000</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-key">THIS WEEK</span>
+          <span class="detail-val red">+180 EXP</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-key">NEXT RANK</span>
+          <span class="detail-val">VIRTUOSO → Lv5</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 体能 -->
+    <div class="stat-row" onclick="toggleDetail(this)">
+      <div class="stat-icon">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <circle cx="10" cy="10" r="3" fill="var(--red)"/>
+          <path d="M2 10 L5 10" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+          <path d="M15 10 L18 10" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+          <rect x="4" y="8" width="4" height="4" rx="1" fill="currentColor" opacity="0.6"/>
+          <rect x="12" y="8" width="4" height="4" rx="1" fill="currentColor" opacity="0.6"/>
+        </svg>
+      </div>
+      <div class="stat-main">
+        <div class="stat-name-row">
+          <span class="stat-name">体能</span>
+          <span class="stat-lv">Lv3</span>
+          <span class="stat-title">ATHLETE</span>
+        </div>
+        <div class="stat-bar-track">
+          <div class="stat-bar-fill" data-width="45" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+    <div class="stat-detail">
+      <div class="detail-inner">
+        <div class="detail-row">
+          <span class="detail-key">当前经验</span>
+          <span class="detail-val gold">450 / 1000</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-key">THIS WEEK</span>
+          <span class="detail-val red">+75 EXP</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-key">NEXT RANK</span>
+          <span class="detail-val">CHAMPION → Lv4</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 社交 -->
+    <div class="stat-row" onclick="toggleDetail(this)">
+      <div class="stat-icon">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <circle cx="7" cy="7" r="3" fill="currentColor" opacity="0.7"/>
+          <circle cx="14" cy="5" r="2.5" fill="var(--red)" opacity="0.9"/>
+          <path d="M2 17 C2 13 4 11 7 11 C9 11 11 12 12 13" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+          <path d="M10 17 C10 14 12 12 14 12 C17 12 18 14 18 17" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.7"/>
+        </svg>
+      </div>
+      <div class="stat-main">
+        <div class="stat-name-row">
+          <span class="stat-name">社交</span>
+          <span class="stat-lv">Lv2</span>
+          <span class="stat-title">CHARMER</span>
+        </div>
+        <div class="stat-bar-track">          <div class="stat-bar-fill" data-width="28" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+    <div class="stat-detail">
+      <div class="detail-inner">
+        <div class="detail-row">
+          <span class="detail-key">当前经验</span>
+          <span class="detail-val gold">280 / 1000</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-key">THIS WEEK</span>
+          <span class="detail-val red">+40 EXP</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-key">NEXT RANK</span>
+          <span class="detail-val">DIPLOMAT → Lv3</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 创造力 -->
+    <div class="stat-row" onclick="toggleDetail(this)">
+      <div class="stat-icon">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <polygon points="10,2 12.5,7.5 18,8 14,12 15,18 10,15 5,18 6,12 2,8 7.5,7.5" fill="currentColor" opacity="0.5"/>
+          <polygon points="10,5 11.5,8.5 15,9 12.5,11.5 13,15 10,13.5 7,15 7.5,11.5 5,9 8.5,8.5" fill="var(--red)"/>
+        </svg>
+      </div>
+      <div class="stat-main">
+        <div class="stat-name-row">
+          <span class="stat-name">创造力</span>
+          <span class="stat-lv">Lv3</span>
+          <span class="stat-title">ARTISAN</span>
+        </div>
+        <div class="stat-bar-track">
+          <div class="stat-bar-fill" data-width="60" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+    <div class="stat-detail">
+      <div class="detail-inner">
+        <div class="detail-row">
+          <span class="detail-key">当前经验</span>
+          <span class="detail-val gold">600 / 1000</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-key">THIS WEEK</span>
+          <span class="detail-val red">+30 EXP</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-key">NEXT RANK</span>
+          <span class="detail-val">VISIONARY → Lv4</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 自律 -->
+    <div class="stat-row" onclick="toggleDetail(this)">
+      <div class="stat-icon">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <rect x="3" y="3" width="6" height="6" fill="var(--red)" transform="rotate(10 6 6)"/>
+          <rect x="11" y="3" width="6" height="6" fill="currentColor" opacity="0.5" transform="rotate(-8 14 6)"/>
+          <rect x="3" y="11" width="6" height="6" fill="currentColor" opacity="0.4" transform="rotate(-5 6 14)"/>
+          <rect x="11" y="11" width="6" height="6" fill="currentColor" opacity="0.7" transform="rotate(12 14 14)"/>
+        </svg>
+      </div>
+      <div class="stat-main">
+        <div class="stat-name-row">
+          <span class="stat-name">自律</span>
+          <span class="stat-lv">Lv3</span>
+          <span class="stat-title">RESOLVED</span>
+        </div>
+        <div class="stat-bar-track">
+          <div class="stat-bar-fill" data-width="55" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+    <div class="stat-detail">
+      <div class="detail-inner">
+        <div class="detail-row">
+          <span class="detail-key">当前经验</span>
+          <span class="detail-val gold">550 / 1000</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-key">THIS WEEK</span>
+          <span class="detail-val red">+15 EXP</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-key">NEXT RANK</span>
+          <span class="detail-val">STOIC → Lv4</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 魅力 -->
+    <div class="stat-row" onclick="toggleDetail(this)">
+      <div class="stat-icon">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <path d="M10 3 C10 3 4 7 4 12 C4 15.3 6.7 18 10 18 C13.3 18 16 15.3 16 12 C16 7 10 3 10 3Z" fill="currentColor" opacity="0.4"/>
+          <path d="M10 7 C10 7 7 10 7 12.5 C7 14.2 8.3 15.5 10 15.5 C11.7 15.5 13 14.2 13 12.5 C13 10 10 7 10 7Z" fill="var(--red)" opacity="0.9"/>
+        </svg>
+      </div>
+      <div class="stat-main">
+        <div class="stat-name-row">
+          <span class="stat-name">魅力</span>
+          <span class="stat-lv">Lv2</span>
+          <span class="stat-title">ALLURING</span>
+        </div>
+        <div class="stat-bar-track">
+          <div class="stat-bar-fill" data-width="32" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+    <div class="stat-detail">
+      <div class="detail-inner">
+        <div class="detail-row">
+          <span class="detail-key">当前经验</span>
+          <span class="detail-val gold">320 / 1000</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-key">THIS WEEK</span>
+          <span class="detail-val red">+0 EXP</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-key">NEXT RANK</span>
+          <span class="detail-val">CHARISMATIC → Lv3</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+</div>
+
+<!-- PAGE: HABITS (coming soon) -->
+<div class="page" id="page-habits">
+  <div class="p-header fs d0">
+    <span class="page-title">习惯</span>
+    <span class="header-badge">连锁模式</span>
+  </div>
+  <div class="slash-wrap"><div class="slash-main"></div></div>
+  <div class="content">
+    <div class="add-btn fs d1" onclick="document.getElementById('add-modal').classList.add('open')">
+      <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><line x1="7" y1="1" x2="7" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="1" y1="7" x2="13" y2="7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      新建习惯
+    </div>
+
+    <div class="section-head fs d2"><div class="section-tag">早晨</div><div class="section-rule"></div><span class="slot-cnt">2</span></div>
+    <div class="hm-list fs d3">
+      <div class="hm-card"><div class="hm-left"><div class="hm-ico morning"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4" fill="currentColor"/><line x1="12" y1="2" x2="12" y2="5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="12" y1="19" x2="12" y2="22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="2" y1="12" x2="5" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="19" y1="12" x2="22" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div><div><div class="hm-name">晨跑 3km</div><div class="hm-meta"><span class="htag">体能</span><span class="hexp">+20 EXP</span><span class="hm-freq">每天</span></div></div></div><div class="hm-stk">14<span>天</span></div></div>
+      <div class="chain-sm"><svg width="8" height="8" viewBox="0 0 14 14" fill="none"><polygon points="7,14 0,0 14,0" fill="rgba(195,0,47,0.3)"/></svg></div>
+      <div class="hm-card"><div class="hm-left"><div class="hm-ico morning"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M4 19.5A2.5 2.5 0 016.5 17H20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" stroke="currentColor" stroke-width="2"/></svg></div><div><div class="hm-name">背单词 30个</div><div class="hm-meta"><span class="htag">专业力</span><span class="hexp">+15 EXP</span><span class="hm-freq">每天</span></div></div></div><div class="hm-stk">7<span>天</span></div></div>
+    </div>
+
+    <div class="section-head fs d3"><div class="section-tag">下午</div><div class="section-rule"></div><span class="slot-cnt">3</span></div>
+    <div class="hm-list fs d4">
+      <div class="hm-card anchor-card"><div class="anchor-lbl">锚点</div><div class="hm-left"><div class="hm-ico afternoon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><polyline points="16,18 22,12 16,6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><polyline points="8,6 2,12 8,18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div><div><div class="hm-name">刷 LeetCode 2题</div><div class="hm-meta"><span class="htag">专业力</span><span class="hexp">+30 EXP</span><span class="hm-freq">每天</span></div></div></div><div class="hm-stk">21<span>天</span></div></div>
+      <div class="chain-sm"><svg width="8" height="8" viewBox="0 0 14 14" fill="none"><polygon points="7,14 0,0 14,0" fill="rgba(195,0,47,0.3)"/></svg></div>
+      <div class="hm-card"><div class="hm-left"><div class="hm-ico afternoon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><line x1="2" y1="12" x2="22" y2="12" stroke="currentColor" stroke-width="2"/></svg></div><div><div class="hm-name">读技术文章 30min</div><div class="hm-meta"><span class="htag">专业力</span><span class="hexp">+20 EXP</span><span class="hm-freq">每天</span></div></div></div><div class="hm-stk">5<span>天</span></div></div>
+      <div class="chain-sm"><svg width="8" height="8" viewBox="0 0 14 14" fill="none"><polygon points="7,14 0,0 14,0" fill="rgba(195,0,47,0.3)"/></svg></div>
+      <div class="hm-card"><div class="hm-left"><div class="hm-ico afternoon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M18 8h1a4 4 0 010 8h-1" stroke="currentColor" stroke-width="2"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z" stroke="currentColor" stroke-width="2"/><line x1="6" y1="1" x2="6" y2="4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="10" y1="1" x2="10" y2="4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="14" y1="1" x2="14" y2="4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div><div><div class="hm-name">跑步 5km</div><div class="hm-meta"><span class="htag">体能</span><span class="hexp">+25 EXP</span><span class="hm-freq">每天</span></div></div></div><div class="hm-stk">7<span>天</span></div></div>
+    </div>
+
+    <div class="section-head fs d4"><div class="section-tag">夜晚</div><div class="section-rule"></div><span class="slot-cnt">3</span></div>
+    <div class="hm-list fs d5">
+      <div class="hm-card"><div class="hm-left"><div class="hm-ico night"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z" fill="currentColor"/></svg></div><div><div class="hm-name">复盘今日笔记</div><div class="hm-meta"><span class="htag">专业力</span><span class="hexp">+15 EXP</span><span class="hm-freq">每天</span></div></div></div><div class="hm-stk">3<span>天</span></div></div>
+      <div class="chain-sm"><svg width="8" height="8" viewBox="0 0 14 14" fill="none"><polygon points="7,14 0,0 14,0" fill="rgba(195,0,47,0.3)"/></svg></div>
+      <div class="hm-card"><div class="hm-left"><div class="hm-ico night"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div><div><div class="hm-name">冥想 10min</div><div class="hm-meta"><span class="htag">自律</span><span class="hexp">+10 EXP</span><span class="hm-freq">每天</span></div></div></div><div class="hm-stk">12<span>天</span></div></div>
+      <div class="chain-sm"><svg width="8" height="8" viewBox="0 0 14 14" fill="none"><polygon points="7,14 0,0 14,0" fill="rgba(195,0,47,0.3)"/></svg></div>
+      <div class="hm-card"><div class="hm-left"><div class="hm-ico night"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M4 19.5A2.5 2.5 0 016.5 17H20" stroke="currentColor" stroke-width="2"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" stroke="currentColor" stroke-width="2"/></svg></div><div><div class="hm-name">阅读 30min</div><div class="hm-meta"><span class="htag">创造力</span><span class="hexp">+20 EXP</span><span class="hm-freq">每天</span></div></div></div><div class="hm-stk">9<span>天</span></div></div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="add-modal" onclick="if(event.target===this)this.classList.remove('open')">
+    <div class="modal-box">
+      <div class="modal-ttl"><span class="modal-bar"></span>新建习惯</div>
+      <div class="mfield"><label class="mlabel">习惯名称</label><input class="minput" placeholder="例：跑步 5km"/></div>
+      <div class="mfield"><label class="mlabel">绑定维度</label>
+        <div class="mchips" id="dim-chips">
+          <button class="mchip active" onclick="selectChip(this)">专业力</button><button class="mchip" onclick="selectChip(this)">体能</button><button class="mchip" onclick="selectChip(this)">社交</button><button class="mchip" onclick="selectChip(this)">创造力</button><button class="mchip" onclick="selectChip(this)">自律</button><button class="mchip" onclick="selectChip(this)">魅力</button>
+        </div>
+      </div>
+      <div class="mfield"><label class="mlabel">时间槽</label>
+        <div class="mchips" id="slot-chips">
+          <button class="mchip" onclick="selectChip(this)">早晨</button><button class="mchip active" onclick="selectChip(this)">下午</button><button class="mchip" onclick="selectChip(this)">夜晚</button>
+        </div>
+      </div>
+      <div class="mfield"><label class="mlabel">EXP 奖励</label>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <input type="range" style="flex:1;accent-color:var(--red);" min="5" max="50" value="20" oninput="document.getElementById('expv').textContent='+'+this.value+' EXP'"/>
+          <span id="expv" style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--gold);min-width:72px;">+20 EXP</span>
+        </div>
+      </div>
+      <button class="mconfirm" onclick="document.getElementById('add-modal').classList.remove('open')">确认 ▶</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="page" id="page-growth">
+  <div class="p-header fs d0">
+    <span class="page-title">成长</span>
+    <span class="header-badge">90天</span>
+  </div>
+  <div class="slash-wrap"><div class="slash-main"></div></div>
+  <div class="content">
+    <div class="ov-row fs d1">
+      <div class="ov-item"><div class="ov-num" style="color:var(--red)">340</div><div class="ov-lbl">本周经验</div></div>
+      <div class="ov-div"></div>
+      <div class="ov-item"><div class="ov-num" style="color:var(--gold)">7</div><div class="ov-lbl">连击天</div></div>
+      <div class="ov-div"></div>
+      <div class="ov-item"><div class="ov-num">2.4K</div><div class="ov-lbl">累计经验</div></div>
+    </div>
+
+    <div class="section-head fs d2"><div class="section-tag">活跃地图</div><div class="section-rule"></div></div>
+    <div class="hmap-card fs d2">
+      <div class="hmap-months"><span>DEC</span><span>JAN</span><span>FEB</span><span>MAR</span></div>
+      <div class="hmap-grid" id="hmap-grid"></div>
+      <div class="hmap-legend">
+        <span class="leg-txt">少</span>
+        <div style="display:flex;gap:3px;">
+          <div class="lc" style="background:var(--dim)"></div>
+          <div class="lc" style="background:rgba(195,0,47,0.2)"></div>
+          <div class="lc" style="background:rgba(195,0,47,0.45)"></div>
+          <div class="lc" style="background:rgba(195,0,47,0.7)"></div>
+          <div class="lc" style="background:var(--red)"></div>
+        </div>
+        <span class="leg-txt">多</span>
+      </div>
+    </div>
+
+    <div class="section-head fs d3"><div class="section-tag">维度成长</div><div class="section-rule"></div></div>
+    <div class="gchart-card fs d3">
+      <svg id="gchart" viewBox="0 0 340 100" fill="none" style="width:100%;height:100px;display:block;"></svg>
+      <div class="clegend">
+        <span class="cl-item"><span class="cl-dot" style="background:var(--red)"></span>专业力</span>
+        <span class="cl-item"><span class="cl-dot" style="background:#5b9bd5"></span>体能</span>
+        <span class="cl-item"><span class="cl-dot" style="background:var(--gold)"></span>创造力</span>
+      </div>
+    </div>
+
+    <div class="section-head fs d4"><div class="section-tag">成就里程碑</div><div class="section-rule"></div></div>
+    <div class="ms-list fs d4">
+      <div class="ms-card ms-done"><div class="ms-ico ms-done-ico">◆</div><div class="ms-body"><div class="ms-name">初心者</div><div class="ms-desc">完成第一次打卡</div></div><div class="ms-badge ms-done-badge">完成</div></div>
+      <div class="ms-card ms-done"><div class="ms-ico ms-done-ico">◆</div><div class="ms-body"><div class="ms-name">怪盗团员</div><div class="ms-desc">连续打卡 7 天</div></div><div class="ms-badge ms-done-badge">完成</div></div>
+      <div class="ms-card"><div class="ms-ico">◇</div><div class="ms-body"><div class="ms-name">学者之路</div><div class="ms-desc">专业力达到 Lv5</div></div><div class="ms-badge ms-prog-badge">72%</div></div>
+      <div class="ms-card"><div class="ms-ico">◇</div><div class="ms-body"><div class="ms-name">月之怪盗</div><div class="ms-desc">连续打卡 30 天</div></div><div class="ms-badge ms-prog-badge">7/30</div></div>
+      <div class="ms-card"><div class="ms-ico">◇</div><div class="ms-body"><div class="ms-name">全能怪盗</div><div class="ms-desc">所有维度达到 Lv3</div></div><div class="ms-badge ms-prog-badge">4/6</div></div>
+    </div>
+  </div>
+</div>
+
+
+<div class="page" id="page-arcana">
+  <div class="p-header fs d0">
+    <span class="page-title">奥义</span>
+    <span class="header-badge">莫尔加纳</span>
+  </div>
+  <div class="slash-wrap"><div class="slash-main"></div></div>
+  <div class="content" style="padding-bottom:140px;">
+
+    <div class="morgana-card fs d1">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div class="morgana-av">
+          <svg viewBox="0 0 40 40" fill="none" width="30" height="30">
+            <polygon points="20,2 37,12 37,28 20,38 3,28 3,12" fill="rgba(195,0,47,0.12)" stroke="var(--red)" stroke-width="1.5"/>
+            <circle cx="14" cy="17" r="2.5" fill="var(--white)" opacity="0.9"/><circle cx="26" cy="17" r="2.5" fill="var(--white)" opacity="0.9"/>
+            <circle cx="14" cy="17" r="1.2" fill="var(--red)"/><circle cx="26" cy="17" r="1.2" fill="var(--red)"/>
+            <path d="M13 25 Q20 30 27 25" stroke="var(--white)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:3px;color:var(--white);">MORGANA</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;">// AI PHANTOM ADVISOR</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:5px;">
+        <div class="online-dot"></div>
+        <span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#1DB954;letter-spacing:2px;">ONLINE</span>
+      </div>
+    </div>
+
+    <div class="section-head fs d2"><div class="section-tag">本周报告</div><div class="section-rule"></div></div>
+    <div class="wr-card fs d2">
+      <div class="wr-top">
+        <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--red);letter-spacing:2px;">WEEK 07 · 2026</span>
+        <button class="wr-share-btn">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><polyline points="16 6 12 2 8 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="2" x2="12" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          SHARE
+        </button>
+      </div>
+      <p class="wr-p">本周完成 <span class="wr-hi">23 次打卡</span>，专业力增长最快 <span class="wr-hi">+180 EXP</span>。连击 7 天，开局不错。</p>
+      <p class="wr-p" style="margin-top:8px;">但社交和魅力这周几乎零进展——<span class="wr-warn">你在逃避什么？建议本周加入至少 1 个社交习惯。</span></p>
+    </div>
+
+    <div class="section-head fs d3"><div class="section-tag">与莫尔加纳对话</div><div class="section-rule"></div></div>
+    <div class="chat-wrap" id="chat-wrap">
+      <div class="cmsg ai-msg"><div class="cav">M</div><div class="cbubble">侦探，今天你完成了下午的习惯链。专业力又涨了，不错。但我注意到你 3 天没有社交记录了……是在闭关修炼？</div></div>
+      <div class="cmsg user-msg"><div class="cbubble user-b">最近在刷题，没时间</div></div>
+      <div class="cmsg ai-msg"><div class="cav">M</div><div class="cbubble">刷题是好事，但社交不是可以完全忽略的维度。就算 Joker 在渗透宫殿之余，也会和队友保持联系。试试每天 5 分钟，我帮你加进夜晚习惯链？</div></div>
+    </div>
+
+  </div>
+  <div class="ai-bar">
+    <div class="ai-inner">
+      <span class="ai-prefix">// 莫尔加纳</span>
+      <input class="ai-input" id="arcana-inp" placeholder="问我任何事，或记录今天做了什么…"/>
+      <button class="ai-send" onclick="sendMorgana()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><polygon points="5,3 19,12 5,21" fill="var(--red)"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+
+
+<!-- PAGE: PROFILE (档案/个人中心) -->
+<div class="page" id="page-profile">
+  <div class="p-header fs d0">
+    <span class="page-title">档案</span>
+    <span class="header-badge">怪盗团</span>
+  </div>
+  <div class="slash-wrap"><div class="slash-main"></div></div>
+  <div class="content" style="padding-bottom:100px;">
+
+    <!-- 角色卡 -->
+    <div class="profile-hero fs d1">
+      <div class="profile-bg-text">ARCANA</div>
+      <div class="profile-av-row">
+        <div class="profile-av">
+          <img src="morgana-avatar.png" alt="头像" style="filter:hue-rotate(200deg) brightness(0.8) contrast(1.2);"/>
+        </div>
+        <div class="profile-info">
+          <div class="profile-name">MILO</div>
+          <div class="profile-title">◆ 怪盗团见习成员 · Lv.7</div>
+          <div class="profile-code">ID·2026·PHANTOM·007</div>
+        </div>
+      </div>
+      <div class="profile-stats">
+        <div class="pstat">
+          <div class="pstat-num">2.4<span>K</span></div>
+          <div class="pstat-lbl">累计经验</div>
+        </div>
+        <div class="pstat">
+          <div class="pstat-num">7</div>
+          <div class="pstat-lbl">连击天</div>
+        </div>
+        <div class="pstat">
+          <div class="pstat-num">89<span>%</span></div>
+          <div class="pstat-lbl">完成率</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 成就 -->
+    <div class="section-head fs d2"><div class="section-tag">成就徽章</div><div class="section-rule"></div></div>
+    <div class="achieve-grid fs d2">
+      <div class="ach-card done">
+        <div class="ach-ico">⚡</div>
+        <div class="ach-name">怪盗初临</div>
+        <div class="ach-desc">完成第一次打卡</div>
+        <div class="ach-badge">完成</div>
+      </div>
+      <div class="ach-card done">
+        <div class="ach-ico">🔥</div>
+        <div class="ach-name">连锁之力</div>
+        <div class="ach-desc">连续打卡 7 天</div>
+        <div class="ach-badge">完成</div>
+      </div>
+      <div class="ach-card">
+        <div class="ach-ico">📚</div>
+        <div class="ach-name">学者之路</div>
+        <div class="ach-desc">专业力达到 Lv.5</div>
+        <div class="ach-badge" style="color:var(--muted);">72%</div>
+      </div>
+      <div class="ach-card">
+        <div class="ach-ico">🌙</div>
+        <div class="ach-name">月之怪盗</div>
+        <div class="ach-desc">连续打卡 30 天</div>
+        <div class="ach-badge" style="color:var(--muted);">7/30</div>
+      </div>
+      <div class="ach-card locked">
+        <div class="ach-ico">👑</div>
+        <div class="ach-name">全能怪盗</div>
+        <div class="ach-desc">所有维度 Lv.3+</div>
+        <div class="ach-badge" style="color:var(--muted);">锁定</div>
+      </div>
+      <div class="ach-card locked">
+        <div class="ach-ico">💎</div>
+        <div class="ach-name">传说之心</div>
+        <div class="ach-desc">累计 10000 EXP</div>
+        <div class="ach-badge" style="color:var(--muted);">锁定</div>
+      </div>
+    </div>
+
+    <!-- 与莫纳对话入口 -->
+    <div class="section-head fs d3"><div class="section-tag">AI 顾问</div><div class="section-rule"></div></div>
+    <div class="hm-card fs d3" onclick="goPage('arcana')" style="cursor:pointer;margin-bottom:16px;padding:14px 16px;">
+      <div class="hm-left" style="gap:14px;">
+        <div style="width:40px;height:40px;border-radius:4px;overflow:hidden;border:1px solid rgba(195,0,47,0.3);flex-shrink:0;">
+          <img src="morgana-avatar.png" style="width:100%;height:100%;object-fit:cover;" alt="莫尔加纳"/>
+        </div>
+        <div>
+          <div class="hm-name" style="font-size:13px;">与莫尔加纳对话</div>
+          <div class="hm-meta"><span class="htag">AI 顾问</span><span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#1DB954;letter-spacing:1px;">● 在线</span></div>
+        </div>
+      </div>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><polyline points="9,18 15,12 9,6" stroke="rgba(255,255,255,0.3)" stroke-width="2" stroke-linecap="round"/></svg>
+    </div>
+
+    <!-- 设置 -->
+    <div class="section-head fs d4"><div class="section-tag">设置</div><div class="section-rule"></div></div>
+    <div class="setting-list fs d4">
+      <div class="setting-row">
+        <div class="setting-left">
+          <div class="setting-ico">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </div>
+          <span class="setting-name">打卡提醒</span>
+        </div>
+        <span class="setting-val">开启</span>
+      </div>
+      <div class="setting-row">
+        <div class="setting-left">
+          <div class="setting-ico">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><polygon points="12,2 14.5,9 22,9 16,13.5 18,21 12,17 6,21 8,13.5 2,9 9.5,9" fill="currentColor" opacity="0.7"/></svg>
+          </div>
+          <span class="setting-name">摆烂预警</span>
+        </div>
+        <span class="setting-val">开启</span>
+      </div>
+      <div class="setting-row">
+        <div class="setting-left">
+          <div class="setting-ico">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" fill="currentColor"/><path d="M19.07 4.93A10 10 0 115 19.07M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
+          <span class="setting-name">主题皮肤</span>
+        </div>
+        <span class="setting-val">红黑 · 默认</span>
+      </div>
+      <div class="setting-row">
+        <div class="setting-left">
+          <div class="setting-ico">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/><path d="M8 12h8M12 8v8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </div>
+          <span class="setting-name">数据导出</span>
+        </div>
+        <svg class="setting-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none"><polyline points="9,18 15,12 9,6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+      <div class="setting-row" style="border-top:1px solid var(--dim);margin-top:4px;">
+        <div class="setting-left">
+          <div class="setting-ico" style="background:rgba(195,0,47,0.1);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="var(--red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <span class="setting-name" style="color:var(--red);">退出登录</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="nav" id="main-nav">
+  <button class="nav-btn on" data-page="today" onclick="goPage('today')">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><polygon points="12,2 22,20 2,20" fill="currentColor"/></svg><span class="nav-lbl">今日</span>
+  </button>
+  <button class="nav-btn" data-page="status" onclick="goPage('status')">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="8" height="8" fill="currentColor" transform="rotate(15 7 7)"/><rect x="13" y="3" width="8" height="8" fill="currentColor" opacity="0.6" transform="rotate(-10 17 7)"/><rect x="3" y="13" width="8" height="8" fill="currentColor" opacity="0.6" transform="rotate(-5 7 17)"/><rect x="13" y="13" width="8" height="8" fill="currentColor" opacity="0.4" transform="rotate(10 17 17)"/></svg><span class="nav-lbl">属性</span>
+  </button>
+  <button class="nav-btn" data-page="habits" onclick="goPage('habits')">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="2.5" fill="currentColor" transform="skewX(-8)"/><rect x="3" y="10" width="13" height="2.5" fill="currentColor" opacity="0.7" transform="skewX(-8)"/><rect x="3" y="16" width="16" height="2.5" fill="currentColor" opacity="0.5" transform="skewX(-8)"/></svg><span class="nav-lbl">习惯</span>
+  </button>
+  <button class="nav-btn" data-page="growth" onclick="goPage('growth')">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><polyline points="3,17 8,11 13,14 21,5" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><line x1="3" y1="21" x2="21" y2="21" stroke="currentColor" stroke-width="1.5" opacity="0.4"/></svg><span class="nav-lbl">成长</span>
+  </button>
+  <button class="nav-btn" data-page="profile" onclick="goPage('profile')">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" fill="currentColor"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg><span class="nav-lbl">档案</span>
+  </button>
+</div>
+
+<script>
+
+// ═══ SPA ROUTER ═══
+function goPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('on'));
+  const page = document.getElementById('page-' + name);
+  if (page) page.classList.add('active');
+  const btn = document.querySelector('.nav-btn[data-page="' + name + '"]');
+  if (btn) btn.classList.add('on');
+  window.scrollTo(0, 0);
+  if (name === 'status') initStatusPage();
+  if (name === 'growth') initGrowth();
+}
+
+// ═══ 星星爆炸粒子系统 ═══
+(function(){
+  const canvas = document.getElementById('star-canvas');
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+  let animId = null;
+
+  function resize(){
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  function Star(x, y){
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 2 + Math.random() * 5;
+    this.x = x; this.y = y;
+    this.vx = Math.cos(angle) * speed;
+    this.vy = Math.sin(angle) * speed - 2;
+    this.life = 1;
+    this.size = 6 + Math.random() * 10;
+    this.rot = Math.random() * Math.PI;
+    this.rotV = (Math.random() - 0.5) * 0.2;
+    // P5 colors: gold / red / white
+    const clrs = ['#E8C840','#C3002F','#EFEFEF','#FF1744','#FFD700'];
+    this.color = clrs[Math.floor(Math.random() * clrs.length)];
+  }
+  Star.prototype.update = function(){
+    this.x += this.vx;
+    this.y += this.vy;
+    this.vy += 0.18; // gravity
+    this.vx *= 0.97;
+    this.life -= 0.022;
+    this.rot += this.rotV;
+  };
+  Star.prototype.draw = function(){
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, this.life);
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.rot);
+    // Draw 5-pointed star
+    ctx.beginPath();
+    const s = this.size, r1 = s, r2 = s * 0.4;
+    for(let i = 0; i < 10; i++){
+      const ang = (i * Math.PI / 5) - Math.PI / 2;
+      const r = i % 2 === 0 ? r1 : r2;
+      const px = Math.cos(ang) * r, py = Math.sin(ang) * r;
+      i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.fillStyle = this.color;
+    ctx.shadowBlur = 8;
+    ctx.shadowColor = this.color;
+    ctx.fill();
+    ctx.restore();
+  };
+
+  function animate(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    particles = particles.filter(p => p.life > 0);
+    particles.forEach(p => { p.update(); p.draw(); });
+    if(particles.length > 0) animId = requestAnimationFrame(animate);
+    else animId = null;
+  }
+
+  window.burstStars = function(x, y, count){
+    count = count || 18;
+    for(let i = 0; i < count; i++) particles.push(new Star(x, y));
+    if(!animId) animId = requestAnimationFrame(animate);
+  };
+})();
+
+// ═══ 莫纳对话框 ═══
+const morganaLines = [
+  '干得不错！每次打卡都是怪盗的行动证明。继续！',
+  '经验值到手！你的成长我都记录在案了，侦探。',
+  '连击还在继续——别停下来，怪盗不会轻易放弃的！',
+  '这个习惯正在改变你，数据不会说谎。',
+  '又完成了一个！今天的你比昨天的你更强。',
+  '完美执行！这就是怪盗团的行动力！',
+];
+let morganaLineIdx = 0;
+
+function showMorganaDialog(text){
+  const dialog = document.getElementById('morgana-dialog');
+  const textEl = document.getElementById('morgana-dialog-text');
+  if(!dialog) return;
+  textEl.textContent = text || morganaLines[morganaLineIdx++ % morganaLines.length];
+  dialog.classList.add('show');
+  clearTimeout(dialog._timeout);
+  dialog._timeout = setTimeout(() => dialog.classList.remove('show'), 4000);
+}
+function closeMorganaDialog(){
+  const d = document.getElementById('morgana-dialog');
+  if(d) d.classList.remove('show');
+}
+
+// ═══ 打卡交互 (TODAY 页) ═══
+let totalExp = 0;
+function toggleHabit(card, exp, dim){
+  const done = card.classList.toggle('done');
+  const check = card.querySelector('.hcheck-inner');
+  if(done){
+    // 勾选
+    if(check) check.textContent = '✓';
+    card.style.borderLeftColor = 'var(--red)';
+    card.style.background = 'rgba(195,0,47,0.06)';
+
+    // 星星爆炸：从卡片中心
+    const rect = card.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    burstStars(cx, cy, 22);
+
+    // 经验值 toast
+    totalExp += exp;
+    document.getElementById('total-exp').textContent = totalExp;
+    const toast = document.getElementById('toast');
+    document.getElementById('t-num').textContent = '+' + exp;
+    document.getElementById('t-dim').textContent = dim;
+    toast.classList.add('on');
+    setTimeout(() => toast.classList.remove('on'), 1800);
+
+    // 莫纳对话
+    setTimeout(() => showMorganaDialog(), 600);
+  } else {
+    if(check) check.textContent = '✕';
+    card.style.borderLeftColor = '';
+    card.style.background = '';
+    totalExp = Math.max(0, totalExp - exp);
+    document.getElementById('total-exp').textContent = totalExp;
+  }
+}
+
+// ═══ TODAY 时间槽切换 ═══
+function switchSlot(btn, slot){
+  document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// ═══ AI 快速输入 (TODAY) ═══
+function sendAI(){
+  const inp = document.getElementById('ai-input');
+  const val = inp ? inp.value.trim() : '';
+  if(!val) return;
+  inp.value = '';
+  // 简单模拟：给随机经验并弹莫纳
+  const dims = ['专业力','体能','创造力','自律','社交'];
+  const dim = dims[Math.floor(Math.random() * dims.length)];
+  const exp = 10 + Math.floor(Math.random() * 20);
+  totalExp += exp;
+  document.getElementById('total-exp').textContent = totalExp;
+  const toast = document.getElementById('toast');
+  document.getElementById('t-num').textContent = '+' + exp;
+  document.getElementById('t-dim').textContent = dim;
+  toast.classList.add('on');
+  setTimeout(() => toast.classList.remove('on'), 1800);
+  const cx = window.innerWidth / 2, cy = window.innerHeight / 2;
+  burstStars(cx, cy, 14);
+  setTimeout(() => showMorganaDialog('收到！AI 已识别：' + dim + ' +' + exp + ' EXP，记录在案。'), 500);
+}
+
+
+// ── HABITS ──
+function selectChip(btn) {
+  const group = btn.closest('.mchips');
+  group.querySelectorAll('.mchip').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// ── GROWTH ──
+let growthInited = false;
+function initGrowth() {
+  if (growthInited) return;
+  growthInited = true;
+
+  // Heatmap
+  const grid = document.getElementById('hmap-grid');
+  if (grid) {
+    const lvls = [0,0,0,1,0,1,2,0,1,2,3,1,2,3,4,0,1,2,3,2,4,3,2,1,3,4,3,2,4,3,2,1,2,3,4,3,2,1,0,2,3,4,3,2,1,0,1,2,3,4,3,2,1,2,3,4,0,1,2,3,4,3,2,3,4,0,1,2,3,4,3,4,0,1,2,3,4,3,2,4,3,2,1,2,3,4,3,2,1,0];
+    const clrs = ['var(--dim)','rgba(195,0,47,0.2)','rgba(195,0,47,0.42)','rgba(195,0,47,0.65)','var(--red)'];
+    lvls.forEach(l => {
+      const c = document.createElement('div');
+      c.className = 'hc';
+      c.style.background = clrs[l];
+      grid.appendChild(c);
+    });
+  }
+
+  // Chart
+  const svg = document.getElementById('gchart');
+  if (svg && svg.childElementCount === 0) {
+    const data = [
+      {pts:[20,25,32,28,36,42,40,47,50,52,57,62,60,66,71,72], color:'var(--red)', op:'0.9'},
+      {pts:[15,18,20,22,26,23,29,31,33,36,34,39,41,43,45,45], color:'#5b9bd5', op:'0.65'},
+      {pts:[10,12,15,18,20,22,26,28,31,33,36,39,41,43,46,60], color:'var(--gold)', op:'0.65'},
+    ];
+    const W=340, H=90, P=8;
+    // grid lines
+    [0,25,50,75].forEach(v => {
+      const y = H - P - (v/100)*(H-P*2);
+      const l = document.createElementNS('http://www.w3.org/2000/svg','line');
+      l.setAttribute('x1',P); l.setAttribute('x2',W-P);
+      l.setAttribute('y1',y); l.setAttribute('y2',y);
+      l.setAttribute('stroke','rgba(255,255,255,0.04)'); l.setAttribute('stroke-width','1');
+      svg.appendChild(l);
+    });
+    data.forEach(d => {
+      const pts = d.pts.map((v,i) => {
+        const x = P + (i/(d.pts.length-1))*(W-P*2);
+        const y = H - P - (v/80)*(H-P*2);
+        return `${x},${y}`;
+      }).join(' ');
+      const pl = document.createElementNS('http://www.w3.org/2000/svg','polyline');
+      pl.setAttribute('points', pts);
+      pl.setAttribute('fill','none');
+      pl.setAttribute('stroke', d.color);
+      pl.setAttribute('stroke-width','2');
+      pl.setAttribute('stroke-linecap','round');
+      pl.setAttribute('stroke-linejoin','round');
+      pl.setAttribute('opacity', d.op);
+      svg.appendChild(pl);
+    });
+  }
+}
+
+// ── AI ARCANA ──
+const mgReplies = [
+  '了解。继续保持，每一次记录都会成为你成长的证据。',
+  '侦探，根据你的描述，我判断这属于专业力的提升。给你 +20 EXP，记录在案了。',
+  '有趣。你的创造力这周有点停滞——要不要试试每天写 100 字的记录？',
+  '收到。今天你又进步了一点点，虽然你可能感觉不到，但数据不会说谎。',
+  '我一直在看着你，侦探。你比你自己想象的要努力。但别让我发现你在偷懒……',
+];
+let mgIdx = 0;
+
+function sendMorgana() {
+  const inp = document.getElementById('arcana-inp');
+  const val = inp ? inp.value.trim() : '';
+  if (!val) return;
+  inp.value = '';
+  const wrap = document.getElementById('chat-wrap');
+
+  const userDiv = document.createElement('div');
+  userDiv.className = 'cmsg user-msg';
+  userDiv.innerHTML = '<div class="cbubble user-b">' + val + '</div>';
+  wrap.appendChild(userDiv);
+  wrap.scrollTop = wrap.scrollHeight;
+
+  setTimeout(() => {
+    const aiDiv = document.createElement('div');
+    aiDiv.className = 'cmsg ai-msg';
+    const reply = mgReplies[mgIdx % mgReplies.length];
+    mgIdx++;
+    aiDiv.innerHTML = '<div class="cav">M</div><div class="cbubble">' + reply + '</div>';
+    wrap.appendChild(aiDiv);
+    wrap.scrollTop = wrap.scrollHeight;
+  }, 900);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const inp = document.getElementById('arcana-inp');
+  if (inp) inp.addEventListener('keydown', e => { if (e.key === 'Enter') sendMorgana(); });
+});
+
+</script>
+
+<style>
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+.inland-security-footer {
+  position: fixed;
+  z-index: 10;
+  bottom: 0;
+  right: 0;
+  width: fit-content;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.tooltip-container {
+  position: relative;
+}
+
+.trigger-content {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  background-color: transparent;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.minimax-link {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-weight: 300;
+  color: #adadad;
+  text-decoration: none;
+}
+
+.minimax-link:visited {
+  color: #adadad;
+}
+
+.minimax-link:hover {
+  color: #666666;
+}
+
+.tooltip-content {
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  padding-bottom: 16px; /* 8px 内容间距 + 8px 用于鼠标移动的透明区域 */
+  font-size: 12px;
+  line-height: 17px;
+  background-color: #fafafa;
+  border-radius: 12px;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  color: #171717;
+}
+
+/* 创建透明的连接区域，让鼠标可以平滑移动到 tooltip */
+.tooltip-content::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  right: 0;
+  height: 16px;
+}
+
+.tooltip-container:hover .tooltip-content {
+  display: flex;
+}
+
+.info-section {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
+
+.beian-link {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  color: #171717;
+}
+
+.beian-icon {
+  width: 14px;
+  height: 14px;
+  margin-right: 2px;
+}
+
+.underline-text {
+  color: #171717;
+  text-decoration: underline;
+}
+
+.underline-text:hover {
+  color: #000000;
+}
+
+/* 深色模式支持 */
+@media (prefers-color-scheme: dark) {
+  .trigger-content {
+    background-color: transparent;
+  }
+
+  .minimax-link,
+  .minimax-link:visited {
+    color: #666666;
+  }
+
+  .minimax-link:hover {
+    color: #adadad;
+  }
+
+  .tooltip-content {
+    background-color: #262626;
+    color: #ededed;
+  }
+
+  .beian-link,
+  .underline-text {
+    color: #ededed;
+  }
+
+  .underline-text:hover {
+    color: #ffffff;
+  }
+}
+
+</style>
+<div class="inland-security-footer">
+  <div class="tooltip-container">
+    <div class="trigger-content">
+      <a href="https://www.minimaxi.com/" target="_blank" rel="noreferrer" class="minimax-link">
+        <span>© 2026 MiniMax</span>
+      </a>
+    </div>
+    <div class="tooltip-content">
+      <section class="info-section">
+        <span>上海稀宇科技有限公司</span>
+      </section>
+
+      <section class="info-section">
+        <a class="beian-link" href="https://www.beian.gov.cn/portal/registerSystemInfo?recordcode=31010402010179" target="_blank" rel="noreferrer">
+          <img alt="hailuo-beian-icon" src="https://cdn.hailuoai.com/hailuo-video-web/public_assets/223037d3-79fd-4db0-a456-749f38a6a14b.png" class="beian-icon">
+          <span class="underline-text">沪公网安备31010402010179号</span>
+        </a>
+        <a href="https://beian.miit.gov.cn/" target="_blank" rel="noreferrer" class="underline-text">
+          沪ICP备2023003282号-38
+        </a>
+      </section>
+
+      <section class="info-section">
+        <span>模型名称：MiniMax</span>
+        <span>备案号：Shanghai-MiniMax-202505230046</span>
+      </section>
+
+      <section class="info-section">
+        <a href="https://agent.minimaxi.com/doc/zh/terms-of-service.html" target="_blank" rel="noreferrer" class="underline-text">
+          用户协议
+        </a>
+        <a href="https://agent.minimaxi.com/doc/zh/privacy-policy.html" target="_blank" rel="noreferrer" class="underline-text">
+          隐私政策
+        </a>
+      </section>
+    </div>
+  </div>
+</div>
+
+
+<script>
+/**
+ * Iframe 元素高亮注入脚本
+ * 需要在目标网站中引入此脚本来支持跨域 iframe 高亮功能
+ *
+ * 使用方法：
+ * 1. 将此脚本添加到目标网站的 HTML 中
+ * 2. 或通过浏览器扩展、用户脚本等方式注入
+ */
+
+(function () {
+  "use strict";
+
+  // 检查是否在 iframe 中
+  if (window.self === window.top) {
+    return; // 不在 iframe 中，不执行
+  }
+
+  // 检查是否已经初始化过
+  if (window.__iframeHighlightInitialized) {
+    return;
+  }
+  window.__iframeHighlightInitialized = true;
+  console.log("Iframe 高亮脚本已加载");
+
+  // 创建高亮覆盖层
+  var overlay = document.createElement("div");
+  overlay.id = "iframe-highlight-overlay";
+  overlay.style.cssText = "\n    position: fixed;\n    top: 0;\n    left: 0;\n    width: 100vw;\n    height: 100vh;\n    pointer-events: none;\n    z-index: 999999;\n    overflow: hidden;\n  ";
+
+  // 创建悬停高亮框（虚线边框）
+  var highlightBox = document.createElement("div");
+  highlightBox.id = "iframe-highlight-box";
+  highlightBox.style.cssText = "\n    position: absolute;\n    border: 2px dashed #007AFF;\n    background: rgba(0, 122, 255, 0.08);\n    pointer-events: none;\n    display: none;\n    transition: all 0.1s ease;\n    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.8);\n    border-radius: 2px;\n  ";
+
+  // 创建选中节点的常驻高亮框（实线边框）
+  var selectedBox = document.createElement("div");
+  selectedBox.id = "iframe-selected-box";
+  selectedBox.style.cssText = "\n    position: absolute;\n    border: 2px solid #007AFF;\n    pointer-events: none;\n    display: none;\n    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.9), 0 0 8px rgba(255, 107, 53, 0.4);\n    border-radius: 2px;\n    z-index: 1000000;\n  ";
+
+  // 创建悬停标签显示
+  var tagLabel = document.createElement("div");
+  tagLabel.id = "iframe-tag-label";
+  tagLabel.style.cssText = "\n    position: absolute;\n    background: #007AFF;\n    color: white;\n    padding: 2px 6px;\n    font-size: 11px;\n    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;\n    border-radius: 2px;\n    pointer-events: none;\n    display: none;\n    white-space: nowrap;\n    z-index: 1000001;\n    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);\n    font-weight: 500;\n  ";
+
+  // 创建选中节点标签
+  var selectedLabel = document.createElement("div");
+  selectedLabel.id = "iframe-selected-label";
+  selectedLabel.style.cssText = "\n    position: absolute;\n    background: #007AFF;\n    color: white;\n    padding: 3px 8px;\n    font-size: 11px;\n    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;\n    border-radius: 3px;\n    pointer-events: none;\n    display: none;\n    white-space: nowrap;\n    z-index: 1000002;\n    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);\n    font-weight: 600;\n  ";
+  overlay.appendChild(highlightBox);
+  overlay.appendChild(selectedBox);
+  overlay.appendChild(tagLabel);
+  overlay.appendChild(selectedLabel);
+  document.body.appendChild(overlay);
+
+  // 存储当前选中的元素
+  var selectedElement = null;
+  var highlightEnabled = false;
+
+  // 更新选中元素的高亮显示
+  function updateSelectedHighlight(element) {
+    console.log("updateSelectedHighlight called with:", element);
+    if (!element) {
+      selectedBox.style.display = "none";
+      selectedLabel.style.display = "none";
+      selectedElement = null;
+      console.log("Cleared selected highlight");
+      return;
+    }
+    selectedElement = element;
+    var rect = element.getBoundingClientRect();
+    console.log("Selected element rect:", rect);
+
+    // 更新选中高亮框位置
+    selectedBox.style.display = "block";
+    selectedBox.style.left = "".concat(rect.left - 2, "px");
+    selectedBox.style.top = "".concat(rect.top - 2, "px");
+    selectedBox.style.width = "".concat(rect.width + 4, "px");
+    selectedBox.style.height = "".concat(rect.height + 4, "px");
+
+    // 更新选中标签位置和内容
+    selectedLabel.style.display = "block";
+    selectedLabel.textContent = "\u2713 <".concat(element.tagName.toLowerCase(), ">");
+
+    // 计算标签位置，确保不超出视窗
+    var labelTop = rect.top - 28;
+    var labelLeft = rect.left;
+
+    // 如果标签会超出顶部，显示在元素下方
+    if (labelTop < 5) {
+      labelTop = rect.bottom + 5;
+    }
+
+    // 如果标签会超出右侧，向左调整
+    var labelWidth = selectedLabel.offsetWidth || 100; // 预估宽度
+    if (labelLeft + labelWidth > window.innerWidth - 10) {
+      labelLeft = window.innerWidth - labelWidth - 10;
+    }
+    selectedLabel.style.left = "".concat(Math.max(5, labelLeft), "px");
+    selectedLabel.style.top = "".concat(labelTop, "px");
+    console.log("Selected highlight positioned at:", {
+      left: selectedBox.style.left,
+      top: selectedBox.style.top,
+      width: selectedBox.style.width,
+      height: selectedBox.style.height
+    });
+  }
+  function getElementSelector(element) {
+    if (!(element instanceof Element)) throw new Error('Argument must be a DOM element');
+    var segments = [];
+    var current = element;
+    while (current !== document.documentElement) {
+      var selector = '';
+      // 优先检查唯一ID
+      if (current.id && document.querySelectorAll("#".concat(current.id)).length === 1) {
+        segments.unshift("#".concat(current.id));
+        break; // ID唯一，无需继续向上
+      }
+
+      // 生成类名选择器（取第一个有效类名）
+      var classes = Array.from(current.classList).filter(function (c) {
+        return !c.startsWith('js-');
+      });
+      var className = classes.length > 0 ? ".".concat(classes[0]) : '';
+
+      // 生成位置索引（nth-child）
+      var tag = current.tagName.toLowerCase();
+      if (!className) {
+        var siblings = Array.from(current.parentNode.children);
+        var index = siblings.findIndex(function (el) {
+          return el === current;
+        }) + 1;
+        selector = "".concat(tag, ":nth-child(").concat(index, ")");
+      } else {
+        selector = className;
+      }
+      segments.unshift(selector);
+      current = current.parentElement;
+    }
+
+    // 处理根元素
+    if (current === document.documentElement) {
+      segments.unshift('html');
+    }
+    return segments.join(' > ');
+  }
+
+  // 获取元素文本内容
+  function getElementText(element) {
+    var _element$textContent;
+    if (element.tagName === "INPUT") {
+      return element.value || element.placeholder || "";
+    }
+    if (element.tagName === "TEXTAREA") {
+      return element.value || element.placeholder || "";
+    }
+    var text = ((_element$textContent = element.textContent) === null || _element$textContent === void 0 ? void 0 : _element$textContent.trim()) || "";
+    return text.length > 50 ? text.substring(0, 50) + "..." : text;
+  }
+
+  // 获取元素属性信息
+  function getElementAttributes(element) {
+    var attrs = {};
+    for (var i = 0; i < element.attributes.length; i++) {
+      var attr = element.attributes[i];
+      attrs[attr.name] = attr.value;
+    }
+    return attrs;
+  }
+
+  // 鼠标悬停事件处理
+  function handleMouseOver(e) {
+    if (!highlightEnabled) return;
+    var target = e.target;
+    if (!target || target === overlay || target === highlightBox || target === tagLabel || target === selectedBox || target === selectedLabel) {
+      return;
+    }
+
+    // 避免高亮 html 和 body 元素
+    if (target === document.documentElement || target === document.body) {
+      return;
+    }
+
+    // 如果是已选中的元素，不显示悬停高亮
+    if (target === selectedElement) {
+      highlightBox.style.display = "none";
+      tagLabel.style.display = "none";
+      return;
+    }
+    var rect = target.getBoundingClientRect();
+    var selector = getElementSelector(target);
+    var text = getElementText(target);
+    var attributes = getElementAttributes(target);
+
+    // 更新悬停高亮框位置
+    highlightBox.style.display = "block";
+    highlightBox.style.left = "".concat(rect.left - 2, "px");
+    highlightBox.style.top = "".concat(rect.top - 2, "px");
+    highlightBox.style.width = "".concat(rect.width + 4, "px");
+    highlightBox.style.height = "".concat(rect.height + 4, "px");
+
+    // 更新标签位置和内容
+    tagLabel.style.display = "block";
+    tagLabel.textContent = "<".concat(target.tagName.toLowerCase(), ">");
+
+    // 计算标签位置，确保不超出视窗
+    var labelTop = rect.top - 22;
+    var labelLeft = rect.left;
+
+    // 如果标签会超出顶部，显示在元素下方
+    if (labelTop < 0) {
+      labelTop = rect.bottom + 5;
+    }
+
+    // 如果标签会超出右侧，向左调整
+    if (labelLeft + tagLabel.offsetWidth > window.innerWidth) {
+      labelLeft = window.innerWidth - tagLabel.offsetWidth - 5;
+    }
+    tagLabel.style.left = "".concat(Math.max(0, labelLeft), "px");
+    tagLabel.style.top = "".concat(labelTop, "px");
+
+    // 发送消息到父窗口
+    var elementInfo = {
+      tagName: target.tagName.toLowerCase(),
+      rect: {
+        left: rect.left,
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom,
+        width: rect.width,
+        height: rect.height,
+        x: rect.x,
+        y: rect.y
+      },
+      selector: selector,
+      text: text,
+      attributes: attributes,
+      url: window.location.href,
+      path: window.location.pathname,
+      timestamp: Date.now()
+    };
+    try {
+      window.parent.postMessage({
+        type: "iframe-element-hover",
+        data: elementInfo,
+        source: "iframe-highlight-injector"
+      }, "*");
+    } catch (error) {
+      console.warn("无法发送消息到父窗口:", error);
+    }
+  }
+
+  // 鼠标离开事件处理
+  function handleMouseOut(e) {
+    if (!highlightEnabled) return;
+    var relatedTarget = e.relatedTarget;
+
+    // 如果鼠标移动到高亮相关元素上，不隐藏高亮
+    if (relatedTarget && (relatedTarget === highlightBox || relatedTarget === tagLabel || relatedTarget === overlay || relatedTarget === selectedBox || relatedTarget === selectedLabel)) {
+      return;
+    }
+    highlightBox.style.display = "none";
+    tagLabel.style.display = "none";
+    try {
+      window.parent.postMessage({
+        type: "iframe-element-hover",
+        data: null,
+        source: "iframe-highlight-injector"
+      }, "*");
+    } catch (error) {
+      console.warn("无法发送消息到父窗口:", error);
+    }
+  }
+
+  // 点击事件处理
+  function handleClick(e) {
+    var target = e.target;
+    if (!target || target === overlay || target === highlightBox || target === tagLabel || target === selectedBox || target === selectedLabel) {
+      return;
+    }
+
+    // 避免处理 html 和 body 元素
+    if (target === document.documentElement || target === document.body) {
+      return;
+    }
+
+    // 检查是否是交互元素，这些元素需要保留默认行为
+    var isInteractiveElement = ['input', 'textarea', 'select', 'button', 'a'].includes(target.tagName.toLowerCase());
+
+    // 如果高亮功能启用，对于非交互元素阻止默认行为和事件传播
+    if (highlightEnabled) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    var rect = target.getBoundingClientRect();
+    var selector = getElementSelector(target);
+    var text = getElementText(target);
+    var attributes = getElementAttributes(target);
+    console.log("Element clicked:", {
+      tagName: target.tagName,
+      selector: selector,
+      rect: rect
+    });
+
+    // 立即更新选中高亮
+    updateSelectedHighlight(target);
+
+    // 隐藏悬停高亮，因为现在是选中状态
+    highlightBox.style.display = "none";
+    tagLabel.style.display = "none";
+    var elementInfo = {
+      tagName: target.tagName.toLowerCase(),
+      rect: {
+        left: rect.left,
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom,
+        width: rect.width,
+        height: rect.height,
+        x: rect.x,
+        y: rect.y
+      },
+      selector: selector,
+      text: text,
+      attributes: attributes,
+      url: window.location.href,
+      path: window.location.pathname,
+      timestamp: Date.now()
+    };
+    try {
+      window.parent.postMessage({
+        type: "iframe-element-click",
+        data: elementInfo,
+        source: "iframe-highlight-injector"
+      }, "*");
+    } catch (error) {
+      console.warn("无法发送消息到父窗口:", error);
+    }
+  }
+
+  // 监听来自父窗口的消息
+  function handleParentMessage(event) {
+    console.log("Received message from parent:", event.data);
+    if (event.data.type === "iframe-highlight-toggle") {
+      var enabled = event.data.enabled;
+      console.log("Highlight toggle:", enabled);
+      if (enabled) {
+        enableHighlight();
+      } else {
+        disableHighlight();
+      }
+    } else if (event.data.type === "enable-iframe-highlight") {
+      console.log("Enable iframe highlight");
+      enableHighlight();
+    } else if (event.data.type === "disable-iframe-highlight") {
+      console.log("Disable iframe highlight");
+      disableHighlight();
+    } else if (event.data.type === "toggle-iframe-highlight") {
+      var _enabled = event.data.enabled !== undefined ? event.data.enabled : !highlightEnabled;
+      console.log("Toggle iframe highlight to:", _enabled);
+      if (_enabled) {
+        enableHighlight();
+      } else {
+        disableHighlight();
+      }
+    } else if (event.data.type === "update-selected-element") {
+      var selector = event.data.selector;
+      console.log("Update selected element with selector:", selector);
+      if (selector) {
+        try {
+          var element = document.querySelector(selector);
+          console.log("Found element by selector:", element);
+          updateSelectedHighlight(element);
+        } catch (error) {
+          console.warn("Failed to select element:", error);
+          updateSelectedHighlight(null);
+        }
+      } else {
+        updateSelectedHighlight(null);
+      }
+    } else if (event.data.type === "clear-selected-element") {
+      console.log("Clear selected element");
+      updateSelectedHighlight(null);
+    }
+  }
+
+  // 启用高亮功能
+  function enableHighlight() {
+    console.log("Enabling highlight");
+    document.addEventListener("mouseover", handleMouseOver, true);
+    document.addEventListener("mouseout", handleMouseOut, true);
+    document.addEventListener("click", handleClick, true);
+    highlightEnabled = true;
+    overlay.style.display = "block";
+  }
+
+  // 禁用高亮功能
+  function disableHighlight() {
+    console.log("Disabling highlight");
+    highlightEnabled = false;
+    // 保持事件监听器，但通过 highlightEnabled 变量控制行为
+    // 这样可以保留选中状态的显示
+    highlightBox.style.display = "none";
+    tagLabel.style.display = "none";
+    // 不隐藏 selectedBox 和 selectedLabel，保留选中状态
+  }
+
+  // 完全禁用高亮功能（移除所有监听器）
+  function fullyDisableHighlight() {
+    console.log("Fully disabling highlight");
+    highlightEnabled = false;
+    document.removeEventListener("mouseover", handleMouseOver, true);
+    document.removeEventListener("mouseout", handleMouseOut, true);
+    document.removeEventListener("click", handleClick, true);
+    overlay.style.display = "none";
+    highlightBox.style.display = "none";
+    tagLabel.style.display = "none";
+    selectedBox.style.display = "none";
+    selectedLabel.style.display = "none";
+  }
+
+  // 添加事件监听
+  enableHighlight();
+  window.addEventListener("message", handleParentMessage);
+
+  // 暴露全局函数供外部调用
+  window.__iframeHighlightControl = {
+    enable: enableHighlight,
+    disable: disableHighlight,
+    fullyDisable: fullyDisableHighlight,
+    isEnabled: function isEnabled() {
+      return highlightEnabled;
+    },
+    getSelectedElement: function getSelectedElement() {
+      return selectedElement;
+    },
+    updateSelected: updateSelectedHighlight,
+    // 通过消息发送开关控制
+    sendToggleMessage: function sendToggleMessage(enabled) {
+      window.parent.postMessage({
+        type: 'iframe-highlight-status',
+        enabled: enabled || highlightEnabled,
+        source: 'iframe-highlight-injector'
+      }, '*');
+    }
+  };
+
+  // 通知父窗口脚本已加载
+  try {
+    window.parent.postMessage({
+      type: "iframe-highlight-ready",
+      data: {
+        url: window.location.href,
+        userAgent: navigator.userAgent,
+        timestamp: Date.now()
+      },
+      source: "iframe-highlight-injector"
+    }, "*");
+  } catch (error) {
+    console.warn("无法发送就绪消息到父窗口:", error);
+  }
+
+  // 清理函数
+  window.__iframeHighlightCleanup = function () {
+    fullyDisableHighlight();
+    window.removeEventListener("message", handleParentMessage);
+    if (overlay.parentElement) {
+      overlay.parentElement.removeChild(overlay);
+    }
+    delete window.__iframeHighlightInitialized;
+    delete window.__iframeHighlightCleanup;
+  };
+})();
+
+</script>
+
+<script>
+/**
+ * Iframe 元素高亮注入脚本
+ * 需要在目标网站中引入此脚本来支持跨域 iframe 高亮功能
+ *
+ * 使用方法：
+ * 1. 将此脚本添加到目标网站的 HTML 中
+ * 2. 或通过浏览器扩展、用户脚本等方式注入
+ */
+
+(function () {
+  "use strict";
+
+  // 检查是否在 iframe 中
+  if (window.self === window.top) {
+    return; // 不在 iframe 中，不执行
+  }
+
+  // 检查是否已经初始化过
+  if (window.__iframeHighlightInitialized) {
+    return;
+  }
+  window.__iframeHighlightInitialized = true;
+  console.log("Iframe 高亮脚本已加载");
+
+  // 创建高亮覆盖层
+  var overlay = document.createElement("div");
+  overlay.id = "iframe-highlight-overlay";
+  overlay.style.cssText = "\n    position: fixed;\n    top: 0;\n    left: 0;\n    width: 100vw;\n    height: 100vh;\n    pointer-events: none;\n    z-index: 999999;\n    overflow: hidden;\n  ";
+
+  // 创建悬停高亮框（虚线边框）
+  var highlightBox = document.createElement("div");
+  highlightBox.id = "iframe-highlight-box";
+  highlightBox.style.cssText = "\n    position: absolute;\n    border: 2px dashed #007AFF;\n    background: rgba(0, 122, 255, 0.08);\n    pointer-events: none;\n    display: none;\n    transition: all 0.1s ease;\n    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.8);\n    border-radius: 2px;\n  ";
+
+  // 创建选中节点的常驻高亮框（实线边框）
+  var selectedBox = document.createElement("div");
+  selectedBox.id = "iframe-selected-box";
+  selectedBox.style.cssText = "\n    position: absolute;\n    border: 2px solid #007AFF;\n    pointer-events: none;\n    display: none;\n    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.9), 0 0 8px rgba(255, 107, 53, 0.4);\n    border-radius: 2px;\n    z-index: 1000000;\n  ";
+
+  // 创建悬停标签显示
+  var tagLabel = document.createElement("div");
+  tagLabel.id = "iframe-tag-label";
+  tagLabel.style.cssText = "\n    position: absolute;\n    background: #007AFF;\n    color: white;\n    padding: 2px 6px;\n    font-size: 11px;\n    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;\n    border-radius: 2px;\n    pointer-events: none;\n    display: none;\n    white-space: nowrap;\n    z-index: 1000001;\n    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);\n    font-weight: 500;\n  ";
+
+  // 创建选中节点标签
+  var selectedLabel = document.createElement("div");
+  selectedLabel.id = "iframe-selected-label";
+  selectedLabel.style.cssText = "\n    position: absolute;\n    background: #007AFF;\n    color: white;\n    padding: 3px 8px;\n    font-size: 11px;\n    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;\n    border-radius: 3px;\n    pointer-events: none;\n    display: none;\n    white-space: nowrap;\n    z-index: 1000002;\n    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);\n    font-weight: 600;\n  ";
+  overlay.appendChild(highlightBox);
+  overlay.appendChild(selectedBox);
+  overlay.appendChild(tagLabel);
+  overlay.appendChild(selectedLabel);
+  document.body.appendChild(overlay);
+
+  // 存储当前选中的元素
+  var selectedElement = null;
+  var highlightEnabled = false;
+
+  // 更新选中元素的高亮显示
+  function updateSelectedHighlight(element) {
+    console.log("updateSelectedHighlight called with:", element);
+    if (!element) {
+      selectedBox.style.display = "none";
+      selectedLabel.style.display = "none";
+      selectedElement = null;
+      console.log("Cleared selected highlight");
+      return;
+    }
+    selectedElement = element;
+    var rect = element.getBoundingClientRect();
+    console.log("Selected element rect:", rect);
+
+    // 更新选中高亮框位置
+    selectedBox.style.display = "block";
+    selectedBox.style.left = "".concat(rect.left - 2, "px");
+    selectedBox.style.top = "".concat(rect.top - 2, "px");
+    selectedBox.style.width = "".concat(rect.width + 4, "px");
+    selectedBox.style.height = "".concat(rect.height + 4, "px");
+
+    // 更新选中标签位置和内容
+    selectedLabel.style.display = "block";
+    selectedLabel.textContent = "\u2713 <".concat(element.tagName.toLowerCase(), ">");
+
+    // 计算标签位置，确保不超出视窗
+    var labelTop = rect.top - 28;
+    var labelLeft = rect.left;
+
+    // 如果标签会超出顶部，显示在元素下方
+    if (labelTop < 5) {
+      labelTop = rect.bottom + 5;
+    }
+
+    // 如果标签会超出右侧，向左调整
+    var labelWidth = selectedLabel.offsetWidth || 100; // 预估宽度
+    if (labelLeft + labelWidth > window.innerWidth - 10) {
+      labelLeft = window.innerWidth - labelWidth - 10;
+    }
+    selectedLabel.style.left = "".concat(Math.max(5, labelLeft), "px");
+    selectedLabel.style.top = "".concat(labelTop, "px");
+    console.log("Selected highlight positioned at:", {
+      left: selectedBox.style.left,
+      top: selectedBox.style.top,
+      width: selectedBox.style.width,
+      height: selectedBox.style.height
+    });
+  }
+  function getElementSelector(element) {
+    if (!(element instanceof Element)) throw new Error('Argument must be a DOM element');
+    var segments = [];
+    var current = element;
+    while (current !== document.documentElement) {
+      var selector = '';
+      // 优先检查唯一ID
+      if (current.id && document.querySelectorAll("#".concat(current.id)).length === 1) {
+        segments.unshift("#".concat(current.id));
+        break; // ID唯一，无需继续向上
+      }
+
+      // 生成类名选择器（取第一个有效类名）
+      var classes = Array.from(current.classList).filter(function (c) {
+        return !c.startsWith('js-');
+      });
+      var className = classes.length > 0 ? ".".concat(classes[0]) : '';
+
+      // 生成位置索引（nth-child）
+      var tag = current.tagName.toLowerCase();
+      if (!className) {
+        var siblings = Array.from(current.parentNode.children);
+        var index = siblings.findIndex(function (el) {
+          return el === current;
+        }) + 1;
+        selector = "".concat(tag, ":nth-child(").concat(index, ")");
+      } else {
+        selector = className;
+      }
+      segments.unshift(selector);
+      current = current.parentElement;
+    }
+
+    // 处理根元素
+    if (current === document.documentElement) {
+      segments.unshift('html');
+    }
+    return segments.join(' > ');
+  }
+
+  // 获取元素文本内容
+  function getElementText(element) {
+    var _element$textContent;
+    if (element.tagName === "INPUT") {
+      return element.value || element.placeholder || "";
+    }
+    if (element.tagName === "TEXTAREA") {
+      return element.value || element.placeholder || "";
+    }
+    var text = ((_element$textContent = element.textContent) === null || _element$textContent === void 0 ? void 0 : _element$textContent.trim()) || "";
+    return text.length > 50 ? text.substring(0, 50) + "..." : text;
+  }
+
+  // 获取元素属性信息
+  function getElementAttributes(element) {
+    var attrs = {};
+    for (var i = 0; i < element.attributes.length; i++) {
+      var attr = element.attributes[i];
+      attrs[attr.name] = attr.value;
+    }
+    return attrs;
+  }
+
+  // 鼠标悬停事件处理
+  function handleMouseOver(e) {
+    if (!highlightEnabled) return;
+    var target = e.target;
+    if (!target || target === overlay || target === highlightBox || target === tagLabel || target === selectedBox || target === selectedLabel) {
+      return;
+    }
+
+    // 避免高亮 html 和 body 元素
+    if (target === document.documentElement || target === document.body) {
+      return;
+    }
+
+    // 如果是已选中的元素，不显示悬停高亮
+    if (target === selectedElement) {
+      highlightBox.style.display = "none";
+      tagLabel.style.display = "none";
+      return;
+    }
+    var rect = target.getBoundingClientRect();
+    var selector = getElementSelector(target);
+    var text = getElementText(target);
+    var attributes = getElementAttributes(target);
+
+    // 更新悬停高亮框位置
+    highlightBox.style.display = "block";
+    highlightBox.style.left = "".concat(rect.left - 2, "px");
+    highlightBox.style.top = "".concat(rect.top - 2, "px");
+    highlightBox.style.width = "".concat(rect.width + 4, "px");
+    highlightBox.style.height = "".concat(rect.height + 4, "px");
+
+    // 更新标签位置和内容
+    tagLabel.style.display = "block";
+    tagLabel.textContent = "<".concat(target.tagName.toLowerCase(), ">");
+
+    // 计算标签位置，确保不超出视窗
+    var labelTop = rect.top - 22;
+    var labelLeft = rect.left;
+
+    // 如果标签会超出顶部，显示在元素下方
+    if (labelTop < 0) {
+      labelTop = rect.bottom + 5;
+    }
+
+    // 如果标签会超出右侧，向左调整
+    if (labelLeft + tagLabel.offsetWidth > window.innerWidth) {
+      labelLeft = window.innerWidth - tagLabel.offsetWidth - 5;
+    }
+    tagLabel.style.left = "".concat(Math.max(0, labelLeft), "px");
+    tagLabel.style.top = "".concat(labelTop, "px");
+
+    // 发送消息到父窗口
+    var elementInfo = {
+      tagName: target.tagName.toLowerCase(),
+      rect: {
+        left: rect.left,
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom,
+        width: rect.width,
+        height: rect.height,
+        x: rect.x,
+        y: rect.y
+      },
+      selector: selector,
+      text: text,
+      attributes: attributes,
+      url: window.location.href,
+      path: window.location.pathname,
+      timestamp: Date.now()
+    };
+    try {
+      window.parent.postMessage({
+        type: "iframe-element-hover",
+        data: elementInfo,
+        source: "iframe-highlight-injector"
+      }, "*");
+    } catch (error) {
+      console.warn("无法发送消息到父窗口:", error);
+    }
+  }
+
+  // 鼠标离开事件处理
+  function handleMouseOut(e) {
+    if (!highlightEnabled) return;
+    var relatedTarget = e.relatedTarget;
+
+    // 如果鼠标移动到高亮相关元素上，不隐藏高亮
+    if (relatedTarget && (relatedTarget === highlightBox || relatedTarget === tagLabel || relatedTarget === overlay || relatedTarget === selectedBox || relatedTarget === selectedLabel)) {
+      return;
+    }
+    highlightBox.style.display = "none";
+    tagLabel.style.display = "none";
+    try {
+      window.parent.postMessage({
+        type: "iframe-element-hover",
+        data: null,
+        source: "iframe-highlight-injector"
+      }, "*");
+    } catch (error) {
+      console.warn("无法发送消息到父窗口:", error);
+    }
+  }
+
+  // 点击事件处理
+  function handleClick(e) {
+    var target = e.target;
+    if (!target || target === overlay || target === highlightBox || target === tagLabel || target === selectedBox || target === selectedLabel) {
+      return;
+    }
+
+    // 避免处理 html 和 body 元素
+    if (target === document.documentElement || target === document.body) {
+      return;
+    }
+
+    // 检查是否是交互元素，这些元素需要保留默认行为
+    var isInteractiveElement = ['input', 'textarea', 'select', 'button', 'a'].includes(target.tagName.toLowerCase());
+
+    // 如果高亮功能启用，对于非交互元素阻止默认行为和事件传播
+    if (highlightEnabled) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    var rect = target.getBoundingClientRect();
+    var selector = getElementSelector(target);
+    var text = getElementText(target);
+    var attributes = getElementAttributes(target);
+    console.log("Element clicked:", {
+      tagName: target.tagName,
+      selector: selector,
+      rect: rect
+    });
+
+    // 立即更新选中高亮
+    updateSelectedHighlight(target);
+
+    // 隐藏悬停高亮，因为现在是选中状态
+    highlightBox.style.display = "none";
+    tagLabel.style.display = "none";
+    var elementInfo = {
+      tagName: target.tagName.toLowerCase(),
+      rect: {
+        left: rect.left,
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom,
+        width: rect.width,
+        height: rect.height,
+        x: rect.x,
+        y: rect.y
+      },
+      selector: selector,
+      text: text,
+      attributes: attributes,
+      url: window.location.href,
+      path: window.location.pathname,
+      timestamp: Date.now()
+    };
+    try {
+      window.parent.postMessage({
+        type: "iframe-element-click",
+        data: elementInfo,
+        source: "iframe-highlight-injector"
+      }, "*");
+    } catch (error) {
+      console.warn("无法发送消息到父窗口:", error);
+    }
+  }
+
+  // 监听来自父窗口的消息
+  function handleParentMessage(event) {
+    console.log("Received message from parent:", event.data);
+    if (event.data.type === "iframe-highlight-toggle") {
+      var enabled = event.data.enabled;
+      console.log("Highlight toggle:", enabled);
+      if (enabled) {
+        enableHighlight();
+      } else {
+        disableHighlight();
+      }
+    } else if (event.data.type === "enable-iframe-highlight") {
+      console.log("Enable iframe highlight");
+      enableHighlight();
+    } else if (event.data.type === "disable-iframe-highlight") {
+      console.log("Disable iframe highlight");
+      disableHighlight();
+    } else if (event.data.type === "toggle-iframe-highlight") {
+      var _enabled = event.data.enabled !== undefined ? event.data.enabled : !highlightEnabled;
+      console.log("Toggle iframe highlight to:", _enabled);
+      if (_enabled) {
+        enableHighlight();
+      } else {
+        disableHighlight();
+      }
+    } else if (event.data.type === "update-selected-element") {
+      var selector = event.data.selector;
+      console.log("Update selected element with selector:", selector);
+      if (selector) {
+        try {
+          var element = document.querySelector(selector);
+          console.log("Found element by selector:", element);
+          updateSelectedHighlight(element);
+        } catch (error) {
+          console.warn("Failed to select element:", error);
+          updateSelectedHighlight(null);
+        }
+      } else {
+        updateSelectedHighlight(null);
+      }
+    } else if (event.data.type === "clear-selected-element") {
+      console.log("Clear selected element");
+      updateSelectedHighlight(null);
+    }
+  }
+
+  // 启用高亮功能
+  function enableHighlight() {
+    console.log("Enabling highlight");
+    document.addEventListener("mouseover", handleMouseOver, true);
+    document.addEventListener("mouseout", handleMouseOut, true);
+    document.addEventListener("click", handleClick, true);
+    highlightEnabled = true;
+    overlay.style.display = "block";
+  }
+
+  // 禁用高亮功能
+  function disableHighlight() {
+    console.log("Disabling highlight");
+    highlightEnabled = false;
+    // 保持事件监听器，但通过 highlightEnabled 变量控制行为
+    // 这样可以保留选中状态的显示
+    highlightBox.style.display = "none";
+    tagLabel.style.display = "none";
+    // 不隐藏 selectedBox 和 selectedLabel，保留选中状态
+  }
+
+  // 完全禁用高亮功能（移除所有监听器）
+  function fullyDisableHighlight() {
+    console.log("Fully disabling highlight");
+    highlightEnabled = false;
+    document.removeEventListener("mouseover", handleMouseOver, true);
+    document.removeEventListener("mouseout", handleMouseOut, true);
+    document.removeEventListener("click", handleClick, true);
+    overlay.style.display = "none";
+    highlightBox.style.display = "none";
+    tagLabel.style.display = "none";
+    selectedBox.style.display = "none";
+    selectedLabel.style.display = "none";
+  }
+
+  // 添加事件监听
+  enableHighlight();
+  window.addEventListener("message", handleParentMessage);
+
+  // 暴露全局函数供外部调用
+  window.__iframeHighlightControl = {
+    enable: enableHighlight,
+    disable: disableHighlight,
+    fullyDisable: fullyDisableHighlight,
+    isEnabled: function isEnabled() {
+      return highlightEnabled;
+    },
+    getSelectedElement: function getSelectedElement() {
+      return selectedElement;
+    },
+    updateSelected: updateSelectedHighlight,
+    // 通过消息发送开关控制
+    sendToggleMessage: function sendToggleMessage(enabled) {
+      window.parent.postMessage({
+        type: 'iframe-highlight-status',
+        enabled: enabled || highlightEnabled,
+        source: 'iframe-highlight-injector'
+      }, '*');
+    }
+  };
+
+  // 通知父窗口脚本已加载
+  try {
+    window.parent.postMessage({
+      type: "iframe-highlight-ready",
+      data: {
+        url: window.location.href,
+        userAgent: navigator.userAgent,
+        timestamp: Date.now()
+      },
+      source: "iframe-highlight-injector"
+    }, "*");
+  } catch (error) {
+    console.warn("无法发送就绪消息到父窗口:", error);
+  }
+
+  // 清理函数
+  window.__iframeHighlightCleanup = function () {
+    fullyDisableHighlight();
+    window.removeEventListener("message", handleParentMessage);
+    if (overlay.parentElement) {
+      overlay.parentElement.removeChild(overlay);
+    }
+    delete window.__iframeHighlightInitialized;
+    delete window.__iframeHighlightCleanup;
+  };
+})();
+
+</script>
+
+<script>
+/**
+ * Iframe 元素高亮注入脚本
+ * 需要在目标网站中引入此脚本来支持跨域 iframe 高亮功能
+ *
+ * 使用方法：
+ * 1. 将此脚本添加到目标网站的 HTML 中
+ * 2. 或通过浏览器扩展、用户脚本等方式注入
+ */
+
+(function () {
+  "use strict";
+
+  // 检查是否在 iframe 中
+  if (window.self === window.top) {
+    return; // 不在 iframe 中，不执行
+  }
+
+  // 检查是否已经初始化过
+  if (window.__iframeHighlightInitialized) {
+    return;
+  }
+  window.__iframeHighlightInitialized = true;
+  console.log("Iframe 高亮脚本已加载");
+
+  // 创建高亮覆盖层
+  var overlay = document.createElement("div");
+  overlay.id = "iframe-highlight-overlay";
+  overlay.style.cssText = "\n    position: fixed;\n    top: 0;\n    left: 0;\n    width: 100vw;\n    height: 100vh;\n    pointer-events: none;\n    z-index: 999999;\n    overflow: hidden;\n  ";
+
+  // 创建悬停高亮框（虚线边框）
+  var highlightBox = document.createElement("div");
+  highlightBox.id = "iframe-highlight-box";
+  highlightBox.style.cssText = "\n    position: absolute;\n    border: 2px dashed #007AFF;\n    background: rgba(0, 122, 255, 0.08);\n    pointer-events: none;\n    display: none;\n    transition: all 0.1s ease;\n    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.8);\n    border-radius: 2px;\n  ";
+
+  // 创建选中节点的常驻高亮框（实线边框）
+  var selectedBox = document.createElement("div");
+  selectedBox.id = "iframe-selected-box";
+  selectedBox.style.cssText = "\n    position: absolute;\n    border: 2px solid #007AFF;\n    pointer-events: none;\n    display: none;\n    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.9), 0 0 8px rgba(255, 107, 53, 0.4);\n    border-radius: 2px;\n    z-index: 1000000;\n  ";
+
+  // 创建悬停标签显示
+  var tagLabel = document.createElement("div");
+  tagLabel.id = "iframe-tag-label";
+  tagLabel.style.cssText = "\n    position: absolute;\n    background: #007AFF;\n    color: white;\n    padding: 2px 6px;\n    font-size: 11px;\n    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;\n    border-radius: 2px;\n    pointer-events: none;\n    display: none;\n    white-space: nowrap;\n    z-index: 1000001;\n    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);\n    font-weight: 500;\n  ";
+
+  // 创建选中节点标签
+  var selectedLabel = document.createElement("div");
+  selectedLabel.id = "iframe-selected-label";
+  selectedLabel.style.cssText = "\n    position: absolute;\n    background: #007AFF;\n    color: white;\n    padding: 3px 8px;\n    font-size: 11px;\n    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;\n    border-radius: 3px;\n    pointer-events: none;\n    display: none;\n    white-space: nowrap;\n    z-index: 1000002;\n    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);\n    font-weight: 600;\n  ";
+  overlay.appendChild(highlightBox);
+  overlay.appendChild(selectedBox);
+  overlay.appendChild(tagLabel);
+  overlay.appendChild(selectedLabel);
+  document.body.appendChild(overlay);
+
+  // 存储当前选中的元素
+  var selectedElement = null;
+  var highlightEnabled = false;
+
+  // 更新选中元素的高亮显示
+  function updateSelectedHighlight(element) {
+    console.log("updateSelectedHighlight called with:", element);
+    if (!element) {
+      selectedBox.style.display = "none";
+      selectedLabel.style.display = "none";
+      selectedElement = null;
+      console.log("Cleared selected highlight");
+      return;
+    }
+    selectedElement = element;
+    var rect = element.getBoundingClientRect();
+    console.log("Selected element rect:", rect);
+
+    // 更新选中高亮框位置
+    selectedBox.style.display = "block";
+    selectedBox.style.left = "".concat(rect.left - 2, "px");
+    selectedBox.style.top = "".concat(rect.top - 2, "px");
+    selectedBox.style.width = "".concat(rect.width + 4, "px");
+    selectedBox.style.height = "".concat(rect.height + 4, "px");
+
+    // 更新选中标签位置和内容
+    selectedLabel.style.display = "block";
+    selectedLabel.textContent = "\u2713 <".concat(element.tagName.toLowerCase(), ">");
+
+    // 计算标签位置，确保不超出视窗
+    var labelTop = rect.top - 28;
+    var labelLeft = rect.left;
+
+    // 如果标签会超出顶部，显示在元素下方
+    if (labelTop < 5) {
+      labelTop = rect.bottom + 5;
+    }
+
+    // 如果标签会超出右侧，向左调整
+    var labelWidth = selectedLabel.offsetWidth || 100; // 预估宽度
+    if (labelLeft + labelWidth > window.innerWidth - 10) {
+      labelLeft = window.innerWidth - labelWidth - 10;
+    }
+    selectedLabel.style.left = "".concat(Math.max(5, labelLeft), "px");
+    selectedLabel.style.top = "".concat(labelTop, "px");
+    console.log("Selected highlight positioned at:", {
+      left: selectedBox.style.left,
+      top: selectedBox.style.top,
+      width: selectedBox.style.width,
+      height: selectedBox.style.height
+    });
+  }
+  function getElementSelector(element) {
+    if (!(element instanceof Element)) throw new Error('Argument must be a DOM element');
+    var segments = [];
+    var current = element;
+    while (current !== document.documentElement) {
+      var selector = '';
+      // 优先检查唯一ID
+      if (current.id && document.querySelectorAll("#".concat(current.id)).length === 1) {
+        segments.unshift("#".concat(current.id));
+        break; // ID唯一，无需继续向上
+      }
+
+      // 生成类名选择器（取第一个有效类名）
+      var classes = Array.from(current.classList).filter(function (c) {
+        return !c.startsWith('js-');
+      });
+      var className = classes.length > 0 ? ".".concat(classes[0]) : '';
+
+      // 生成位置索引（nth-child）
+      var tag = current.tagName.toLowerCase();
+      if (!className) {
+        var siblings = Array.from(current.parentNode.children);
+        var index = siblings.findIndex(function (el) {
+          return el === current;
+        }) + 1;
+        selector = "".concat(tag, ":nth-child(").concat(index, ")");
+      } else {
+        selector = className;
+      }
+      segments.unshift(selector);
+      current = current.parentElement;
+    }
+
+    // 处理根元素
+    if (current === document.documentElement) {
+      segments.unshift('html');
+    }
+    return segments.join(' > ');
+  }
+
+  // 获取元素文本内容
+  function getElementText(element) {
+    var _element$textContent;
+    if (element.tagName === "INPUT") {
+      return element.value || element.placeholder || "";
+    }
+    if (element.tagName === "TEXTAREA") {
+      return element.value || element.placeholder || "";
+    }
+    var text = ((_element$textContent = element.textContent) === null || _element$textContent === void 0 ? void 0 : _element$textContent.trim()) || "";
+    return text.length > 50 ? text.substring(0, 50) + "..." : text;
+  }
+
+  // 获取元素属性信息
+  function getElementAttributes(element) {
+    var attrs = {};
+    for (var i = 0; i < element.attributes.length; i++) {
+      var attr = element.attributes[i];
+      attrs[attr.name] = attr.value;
+    }
+    return attrs;
+  }
+
+  // 鼠标悬停事件处理
+  function handleMouseOver(e) {
+    if (!highlightEnabled) return;
+    var target = e.target;
+    if (!target || target === overlay || target === highlightBox || target === tagLabel || target === selectedBox || target === selectedLabel) {
+      return;
+    }
+
+    // 避免高亮 html 和 body 元素
+    if (target === document.documentElement || target === document.body) {
+      return;
+    }
+
+    // 如果是已选中的元素，不显示悬停高亮
+    if (target === selectedElement) {
+      highlightBox.style.display = "none";
+      tagLabel.style.display = "none";
+      return;
+    }
+    var rect = target.getBoundingClientRect();
+    var selector = getElementSelector(target);
+    var text = getElementText(target);
+    var attributes = getElementAttributes(target);
+
+    // 更新悬停高亮框位置
+    highlightBox.style.display = "block";
+    highlightBox.style.left = "".concat(rect.left - 2, "px");
+    highlightBox.style.top = "".concat(rect.top - 2, "px");
+    highlightBox.style.width = "".concat(rect.width + 4, "px");
+    highlightBox.style.height = "".concat(rect.height + 4, "px");
+
+    // 更新标签位置和内容
+    tagLabel.style.display = "block";
+    tagLabel.textContent = "<".concat(target.tagName.toLowerCase(), ">");
+
+    // 计算标签位置，确保不超出视窗
+    var labelTop = rect.top - 22;
+    var labelLeft = rect.left;
+
+    // 如果标签会超出顶部，显示在元素下方
+    if (labelTop < 0) {
+      labelTop = rect.bottom + 5;
+    }
+
+    // 如果标签会超出右侧，向左调整
+    if (labelLeft + tagLabel.offsetWidth > window.innerWidth) {
+      labelLeft = window.innerWidth - tagLabel.offsetWidth - 5;
+    }
+    tagLabel.style.left = "".concat(Math.max(0, labelLeft), "px");
+    tagLabel.style.top = "".concat(labelTop, "px");
+
+    // 发送消息到父窗口
+    var elementInfo = {
+      tagName: target.tagName.toLowerCase(),
+      rect: {
+        left: rect.left,
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom,
+        width: rect.width,
+        height: rect.height,
+        x: rect.x,
+        y: rect.y
+      },
+      selector: selector,
+      text: text,
+      attributes: attributes,
+      url: window.location.href,
+      path: window.location.pathname,
+      timestamp: Date.now()
+    };
+    try {
+      window.parent.postMessage({
+        type: "iframe-element-hover",
+        data: elementInfo,
+        source: "iframe-highlight-injector"
+      }, "*");
+    } catch (error) {
+      console.warn("无法发送消息到父窗口:", error);
+    }
+  }
+
+  // 鼠标离开事件处理
+  function handleMouseOut(e) {
+    if (!highlightEnabled) return;
+    var relatedTarget = e.relatedTarget;
+
+    // 如果鼠标移动到高亮相关元素上，不隐藏高亮
+    if (relatedTarget && (relatedTarget === highlightBox || relatedTarget === tagLabel || relatedTarget === overlay || relatedTarget === selectedBox || relatedTarget === selectedLabel)) {
+      return;
+    }
+    highlightBox.style.display = "none";
+    tagLabel.style.display = "none";
+    try {
+      window.parent.postMessage({
+        type: "iframe-element-hover",
+        data: null,
+        source: "iframe-highlight-injector"
+      }, "*");
+    } catch (error) {
+      console.warn("无法发送消息到父窗口:", error);
+    }
+  }
+
+  // 点击事件处理
+  function handleClick(e) {
+    var target = e.target;
+    if (!target || target === overlay || target === highlightBox || target === tagLabel || target === selectedBox || target === selectedLabel) {
+      return;
+    }
+
+    // 避免处理 html 和 body 元素
+    if (target === document.documentElement || target === document.body) {
+      return;
+    }
+
+    // 检查是否是交互元素，这些元素需要保留默认行为
+    var isInteractiveElement = ['input', 'textarea', 'select', 'button', 'a'].includes(target.tagName.toLowerCase());
+
+    // 如果高亮功能启用，对于非交互元素阻止默认行为和事件传播
+    if (highlightEnabled) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    var rect = target.getBoundingClientRect();
+    var selector = getElementSelector(target);
+    var text = getElementText(target);
+    var attributes = getElementAttributes(target);
+    console.log("Element clicked:", {
+      tagName: target.tagName,
+      selector: selector,
+      rect: rect
+    });
+
+    // 立即更新选中高亮
+    updateSelectedHighlight(target);
+
+    // 隐藏悬停高亮，因为现在是选中状态
+    highlightBox.style.display = "none";
+    tagLabel.style.display = "none";
+    var elementInfo = {
+      tagName: target.tagName.toLowerCase(),
+      rect: {
+        left: rect.left,
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom,
+        width: rect.width,
+        height: rect.height,
+        x: rect.x,
+        y: rect.y
+      },
+      selector: selector,
+      text: text,
+      attributes: attributes,
+      url: window.location.href,
+      path: window.location.pathname,
+      timestamp: Date.now()
+    };
+    try {
+      window.parent.postMessage({
+        type: "iframe-element-click",
+        data: elementInfo,
+        source: "iframe-highlight-injector"
+      }, "*");
+    } catch (error) {
+      console.warn("无法发送消息到父窗口:", error);
+    }
+  }
+
+  // 监听来自父窗口的消息
+  function handleParentMessage(event) {
+    console.log("Received message from parent:", event.data);
+    if (event.data.type === "iframe-highlight-toggle") {
+      var enabled = event.data.enabled;
+      console.log("Highlight toggle:", enabled);
+      if (enabled) {
+        enableHighlight();
+      } else {
+        disableHighlight();
+      }
+    } else if (event.data.type === "enable-iframe-highlight") {
+      console.log("Enable iframe highlight");
+      enableHighlight();
+    } else if (event.data.type === "disable-iframe-highlight") {
+      console.log("Disable iframe highlight");
+      disableHighlight();
+    } else if (event.data.type === "toggle-iframe-highlight") {
+      var _enabled = event.data.enabled !== undefined ? event.data.enabled : !highlightEnabled;
+      console.log("Toggle iframe highlight to:", _enabled);
+      if (_enabled) {
+        enableHighlight();
+      } else {
+        disableHighlight();
+      }
+    } else if (event.data.type === "update-selected-element") {
+      var selector = event.data.selector;
+      console.log("Update selected element with selector:", selector);
+      if (selector) {
+        try {
+          var element = document.querySelector(selector);
+          console.log("Found element by selector:", element);
+          updateSelectedHighlight(element);
+        } catch (error) {
+          console.warn("Failed to select element:", error);
+          updateSelectedHighlight(null);
+        }
+      } else {
+        updateSelectedHighlight(null);
+      }
+    } else if (event.data.type === "clear-selected-element") {
+      console.log("Clear selected element");
+      updateSelectedHighlight(null);
+    }
+  }
+
+  // 启用高亮功能
+  function enableHighlight() {
+    console.log("Enabling highlight");
+    document.addEventListener("mouseover", handleMouseOver, true);
+    document.addEventListener("mouseout", handleMouseOut, true);
+    document.addEventListener("click", handleClick, true);
+    highlightEnabled = true;
+    overlay.style.display = "block";
+  }
+
+  // 禁用高亮功能
+  function disableHighlight() {
+    console.log("Disabling highlight");
+    highlightEnabled = false;
+    // 保持事件监听器，但通过 highlightEnabled 变量控制行为
+    // 这样可以保留选中状态的显示
+    highlightBox.style.display = "none";
+    tagLabel.style.display = "none";
+    // 不隐藏 selectedBox 和 selectedLabel，保留选中状态
+  }
+
+  // 完全禁用高亮功能（移除所有监听器）
+  function fullyDisableHighlight() {
+    console.log("Fully disabling highlight");
+    highlightEnabled = false;
+    document.removeEventListener("mouseover", handleMouseOver, true);
+    document.removeEventListener("mouseout", handleMouseOut, true);
+    document.removeEventListener("click", handleClick, true);
+    overlay.style.display = "none";
+    highlightBox.style.display = "none";
+    tagLabel.style.display = "none";
+    selectedBox.style.display = "none";
+    selectedLabel.style.display = "none";
+  }
+
+  // 添加事件监听
+  enableHighlight();
+  window.addEventListener("message", handleParentMessage);
+
+  // 暴露全局函数供外部调用
+  window.__iframeHighlightControl = {
+    enable: enableHighlight,
+    disable: disableHighlight,
+    fullyDisable: fullyDisableHighlight,
+    isEnabled: function isEnabled() {
+      return highlightEnabled;
+    },
+    getSelectedElement: function getSelectedElement() {
+      return selectedElement;
+    },
+    updateSelected: updateSelectedHighlight,
+    // 通过消息发送开关控制
+    sendToggleMessage: function sendToggleMessage(enabled) {
+      window.parent.postMessage({
+        type: 'iframe-highlight-status',
+        enabled: enabled || highlightEnabled,
+        source: 'iframe-highlight-injector'
+      }, '*');
+    }
+  };
+
+  // 通知父窗口脚本已加载
+  try {
+    window.parent.postMessage({
+      type: "iframe-highlight-ready",
+      data: {
+        url: window.location.href,
+        userAgent: navigator.userAgent,
+        timestamp: Date.now()
+      },
+      source: "iframe-highlight-injector"
+    }, "*");
+  } catch (error) {
+    console.warn("无法发送就绪消息到父窗口:", error);
+  }
+
+  // 清理函数
+  window.__iframeHighlightCleanup = function () {
+    fullyDisableHighlight();
+    window.removeEventListener("message", handleParentMessage);
+    if (overlay.parentElement) {
+      overlay.parentElement.removeChild(overlay);
+    }
+    delete window.__iframeHighlightInitialized;
+    delete window.__iframeHighlightCleanup;
+  };
+})();
+
+</script>
+
+<script>
+/**
+ * Iframe 元素高亮注入脚本
+ * 需要在目标网站中引入此脚本来支持跨域 iframe 高亮功能
+ *
+ * 使用方法：
+ * 1. 将此脚本添加到目标网站的 HTML 中
+ * 2. 或通过浏览器扩展、用户脚本等方式注入
+ */
+
+(function () {
+  "use strict";
+
+  // 检查是否在 iframe 中
+  if (window.self === window.top) {
+    return; // 不在 iframe 中，不执行
+  }
+
+  // 检查是否已经初始化过
+  if (window.__iframeHighlightInitialized) {
+    return;
+  }
+  window.__iframeHighlightInitialized = true;
+  console.log("Iframe 高亮脚本已加载");
+
+  // 创建高亮覆盖层
+  var overlay = document.createElement("div");
+  overlay.id = "iframe-highlight-overlay";
+  overlay.style.cssText = "\n    position: fixed;\n    top: 0;\n    left: 0;\n    width: 100vw;\n    height: 100vh;\n    pointer-events: none;\n    z-index: 999999;\n    overflow: hidden;\n  ";
+
+  // 创建悬停高亮框（虚线边框）
+  var highlightBox = document.createElement("div");
+  highlightBox.id = "iframe-highlight-box";
+  highlightBox.style.cssText = "\n    position: absolute;\n    border: 2px dashed #007AFF;\n    background: rgba(0, 122, 255, 0.08);\n    pointer-events: none;\n    display: none;\n    transition: all 0.1s ease;\n    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.8);\n    border-radius: 2px;\n  ";
+
+  // 创建选中节点的常驻高亮框（实线边框）
+  var selectedBox = document.createElement("div");
+  selectedBox.id = "iframe-selected-box";
+  selectedBox.style.cssText = "\n    position: absolute;\n    border: 2px solid #007AFF;\n    pointer-events: none;\n    display: none;\n    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.9), 0 0 8px rgba(255, 107, 53, 0.4);\n    border-radius: 2px;\n    z-index: 1000000;\n  ";
+
+  // 创建悬停标签显示
+  var tagLabel = document.createElement("div");
+  tagLabel.id = "iframe-tag-label";
+  tagLabel.style.cssText = "\n    position: absolute;\n    background: #007AFF;\n    color: white;\n    padding: 2px 6px;\n    font-size: 11px;\n    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;\n    border-radius: 2px;\n    pointer-events: none;\n    display: none;\n    white-space: nowrap;\n    z-index: 1000001;\n    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);\n    font-weight: 500;\n  ";
+
+  // 创建选中节点标签
+  var selectedLabel = document.createElement("div");
+  selectedLabel.id = "iframe-selected-label";
+  selectedLabel.style.cssText = "\n    position: absolute;\n    background: #007AFF;\n    color: white;\n    padding: 3px 8px;\n    font-size: 11px;\n    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;\n    border-radius: 3px;\n    pointer-events: none;\n    display: none;\n    white-space: nowrap;\n    z-index: 1000002;\n    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);\n    font-weight: 600;\n  ";
+  overlay.appendChild(highlightBox);
+  overlay.appendChild(selectedBox);
+  overlay.appendChild(tagLabel);
+  overlay.appendChild(selectedLabel);
+  document.body.appendChild(overlay);
+
+  // 存储当前选中的元素
+  var selectedElement = null;
+  var highlightEnabled = false;
+
+  // 更新选中元素的高亮显示
+  function updateSelectedHighlight(element) {
+    console.log("updateSelectedHighlight called with:", element);
+    if (!element) {
+      selectedBox.style.display = "none";
+      selectedLabel.style.display = "none";
+      selectedElement = null;
+      console.log("Cleared selected highlight");
+      return;
+    }
+    selectedElement = element;
+    var rect = element.getBoundingClientRect();
+    console.log("Selected element rect:", rect);
+
+    // 更新选中高亮框位置
+    selectedBox.style.display = "block";
+    selectedBox.style.left = "".concat(rect.left - 2, "px");
+    selectedBox.style.top = "".concat(rect.top - 2, "px");
+    selectedBox.style.width = "".concat(rect.width + 4, "px");
+    selectedBox.style.height = "".concat(rect.height + 4, "px");
+
+    // 更新选中标签位置和内容
+    selectedLabel.style.display = "block";
+    selectedLabel.textContent = "\u2713 <".concat(element.tagName.toLowerCase(), ">");
+
+    // 计算标签位置，确保不超出视窗
+    var labelTop = rect.top - 28;
+    var labelLeft = rect.left;
+
+    // 如果标签会超出顶部，显示在元素下方
+    if (labelTop < 5) {
+      labelTop = rect.bottom + 5;
+    }
+
+    // 如果标签会超出右侧，向左调整
+    var labelWidth = selectedLabel.offsetWidth || 100; // 预估宽度
+    if (labelLeft + labelWidth > window.innerWidth - 10) {
+      labelLeft = window.innerWidth - labelWidth - 10;
+    }
+    selectedLabel.style.left = "".concat(Math.max(5, labelLeft), "px");
+    selectedLabel.style.top = "".concat(labelTop, "px");
+    console.log("Selected highlight positioned at:", {
+      left: selectedBox.style.left,
+      top: selectedBox.style.top,
+      width: selectedBox.style.width,
+      height: selectedBox.style.height
+    });
+  }
+  function getElementSelector(element) {
+    if (!(element instanceof Element)) throw new Error('Argument must be a DOM element');
+    var segments = [];
+    var current = element;
+    while (current !== document.documentElement) {
+      var selector = '';
+      // 优先检查唯一ID
+      if (current.id && document.querySelectorAll("#".concat(current.id)).length === 1) {
+        segments.unshift("#".concat(current.id));
+        break; // ID唯一，无需继续向上
+      }
+
+      // 生成类名选择器（取第一个有效类名）
+      var classes = Array.from(current.classList).filter(function (c) {
+        return !c.startsWith('js-');
+      });
+      var className = classes.length > 0 ? ".".concat(classes[0]) : '';
+
+      // 生成位置索引（nth-child）
+      var tag = current.tagName.toLowerCase();
+      if (!className) {
+        var siblings = Array.from(current.parentNode.children);
+        var index = siblings.findIndex(function (el) {
+          return el === current;
+        }) + 1;
+        selector = "".concat(tag, ":nth-child(").concat(index, ")");
+      } else {
+        selector = className;
+      }
+      segments.unshift(selector);
+      current = current.parentElement;
+    }
+
+    // 处理根元素
+    if (current === document.documentElement) {
+      segments.unshift('html');
+    }
+    return segments.join(' > ');
+  }
+
+  // 获取元素文本内容
+  function getElementText(element) {
+    var _element$textContent;
+    if (element.tagName === "INPUT") {
+      return element.value || element.placeholder || "";
+    }
+    if (element.tagName === "TEXTAREA") {
+      return element.value || element.placeholder || "";
+    }
+    var text = ((_element$textContent = element.textContent) === null || _element$textContent === void 0 ? void 0 : _element$textContent.trim()) || "";
+    return text.length > 50 ? text.substring(0, 50) + "..." : text;
+  }
+
+  // 获取元素属性信息
+  function getElementAttributes(element) {
+    var attrs = {};
+    for (var i = 0; i < element.attributes.length; i++) {
+      var attr = element.attributes[i];
+      attrs[attr.name] = attr.value;
+    }
+    return attrs;
+  }
+
+  // 鼠标悬停事件处理
+  function handleMouseOver(e) {
+    if (!highlightEnabled) return;
+    var target = e.target;
+    if (!target || target === overlay || target === highlightBox || target === tagLabel || target === selectedBox || target === selectedLabel) {
+      return;
+    }
+
+    // 避免高亮 html 和 body 元素
+    if (target === document.documentElement || target === document.body) {
+      return;
+    }
+
+    // 如果是已选中的元素，不显示悬停高亮
+    if (target === selectedElement) {
+      highlightBox.style.display = "none";
+      tagLabel.style.display = "none";
+      return;
+    }
+    var rect = target.getBoundingClientRect();
+    var selector = getElementSelector(target);
+    var text = getElementText(target);
+    var attributes = getElementAttributes(target);
+
+    // 更新悬停高亮框位置
+    highlightBox.style.display = "block";
+    highlightBox.style.left = "".concat(rect.left - 2, "px");
+    highlightBox.style.top = "".concat(rect.top - 2, "px");
+    highlightBox.style.width = "".concat(rect.width + 4, "px");
+    highlightBox.style.height = "".concat(rect.height + 4, "px");
+
+    // 更新标签位置和内容
+    tagLabel.style.display = "block";
+    tagLabel.textContent = "<".concat(target.tagName.toLowerCase(), ">");
+
+    // 计算标签位置，确保不超出视窗
+    var labelTop = rect.top - 22;
+    var labelLeft = rect.left;
+
+    // 如果标签会超出顶部，显示在元素下方
+    if (labelTop < 0) {
+      labelTop = rect.bottom + 5;
+    }
+
+    // 如果标签会超出右侧，向左调整
+    if (labelLeft + tagLabel.offsetWidth > window.innerWidth) {
+      labelLeft = window.innerWidth - tagLabel.offsetWidth - 5;
+    }
+    tagLabel.style.left = "".concat(Math.max(0, labelLeft), "px");
+    tagLabel.style.top = "".concat(labelTop, "px");
+
+    // 发送消息到父窗口
+    var elementInfo = {
+      tagName: target.tagName.toLowerCase(),
+      rect: {
+        left: rect.left,
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom,
+        width: rect.width,
+        height: rect.height,
+        x: rect.x,
+        y: rect.y
+      },
+      selector: selector,
+      text: text,
+      attributes: attributes,
+      url: window.location.href,
+      path: window.location.pathname,
+      timestamp: Date.now()
+    };
+    try {
+      window.parent.postMessage({
+        type: "iframe-element-hover",
+        data: elementInfo,
+        source: "iframe-highlight-injector"
+      }, "*");
+    } catch (error) {
+      console.warn("无法发送消息到父窗口:", error);
+    }
+  }
+
+  // 鼠标离开事件处理
+  function handleMouseOut(e) {
+    if (!highlightEnabled) return;
+    var relatedTarget = e.relatedTarget;
+
+    // 如果鼠标移动到高亮相关元素上，不隐藏高亮
+    if (relatedTarget && (relatedTarget === highlightBox || relatedTarget === tagLabel || relatedTarget === overlay || relatedTarget === selectedBox || relatedTarget === selectedLabel)) {
+      return;
+    }
+    highlightBox.style.display = "none";
+    tagLabel.style.display = "none";
+    try {
+      window.parent.postMessage({
+        type: "iframe-element-hover",
+        data: null,
+        source: "iframe-highlight-injector"
+      }, "*");
+    } catch (error) {
+      console.warn("无法发送消息到父窗口:", error);
+    }
+  }
+
+  // 点击事件处理
+  function handleClick(e) {
+    var target = e.target;
+    if (!target || target === overlay || target === highlightBox || target === tagLabel || target === selectedBox || target === selectedLabel) {
+      return;
+    }
+
+    // 避免处理 html 和 body 元素
+    if (target === document.documentElement || target === document.body) {
+      return;
+    }
+
+    // 检查是否是交互元素，这些元素需要保留默认行为
+    var isInteractiveElement = ['input', 'textarea', 'select', 'button', 'a'].includes(target.tagName.toLowerCase());
+
+    // 如果高亮功能启用，对于非交互元素阻止默认行为和事件传播
+    if (highlightEnabled) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    var rect = target.getBoundingClientRect();
+    var selector = getElementSelector(target);
+    var text = getElementText(target);
+    var attributes = getElementAttributes(target);
+    console.log("Element clicked:", {
+      tagName: target.tagName,
+      selector: selector,
+      rect: rect
+    });
+
+    // 立即更新选中高亮
+    updateSelectedHighlight(target);
+
+    // 隐藏悬停高亮，因为现在是选中状态
+    highlightBox.style.display = "none";
+    tagLabel.style.display = "none";
+    var elementInfo = {
+      tagName: target.tagName.toLowerCase(),
+      rect: {
+        left: rect.left,
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom,
+        width: rect.width,
+        height: rect.height,
+        x: rect.x,
+        y: rect.y
+      },
+      selector: selector,
+      text: text,
+      attributes: attributes,
+      url: window.location.href,
+      path: window.location.pathname,
+      timestamp: Date.now()
+    };
+    try {
+      window.parent.postMessage({
+        type: "iframe-element-click",
+        data: elementInfo,
+        source: "iframe-highlight-injector"
+      }, "*");
+    } catch (error) {
+      console.warn("无法发送消息到父窗口:", error);
+    }
+  }
+
+  // 监听来自父窗口的消息
+  function handleParentMessage(event) {
+    console.log("Received message from parent:", event.data);
+    if (event.data.type === "iframe-highlight-toggle") {
+      var enabled = event.data.enabled;
+      console.log("Highlight toggle:", enabled);
+      if (enabled) {
+        enableHighlight();
+      } else {
+        disableHighlight();
+      }
+    } else if (event.data.type === "enable-iframe-highlight") {
+      console.log("Enable iframe highlight");
+      enableHighlight();
+    } else if (event.data.type === "disable-iframe-highlight") {
+      console.log("Disable iframe highlight");
+      disableHighlight();
+    } else if (event.data.type === "toggle-iframe-highlight") {
+      var _enabled = event.data.enabled !== undefined ? event.data.enabled : !highlightEnabled;
+      console.log("Toggle iframe highlight to:", _enabled);
+      if (_enabled) {
+        enableHighlight();
+      } else {
+        disableHighlight();
+      }
+    } else if (event.data.type === "update-selected-element") {
+      var selector = event.data.selector;
+      console.log("Update selected element with selector:", selector);
+      if (selector) {
+        try {
+          var element = document.querySelector(selector);
+          console.log("Found element by selector:", element);
+          updateSelectedHighlight(element);
+        } catch (error) {
+          console.warn("Failed to select element:", error);
+          updateSelectedHighlight(null);
+        }
+      } else {
+        updateSelectedHighlight(null);
+      }
+    } else if (event.data.type === "clear-selected-element") {
+      console.log("Clear selected element");
+      updateSelectedHighlight(null);
+    }
+  }
+
+  // 启用高亮功能
+  function enableHighlight() {
+    console.log("Enabling highlight");
+    document.addEventListener("mouseover", handleMouseOver, true);
+    document.addEventListener("mouseout", handleMouseOut, true);
+    document.addEventListener("click", handleClick, true);
+    highlightEnabled = true;
+    overlay.style.display = "block";
+  }
+
+  // 禁用高亮功能
+  function disableHighlight() {
+    console.log("Disabling highlight");
+    highlightEnabled = false;
+    // 保持事件监听器，但通过 highlightEnabled 变量控制行为
+    // 这样可以保留选中状态的显示
+    highlightBox.style.display = "none";
+    tagLabel.style.display = "none";
+    // 不隐藏 selectedBox 和 selectedLabel，保留选中状态
+  }
+
+  // 完全禁用高亮功能（移除所有监听器）
+  function fullyDisableHighlight() {
+    console.log("Fully disabling highlight");
+    highlightEnabled = false;
+    document.removeEventListener("mouseover", handleMouseOver, true);
+    document.removeEventListener("mouseout", handleMouseOut, true);
+    document.removeEventListener("click", handleClick, true);
+    overlay.style.display = "none";
+    highlightBox.style.display = "none";
+    tagLabel.style.display = "none";
+    selectedBox.style.display = "none";
+    selectedLabel.style.display = "none";
+  }
+
+  // 添加事件监听
+  enableHighlight();
+  window.addEventListener("message", handleParentMessage);
+
+  // 暴露全局函数供外部调用
+  window.__iframeHighlightControl = {
+    enable: enableHighlight,
+    disable: disableHighlight,
+    fullyDisable: fullyDisableHighlight,
+    isEnabled: function isEnabled() {
+      return highlightEnabled;
+    },
+    getSelectedElement: function getSelectedElement() {
+      return selectedElement;
+    },
+    updateSelected: updateSelectedHighlight,
+    // 通过消息发送开关控制
+    sendToggleMessage: function sendToggleMessage(enabled) {
+      window.parent.postMessage({
+        type: 'iframe-highlight-status',
+        enabled: enabled || highlightEnabled,
+        source: 'iframe-highlight-injector'
+      }, '*');
+    }
+  };
+
+  // 通知父窗口脚本已加载
+  try {
+    window.parent.postMessage({
+      type: "iframe-highlight-ready",
+      data: {
+        url: window.location.href,
+        userAgent: navigator.userAgent,
+        timestamp: Date.now()
+      },
+      source: "iframe-highlight-injector"
+    }, "*");
+  } catch (error) {
+    console.warn("无法发送就绪消息到父窗口:", error);
+  }
+
+  // 清理函数
+  window.__iframeHighlightCleanup = function () {
+    fullyDisableHighlight();
+    window.removeEventListener("message", handleParentMessage);
+    if (overlay.parentElement) {
+      overlay.parentElement.removeChild(overlay);
+    }
+    delete window.__iframeHighlightInitialized;
+    delete window.__iframeHighlightCleanup;
+  };
+})();
+
+</script>
+
+<script>
+/**
+ * Iframe 元素高亮注入脚本
+ * 需要在目标网站中引入此脚本来支持跨域 iframe 高亮功能
+ *
+ * 使用方法：
+ * 1. 将此脚本添加到目标网站的 HTML 中
+ * 2. 或通过浏览器扩展、用户脚本等方式注入
+ */
+
+(function () {
+  "use strict";
+
+  // 检查是否在 iframe 中
+  if (window.self === window.top) {
+    return; // 不在 iframe 中，不执行
+  }
+
+  // 检查是否已经初始化过
+  if (window.__iframeHighlightInitialized) {
+    return;
+  }
+  window.__iframeHighlightInitialized = true;
+  console.log("Iframe 高亮脚本已加载");
+
+  // 创建高亮覆盖层
+  var overlay = document.createElement("div");
+  overlay.id = "iframe-highlight-overlay";
+  overlay.style.cssText = "\n    position: fixed;\n    top: 0;\n    left: 0;\n    width: 100vw;\n    height: 100vh;\n    pointer-events: none;\n    z-index: 999999;\n    overflow: hidden;\n  ";
+
+  // 创建悬停高亮框（虚线边框）
+  var highlightBox = document.createElement("div");
+  highlightBox.id = "iframe-highlight-box";
+  highlightBox.style.cssText = "\n    position: absolute;\n    border: 2px dashed #007AFF;\n    background: rgba(0, 122, 255, 0.08);\n    pointer-events: none;\n    display: none;\n    transition: all 0.1s ease;\n    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.8);\n    border-radius: 2px;\n  ";
+
+  // 创建选中节点的常驻高亮框（实线边框）
+  var selectedBox = document.createElement("div");
+  selectedBox.id = "iframe-selected-box";
+  selectedBox.style.cssText = "\n    position: absolute;\n    border: 2px solid #007AFF;\n    pointer-events: none;\n    display: none;\n    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.9), 0 0 8px rgba(255, 107, 53, 0.4);\n    border-radius: 2px;\n    z-index: 1000000;\n  ";
+
+  // 创建悬停标签显示
+  var tagLabel = document.createElement("div");
+  tagLabel.id = "iframe-tag-label";
+  tagLabel.style.cssText = "\n    position: absolute;\n    background: #007AFF;\n    color: white;\n    padding: 2px 6px;\n    font-size: 11px;\n    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;\n    border-radius: 2px;\n    pointer-events: none;\n    display: none;\n    white-space: nowrap;\n    z-index: 1000001;\n    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);\n    font-weight: 500;\n  ";
+
+  // 创建选中节点标签
+  var selectedLabel = document.createElement("div");
+  selectedLabel.id = "iframe-selected-label";
+  selectedLabel.style.cssText = "\n    position: absolute;\n    background: #007AFF;\n    color: white;\n    padding: 3px 8px;\n    font-size: 11px;\n    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;\n    border-radius: 3px;\n    pointer-events: none;\n    display: none;\n    white-space: nowrap;\n    z-index: 1000002;\n    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);\n    font-weight: 600;\n  ";
+  overlay.appendChild(highlightBox);
+  overlay.appendChild(selectedBox);
+  overlay.appendChild(tagLabel);
+  overlay.appendChild(selectedLabel);
+  document.body.appendChild(overlay);
+
+  // 存储当前选中的元素
+  var selectedElement = null;
+  var highlightEnabled = false;
+
+  // 更新选中元素的高亮显示
+  function updateSelectedHighlight(element) {
+    console.log("updateSelectedHighlight called with:", element);
+    if (!element) {
+      selectedBox.style.display = "none";
+      selectedLabel.style.display = "none";
+      selectedElement = null;
+      console.log("Cleared selected highlight");
+      return;
+    }
+    selectedElement = element;
+    var rect = element.getBoundingClientRect();
+    console.log("Selected element rect:", rect);
+
+    // 更新选中高亮框位置
+    selectedBox.style.display = "block";
+    selectedBox.style.left = "".concat(rect.left - 2, "px");
+    selectedBox.style.top = "".concat(rect.top - 2, "px");
+    selectedBox.style.width = "".concat(rect.width + 4, "px");
+    selectedBox.style.height = "".concat(rect.height + 4, "px");
+
+    // 更新选中标签位置和内容
+    selectedLabel.style.display = "block";
+    selectedLabel.textContent = "\u2713 <".concat(element.tagName.toLowerCase(), ">");
+
+    // 计算标签位置，确保不超出视窗
+    var labelTop = rect.top - 28;
+    var labelLeft = rect.left;
+
+    // 如果标签会超出顶部，显示在元素下方
+    if (labelTop < 5) {
+      labelTop = rect.bottom + 5;
+    }
+
+    // 如果标签会超出右侧，向左调整
+    var labelWidth = selectedLabel.offsetWidth || 100; // 预估宽度
+    if (labelLeft + labelWidth > window.innerWidth - 10) {
+      labelLeft = window.innerWidth - labelWidth - 10;
+    }
+    selectedLabel.style.left = "".concat(Math.max(5, labelLeft), "px");
+    selectedLabel.style.top = "".concat(labelTop, "px");
+    console.log("Selected highlight positioned at:", {
+      left: selectedBox.style.left,
+      top: selectedBox.style.top,
+      width: selectedBox.style.width,
+      height: selectedBox.style.height
+    });
+  }
+  function getElementSelector(element) {
+    if (!(element instanceof Element)) throw new Error('Argument must be a DOM element');
+    var segments = [];
+    var current = element;
+    while (current !== document.documentElement) {
+      var selector = '';
+      // 优先检查唯一ID
+      if (current.id && document.querySelectorAll("#".concat(current.id)).length === 1) {
+        segments.unshift("#".concat(current.id));
+        break; // ID唯一，无需继续向上
+      }
+
+      // 生成类名选择器（取第一个有效类名）
+      var classes = Array.from(current.classList).filter(function (c) {
+        return !c.startsWith('js-');
+      });
+      var className = classes.length > 0 ? ".".concat(classes[0]) : '';
+
+      // 生成位置索引（nth-child）
+      var tag = current.tagName.toLowerCase();
+      if (!className) {
+        var siblings = Array.from(current.parentNode.children);
+        var index = siblings.findIndex(function (el) {
+          return el === current;
+        }) + 1;
+        selector = "".concat(tag, ":nth-child(").concat(index, ")");
+      } else {
+        selector = className;
+      }
+      segments.unshift(selector);
+      current = current.parentElement;
+    }
+
+    // 处理根元素
+    if (current === document.documentElement) {
+      segments.unshift('html');
+    }
+    return segments.join(' > ');
+  }
+
+  // 获取元素文本内容
+  function getElementText(element) {
+    var _element$textContent;
+    if (element.tagName === "INPUT") {
+      return element.value || element.placeholder || "";
+    }
+    if (element.tagName === "TEXTAREA") {
+      return element.value || element.placeholder || "";
+    }
+    var text = ((_element$textContent = element.textContent) === null || _element$textContent === void 0 ? void 0 : _element$textContent.trim()) || "";
+    return text.length > 50 ? text.substring(0, 50) + "..." : text;
+  }
+
+  // 获取元素属性信息
+  function getElementAttributes(element) {
+    var attrs = {};
+    for (var i = 0; i < element.attributes.length; i++) {
+      var attr = element.attributes[i];
+      attrs[attr.name] = attr.value;
+    }
+    return attrs;
+  }
+
+  // 鼠标悬停事件处理
+  function handleMouseOver(e) {
+    if (!highlightEnabled) return;
+    var target = e.target;
+    if (!target || target === overlay || target === highlightBox || target === tagLabel || target === selectedBox || target === selectedLabel) {
+      return;
+    }
+
+    // 避免高亮 html 和 body 元素
+    if (target === document.documentElement || target === document.body) {
+      return;
+    }
+
+    // 如果是已选中的元素，不显示悬停高亮
+    if (target === selectedElement) {
+      highlightBox.style.display = "none";
+      tagLabel.style.display = "none";
+      return;
+    }
+    var rect = target.getBoundingClientRect();
+    var selector = getElementSelector(target);
+    var text = getElementText(target);
+    var attributes = getElementAttributes(target);
+
+    // 更新悬停高亮框位置
+    highlightBox.style.display = "block";
+    highlightBox.style.left = "".concat(rect.left - 2, "px");
+    highlightBox.style.top = "".concat(rect.top - 2, "px");
+    highlightBox.style.width = "".concat(rect.width + 4, "px");
+    highlightBox.style.height = "".concat(rect.height + 4, "px");
+
+    // 更新标签位置和内容
+    tagLabel.style.display = "block";
+    tagLabel.textContent = "<".concat(target.tagName.toLowerCase(), ">");
+
+    // 计算标签位置，确保不超出视窗
+    var labelTop = rect.top - 22;
+    var labelLeft = rect.left;
+
+    // 如果标签会超出顶部，显示在元素下方
+    if (labelTop < 0) {
+      labelTop = rect.bottom + 5;
+    }
+
+    // 如果标签会超出右侧，向左调整
+    if (labelLeft + tagLabel.offsetWidth > window.innerWidth) {
+      labelLeft = window.innerWidth - tagLabel.offsetWidth - 5;
+    }
+    tagLabel.style.left = "".concat(Math.max(0, labelLeft), "px");
+    tagLabel.style.top = "".concat(labelTop, "px");
+
+    // 发送消息到父窗口
+    var elementInfo = {
+      tagName: target.tagName.toLowerCase(),
+      rect: {
+        left: rect.left,
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom,
+        width: rect.width,
+        height: rect.height,
+        x: rect.x,
+        y: rect.y
+      },
+      selector: selector,
+      text: text,
+      attributes: attributes,
+      url: window.location.href,
+      path: window.location.pathname,
+      timestamp: Date.now()
+    };
+    try {
+      window.parent.postMessage({
+        type: "iframe-element-hover",
+        data: elementInfo,
+        source: "iframe-highlight-injector"
+      }, "*");
+    } catch (error) {
+      console.warn("无法发送消息到父窗口:", error);
+    }
+  }
+
+  // 鼠标离开事件处理
+  function handleMouseOut(e) {
+    if (!highlightEnabled) return;
+    var relatedTarget = e.relatedTarget;
+
+    // 如果鼠标移动到高亮相关元素上，不隐藏高亮
+    if (relatedTarget && (relatedTarget === highlightBox || relatedTarget === tagLabel || relatedTarget === overlay || relatedTarget === selectedBox || relatedTarget === selectedLabel)) {
+      return;
+    }
+    highlightBox.style.display = "none";
+    tagLabel.style.display = "none";
+    try {
+      window.parent.postMessage({
+        type: "iframe-element-hover",
+        data: null,
+        source: "iframe-highlight-injector"
+      }, "*");
+    } catch (error) {
+      console.warn("无法发送消息到父窗口:", error);
+    }
+  }
+
+  // 点击事件处理
+  function handleClick(e) {
+    var target = e.target;
+    if (!target || target === overlay || target === highlightBox || target === tagLabel || target === selectedBox || target === selectedLabel) {
+      return;
+    }
+
+    // 避免处理 html 和 body 元素
+    if (target === document.documentElement || target === document.body) {
+      return;
+    }
+
+    // 检查是否是交互元素，这些元素需要保留默认行为
+    var isInteractiveElement = ['input', 'textarea', 'select', 'button', 'a'].includes(target.tagName.toLowerCase());
+
+    // 如果高亮功能启用，对于非交互元素阻止默认行为和事件传播
+    if (highlightEnabled) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    var rect = target.getBoundingClientRect();
+    var selector = getElementSelector(target);
+    var text = getElementText(target);
+    var attributes = getElementAttributes(target);
+    console.log("Element clicked:", {
+      tagName: target.tagName,
+      selector: selector,
+      rect: rect
+    });
+
+    // 立即更新选中高亮
+    updateSelectedHighlight(target);
+
+    // 隐藏悬停高亮，因为现在是选中状态
+    highlightBox.style.display = "none";
+    tagLabel.style.display = "none";
+    var elementInfo = {
+      tagName: target.tagName.toLowerCase(),
+      rect: {
+        left: rect.left,
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom,
+        width: rect.width,
+        height: rect.height,
+        x: rect.x,
+        y: rect.y
+      },
+      selector: selector,
+      text: text,
+      attributes: attributes,
+      url: window.location.href,
+      path: window.location.pathname,
+      timestamp: Date.now()
+    };
+    try {
+      window.parent.postMessage({
+        type: "iframe-element-click",
+        data: elementInfo,
+        source: "iframe-highlight-injector"
+      }, "*");
+    } catch (error) {
+      console.warn("无法发送消息到父窗口:", error);
+    }
+  }
+
+  // 监听来自父窗口的消息
+  function handleParentMessage(event) {
+    console.log("Received message from parent:", event.data);
+    if (event.data.type === "iframe-highlight-toggle") {
+      var enabled = event.data.enabled;
+      console.log("Highlight toggle:", enabled);
+      if (enabled) {
+        enableHighlight();
+      } else {
+        disableHighlight();
+      }
+    } else if (event.data.type === "enable-iframe-highlight") {
+      console.log("Enable iframe highlight");
+      enableHighlight();
+    } else if (event.data.type === "disable-iframe-highlight") {
+      console.log("Disable iframe highlight");
+      disableHighlight();
+    } else if (event.data.type === "toggle-iframe-highlight") {
+      var _enabled = event.data.enabled !== undefined ? event.data.enabled : !highlightEnabled;
+      console.log("Toggle iframe highlight to:", _enabled);
+      if (_enabled) {
+        enableHighlight();
+      } else {
+        disableHighlight();
+      }
+    } else if (event.data.type === "update-selected-element") {
+      var selector = event.data.selector;
+      console.log("Update selected element with selector:", selector);
+      if (selector) {
+        try {
+          var element = document.querySelector(selector);
+          console.log("Found element by selector:", element);
+          updateSelectedHighlight(element);
+        } catch (error) {
+          console.warn("Failed to select element:", error);
+          updateSelectedHighlight(null);
+        }
+      } else {
+        updateSelectedHighlight(null);
+      }
+    } else if (event.data.type === "clear-selected-element") {
+      console.log("Clear selected element");
+      updateSelectedHighlight(null);
+    }
+  }
+
+  // 启用高亮功能
+  function enableHighlight() {
+    console.log("Enabling highlight");
+    document.addEventListener("mouseover", handleMouseOver, true);
+    document.addEventListener("mouseout", handleMouseOut, true);
+    document.addEventListener("click", handleClick, true);
+    highlightEnabled = true;
+    overlay.style.display = "block";
+  }
+
+  // 禁用高亮功能
+  function disableHighlight() {
+    console.log("Disabling highlight");
+    highlightEnabled = false;
+    // 保持事件监听器，但通过 highlightEnabled 变量控制行为
+    // 这样可以保留选中状态的显示
+    highlightBox.style.display = "none";
+    tagLabel.style.display = "none";
+    // 不隐藏 selectedBox 和 selectedLabel，保留选中状态
+  }
+
+  // 完全禁用高亮功能（移除所有监听器）
+  function fullyDisableHighlight() {
+    console.log("Fully disabling highlight");
+    highlightEnabled = false;
+    document.removeEventListener("mouseover", handleMouseOver, true);
+    document.removeEventListener("mouseout", handleMouseOut, true);
+    document.removeEventListener("click", handleClick, true);
+    overlay.style.display = "none";
+    highlightBox.style.display = "none";
+    tagLabel.style.display = "none";
+    selectedBox.style.display = "none";
+    selectedLabel.style.display = "none";
+  }
+
+  // 添加事件监听
+  enableHighlight();
+  window.addEventListener("message", handleParentMessage);
+
+  // 暴露全局函数供外部调用
+  window.__iframeHighlightControl = {
+    enable: enableHighlight,
+    disable: disableHighlight,
+    fullyDisable: fullyDisableHighlight,
+    isEnabled: function isEnabled() {
+      return highlightEnabled;
+    },
+    getSelectedElement: function getSelectedElement() {
+      return selectedElement;
+    },
+    updateSelected: updateSelectedHighlight,
+    // 通过消息发送开关控制
+    sendToggleMessage: function sendToggleMessage(enabled) {
+      window.parent.postMessage({
+        type: 'iframe-highlight-status',
+        enabled: enabled || highlightEnabled,
+        source: 'iframe-highlight-injector'
+      }, '*');
+    }
+  };
+
+  // 通知父窗口脚本已加载
+  try {
+    window.parent.postMessage({
+      type: "iframe-highlight-ready",
+      data: {
+        url: window.location.href,
+        userAgent: navigator.userAgent,
+        timestamp: Date.now()
+      },
+      source: "iframe-highlight-injector"
+    }, "*");
+  } catch (error) {
+    console.warn("无法发送就绪消息到父窗口:", error);
+  }
+
+  // 清理函数
+  window.__iframeHighlightCleanup = function () {
+    fullyDisableHighlight();
+    window.removeEventListener("message", handleParentMessage);
+    if (overlay.parentElement) {
+      overlay.parentElement.removeChild(overlay);
+    }
+    delete window.__iframeHighlightInitialized;
+    delete window.__iframeHighlightCleanup;
+  };
+})();
+
+</script>
+</body>
+</html>

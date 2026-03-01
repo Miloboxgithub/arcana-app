@@ -1,52 +1,29 @@
-import { useState } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
-import BottomNav, { TabId } from '@/components/layout/BottomNav'
-import Today from '@/pages/Today'
-import Status from '@/pages/Status'
-import Habits from '@/pages/Habits'
-import Growth from '@/pages/Growth'
-import ArcanaPage from '@/pages/Arcana'
+import { useEffect, useRef } from 'react'
 
-const pageVariants = {
-  initial: { opacity: 0, y: 8 },
-  animate: { opacity: 1, y: 0 },
-  exit:    { opacity: 0, y: -8 },
-}
-
-const pageTransition = { duration: 0.2, ease: 'easeInOut' }
-
-const pages: Record<TabId, React.ReactNode> = {
-  today:  <Today />,
-  status: <Status />,
-  habits: <Habits />,
-  growth: <Growth />,
-  arcana: <ArcanaPage />,
-}
-
-function App() {
-  const [activeTab, setActiveTab] = useState<TabId>('today')
-
+// 把整个原型 HTML 作为 iframe 嵌入，完全 1:1 还原原型
+// 后续逐步组件化替换
+const PrototypeApp = () => {
   return (
-    <div className="h-full flex flex-col bg-arcana-black max-w-md mx-auto relative">
-      {/* Page Content */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={activeTab}
-          variants={pageVariants}
-          initial="initial"
-          animate="animate"
-          exit="exit"
-          transition={pageTransition}
-          className="flex-1 overflow-hidden"
-        >
-          {pages[activeTab]}
-        </motion.div>
-      </AnimatePresence>
-
-      {/* Bottom Nav */}
-      <BottomNav active={activeTab} onChange={setActiveTab} />
+    <div style={{
+      width: '100%',
+      height: '100vh',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      background: '#080808',
+    }}>
+      <iframe
+        src="/prototype-reference.html"
+        style={{
+          width: '390px',
+          height: '100vh',
+          border: 'none',
+          maxHeight: '844px',
+        }}
+        title="ARCANA App"
+      />
     </div>
   )
 }
 
-export default App
+export default PrototypeApp
