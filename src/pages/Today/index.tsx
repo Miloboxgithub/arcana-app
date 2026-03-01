@@ -179,7 +179,7 @@ export default function Today() {
     }
   }, [toggleToday, addExp, removeExp, burst, showToast, showMorgana])
 
-  const handleAI = useCallback((text: string) => {
+  const handleAI = useCallback((_text: string) => {
     const dimId = AI_DIMS[Math.floor(Math.random() * AI_DIMS.length)]
     const exp = 10 + Math.floor(Math.random() * 20)
     burst(window.innerWidth / 2, window.innerHeight / 2, 14)
