@@ -203,3 +203,9 @@
 .page-content {
   padding: 18px 16px 0;
 }
+
+/* ── Blink animation (onboarding cursor) ── */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}

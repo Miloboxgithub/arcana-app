@@ -8,6 +8,7 @@ import Growth from '@/pages/Growth'
 import ArcanaPage from '@/pages/Arcana'
 import Profile from '@/pages/Profile'
 import AuthPage from '@/pages/Auth'
+import Onboarding from '@/pages/Onboarding'
 import useAuthStore from '@/stores/useAuthStore'
 import { syncFromCloud } from '@/lib/sync'
 import { supabase } from '@/lib/supabase'
@@ -77,6 +78,15 @@ function App() {
 
   // Not logged in → show auth page
   if (!user) return <AuthPage />
+
+  // New user → show onboarding
+  const onboardingDone = user.user_metadata?.onboarding_done
+  if (!onboardingDone) {
+    return <Onboarding onComplete={() => {
+      // Trigger re-render by refreshing session
+      supabase.auth.refreshSession()
+    }} />
+  }
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--black)', position: 'relative' }}>
