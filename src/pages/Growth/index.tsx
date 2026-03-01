@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState } from 'react'
 import useProfileStore from '@/stores/useProfileStore'
 import useHabitStore from '@/stores/useHabitStore'
 
@@ -102,7 +102,7 @@ function Heatmap({ checksByDate }: { checksByDate: Map<string, number> }) {
     return 'var(--red)'
   }
 
-  const CELL = 13, GAP = 3
+  const CELL = 17, GAP = 3
   const gridW = weeks.length * (CELL + GAP)
 
   return (
@@ -191,68 +191,6 @@ function Heatmap({ checksByDate }: { checksByDate: Map<string, number> }) {
   )
 }
 
-// ── Dimension Progress Cards ──────────────────────────────
-const DIM_COLORS: Record<string, string> = {
-  pro:'var(--red)', fitness:'#5b9bd5', social:'#4fc3f7',
-  create:'var(--gold)', self:'#ce93d8', charm:'#ff8a65',
-}
-const DIM_ICONS: Record<string, string> = {
-  pro:'⚙', fitness:'◈', social:'◇', create:'✦', self:'▲', charm:'◉',
-}
-
-function DimProgressCard({ dim, animated }: {
-  dim: { id:string; name:string; level:number; exp:number; maxExp:number }
-  animated: boolean
-}) {
-  const pct = Math.min(100, (dim.exp / dim.maxExp) * 100)
-  const total = dim.level * dim.maxExp + dim.exp
-  const color = DIM_COLORS[dim.id] || 'var(--red)'
-
-  return (
-    <div style={{
-      background:'var(--card)', padding:'14px 16px', marginBottom:4,
-      clipPath:'polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,0 100%)',
-      borderLeft:`2px solid ${color}`, position:'relative', overflow:'hidden',
-    }}>
-      {/* BG icon */}
-      <div style={{ position:'absolute', right:14, top:'50%', transform:'translateY(-50%)', fontSize:52, color:color, opacity:0.04, userSelect:'none' }}>
-        {DIM_ICONS[dim.id]}
-      </div>
-
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:8 }}>
-        <div>
-          <span style={{ fontSize:13, fontWeight:700, color:'var(--white)', marginRight:8 }}>{dim.name}</span>
-          <span style={{ fontFamily:'Share Tech Mono,monospace', fontSize:9, color:'var(--muted)', letterSpacing:1 }}>
-            {total.toLocaleString()} EXP 累计
-          </span>
-        </div>
-        <span style={{ fontFamily:'Bebas Neue,sans-serif', fontSize:22, color, lineHeight:1 }}>Lv{dim.level}</span>
-      </div>
-
-      {/* XP bar */}
-      <div style={{ height:4, background:'var(--dim)', marginBottom:6, position:'relative' }}>
-        <div style={{
-          height:'100%', background:color,
-          width: animated ? `${pct}%` : '0%',
-          transition:'width 1.2s cubic-bezier(0.22,1,0.36,1)',
-          position:'relative',
-        }}>
-          <div style={{ position:'absolute', right:-2, top:-3, width:10, height:10, background:'var(--white)', border:`1.5px solid ${color}`, transform:'rotate(45deg)' }}/>
-        </div>
-      </div>
-
-      <div style={{ display:'flex', justifyContent:'space-between' }}>
-        <span style={{ fontFamily:'Share Tech Mono,monospace', fontSize:8, color:'var(--muted)', letterSpacing:1 }}>
-          {dim.exp} / {dim.maxExp} EXP
-        </span>
-        <span style={{ fontFamily:'Share Tech Mono,monospace', fontSize:8, color, letterSpacing:1 }}>
-          {pct.toFixed(0)}%
-        </span>
-      </div>
-    </div>
-  )
-}
-
 // ── Milestone Card ────────────────────────────────────────
 function MilestoneCard({ name, desc, icon, current, target, done }: {
   name: string; desc: string; icon: string
@@ -313,12 +251,6 @@ function MilestoneCard({ name, desc, icon, current, target, done }: {
 export default function Growth() {
   const { checkRecords, getStreak, habits } = useHabitStore()
   const { dimensions } = useProfileStore()
-  const [dimAnimated, setDimAnimated] = useState(false)
-
-  useEffect(() => {
-    const t = setTimeout(() => setDimAnimated(true), 200)
-    return () => clearTimeout(t)
-  }, [])
 
   const streak = getStreak()
   const totalExp = dimensions.reduce((s,d) => s + d.exp + d.level * d.maxExp, 0)
@@ -399,14 +331,6 @@ export default function Growth() {
         {/* Heatmap */}
         <SH label="打卡热力图" />
         <Heatmap checksByDate={checksByDate} />
-
-        {/* Dimension bars */}
-        <SH label="属性成长" />
-        <div style={{ display:'flex', flexDirection:'column' }}>
-          {dimensions.map(d => (
-            <DimProgressCard key={d.id} dim={d} animated={dimAnimated} />
-          ))}
-        </div>
 
         {/* Milestones */}
         <SH label="成就里程碑" />

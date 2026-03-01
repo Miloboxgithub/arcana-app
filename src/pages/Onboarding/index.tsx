@@ -3,6 +3,7 @@ import useAuthStore from '@/stores/useAuthStore'
 import useProfileStore from '@/stores/useProfileStore'
 import useHabitStore from '@/stores/useHabitStore'
 import { supabase } from '@/lib/supabase'
+import { pushOnboardingDims } from '@/lib/sync'
 import type { DimensionId } from '@/stores/useHabitStore'
 
 // ── Types ─────────────────────────────────────────────────
@@ -183,14 +184,15 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
 
   const handleFinish = async () => {
     setSaving(true)
-    // Apply initial exp to profile store
-    const expMap: Record<string, number> = {}
-    for (const [id, exp] of Object.entries(initExp)) {
-      expMap[id] = exp
-    }
-    setDimensionExp(expMap as Record<DimensionId, number>)
 
-    // Add first habit if provided
+    // Apply initial exp to profile store (local)
+    const expMap: Record<DimensionId, number> = {} as any
+    for (const [id, exp] of Object.entries(initExp)) {
+      expMap[id as DimensionId] = exp
+    }
+    setDimensionExp(expMap)
+
+    // Add first habit if provided (addHabit already pushes to cloud)
     if (firstHabitName.trim()) {
       addHabit({
         name: firstHabitName.trim(),
@@ -201,7 +203,10 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
       })
     }
 
-    // Mark onboarding done in Supabase
+    // Push initial dimension exp to cloud
+    await pushOnboardingDims(expMap)
+
+    // Mark onboarding done in Supabase user_metadata
     await supabase.auth.updateUser({ data: { onboarding_done: true } })
 
     setSaving(false)

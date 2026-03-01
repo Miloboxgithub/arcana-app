@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import useProfileStore from '@/stores/useProfileStore'
 import useHabitStore from '@/stores/useHabitStore'
 import useAuthStore from '@/stores/useAuthStore'
@@ -149,7 +149,7 @@ function SH({label}:{label:string}) {
 
 export default function Status() {
   const {dimensions,getTotalLevel} = useProfileStore()
-  const {getStreak} = useHabitStore()
+  const {getStreak,checkRecords,habits} = useHabitStore()
   const {user} = useAuthStore()
   const [bars,setBars] = useState(false)
   const [open,setOpen] = useState<Set<string>>(new Set())
@@ -187,6 +187,19 @@ export default function Status() {
   const streak = getStreak()
   const totalExp = dimensions.reduce((s,d)=>s+d.exp+d.level*d.maxExp,0)
   const wk = Math.ceil((Date.now()-new Date(new Date().getFullYear(),0,1).getTime())/(7*86400000))
+
+  // Weekly EXP per dimension (for expanded detail panel)
+  const weekExpByDim = useMemo(() => {
+    const weekAgo = Date.now() - 7 * 86400000
+    const m = new Map<string, number>()
+    for (const r of checkRecords) {
+      if (r.completedAt < weekAgo) continue
+      const h = habits.find(x => x.id === r.habitId)
+      if (!h) continue
+      m.set(h.dimension, (m.get(h.dimension) ?? 0) + h.exp)
+    }
+    return m
+  }, [checkRecords, habits])
 
   const ratios = DIM_ORDER.map(id=>{ const d=dmap[id]; return d ? d.exp/d.maxExp : 0 })
   // Interpolate from 0 to actual ratios using radarProgress
@@ -306,12 +319,25 @@ export default function Status() {
                     </div>
                   </div>
                 </div>
-                <div style={{maxHeight:isOpen?130:0,overflow:'hidden',transition:'max-height 0.35s ease',background:'var(--card2)',padding:'0 16px'}}>
-                  <div style={{padding:'10px 0 14px',borderTop:'1px solid var(--dim)'}}>
+                <div style={{maxHeight:isOpen?200:0,overflow:'hidden',transition:'max-height 0.35s ease',background:'var(--card2)',padding:'0 16px'}}>
+                  <div style={{padding:'10px 0 16px',borderTop:'1px solid var(--dim)'}}>
+                    {/* EXP 进度条 */}
+                    <div style={{marginBottom:10}}>
+                      <div style={{display:'flex',justifyContent:'space-between',marginBottom:5}}>
+                        <span style={{fontFamily:'Share Tech Mono,monospace',fontSize:9,color:'var(--muted)',letterSpacing:1}}>EXP PROGRESS</span>
+                        <span style={{fontFamily:'Share Tech Mono,monospace',fontSize:9,color:'var(--red)',letterSpacing:1}}>{exp} / {maxExp}</span>
+                      </div>
+                      <div style={{height:4,background:'var(--dim)',position:'relative'}}>
+                        <div style={{height:'100%',background:'var(--red)',width:isOpen?`${pct}%`:'0%',transition:'width 1.2s cubic-bezier(0.22,1,0.36,1) 0.3s',position:'relative'}}>
+                          <div style={{position:'absolute',right:-2,top:-3,width:9,height:9,background:'var(--white)',border:'1.5px solid var(--red)',transform:'rotate(45deg)'}}/>
+                        </div>
+                      </div>
+                    </div>
+                    {/* 三项统计 */}
                     {[
-                      {k:'当前经验',v:`${exp} / ${maxExp}`,gold:true,red:false},
-                      {k:'THIS WEEK',v:`+${Math.floor(exp*0.1)} EXP`,gold:false,red:true},
-                      {k:'NEXT RANK',v:`${meta.ranks[Math.min(level+1,meta.ranks.length-1)]} → Lv${level+1}`,gold:false,red:false},
+                      {k:'累计经验', v:`${(level*maxExp+exp).toLocaleString()} EXP`, gold:true,  red:false},
+                      {k:'本周经验', v:`+${weekExpByDim.get(id) ?? 0} EXP`,          gold:false, red:true },
+                      {k:'下一等级', v:`${meta.ranks[Math.min(level+1,meta.ranks.length-1)]} · Lv${level+1}`, gold:false, red:false},
                     ].map(r=>(
                       <div key={r.k} style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
                         <span style={{fontFamily:'Share Tech Mono,monospace',fontSize:9,color:'var(--muted)',letterSpacing:1}}>{r.k}</span>
