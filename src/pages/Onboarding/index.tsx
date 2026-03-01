@@ -109,7 +109,12 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   const [description, setDescription] = useState('')
   const [analysisProgress, setAnalysisProgress] = useState(0)
   const [analysisLines, setAnalysisLines] = useState<string[]>([])
-  const [initExp, setInitExp] = useState<Record<DimensionId, number>>({} as any)
+  const [initExp, setInitExp] = useState<Record<DimensionId, number>>(() => {
+    // Pre-fill with defaults so Step 4 never renders empty
+    const defaults: Partial<Record<DimensionId, number>> = {}
+    ALL_DIMS.forEach(d => { defaults[d.id] = 200 })
+    return defaults as Record<DimensionId, number>
+  })
   const [radarProgress, setRadarProgress] = useState(0)
   const [firstHabitName, setFirstHabitName] = useState('')
   const [firstHabitDim, setFirstHabitDim] = useState<DimensionId>('pro')
@@ -149,10 +154,13 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
       setAnalysisLines(prev => [...prev, lines[i-1]])
       if (i >= lines.length) {
         clearInterval(iv)
-        // Compute initExp
+        // Compute initExp synchronously and store before transitioning
         const result = analyzeDescription(description, selectedDims)
         setInitExp(result)
-        setTimeout(() => setStep(4), 800)
+        // Give React one frame to commit the state before moving to step 4
+        requestAnimationFrame(() => {
+          setTimeout(() => setStep(4), 600)
+        })
       }
     }, 500)
     return () => clearInterval(iv)
@@ -205,7 +213,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
     <div style={{
       minHeight: '100vh', background: 'var(--black)',
       display: 'flex', flexDirection: 'column', alignItems: 'center',
-      padding: '0 0 40px', position: 'relative', overflow: 'hidden',
+      padding: '0 0 60px', position: 'relative', overflowY: 'auto',
     }}>
       {/* BG watermark */}
       <div style={{
@@ -566,7 +574,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
               style={{
                 width:'100%', background:'var(--red)', border:'none', color:'var(--white)',
                 fontFamily:'Bebas Neue,sans-serif', fontSize:16, letterSpacing:5,
-                padding:'16px', cursor:'pointer',
+                padding:'16px', cursor:'pointer', marginBottom:20,
                 clipPath:'polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,12px 100%,0 calc(100% - 12px))',
               }}
             >
