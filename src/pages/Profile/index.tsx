@@ -1,9 +1,133 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import useProfileStore from '@/stores/useProfileStore'
 import useHabitStore from '@/stores/useHabitStore'
 import useAuthStore from '@/stores/useAuthStore'
 import { toast } from '@/components/ui/Toast'
 import { supabase } from '@/lib/supabase'
+
+// ---- Preset SVG Avatars (P5 characters, zero external deps) ----
+const PRESET_AVATARS = [
+  {
+    id: 'joker', label: 'JOKER',
+    node: (
+      <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style={{width:'100%',height:'100%'}}>
+        <rect width="100" height="100" fill="#0a0a0a"/>
+        <polygon points="0,0 22,0 0,22" fill="#C3002F" opacity="0.8"/>
+        <polygon points="100,100 78,100 100,78" fill="#C3002F" opacity="0.4"/>
+        <path d="M20 100 Q25 72 50 68 Q75 72 80 100 Z" fill="#1a1a2e"/>
+        <path d="M36 100 Q41 76 50 73 Q59 76 64 100 Z" fill="#f0f0f0" opacity="0.9"/>
+        <path d="M48 74 L52 74 L54 100 L46 100 Z" fill="#C3002F"/>
+        <path d="M46 77 L54 77 L52 81 L50 79 L48 81 Z" fill="#C3002F"/>
+        <ellipse cx="50" cy="44" rx="18" ry="20" fill="#f5dcc8"/>
+        <ellipse cx="50" cy="30" rx="19" ry="14" fill="#111"/>
+        <path d="M68 30 Q74 26 70 38 Q66 34 64 40" fill="#111"/>
+        <path d="M32 30 Q28 26 31 40 Q34 36 36 42" fill="#111"/>
+        <path d="M33 34 Q42 26 50 30 Q58 26 67 34" fill="#111"/>
+        <rect x="35" y="44" width="11" height="7" rx="3" fill="none" stroke="#333" strokeWidth="1.2"/>
+        <rect x="54" y="44" width="11" height="7" rx="3" fill="none" stroke="#333" strokeWidth="1.2"/>
+        <line x1="46" y1="47" x2="54" y2="47" stroke="#333" strokeWidth="1.2"/>
+        <ellipse cx="40" cy="48" rx="3" ry="3.5" fill="#1a1a1a"/>
+        <ellipse cx="59" cy="48" rx="3" ry="3.5" fill="#1a1a1a"/>
+        <circle cx="41" cy="47" r="0.8" fill="white" opacity="0.8"/>
+        <circle cx="60" cy="47" r="0.8" fill="white" opacity="0.8"/>
+        <path d="M35 42 Q40 40 45 41" stroke="#111" strokeWidth="1.8" fill="none" strokeLinecap="round"/>
+        <path d="M54 41 Q59 40 64 42" stroke="#111" strokeWidth="1.8" fill="none" strokeLinecap="round"/>
+        <path d="M44 59 Q50 62 56 58" stroke="#c08060" strokeWidth="1.2" fill="none" strokeLinecap="round"/>
+        <rect x="0" y="95" width="100" height="2" fill="#C3002F" opacity="0.6"/>
+        <rect x="2" y="2" width="8" height="2" fill="#C3002F" opacity="0.7"/>
+        <rect x="2" y="2" width="2" height="8" fill="#C3002F" opacity="0.7"/>
+        <rect x="90" y="2" width="8" height="2" fill="#C3002F" opacity="0.7"/>
+        <rect x="96" y="2" width="2" height="8" fill="#C3002F" opacity="0.7"/>
+      </svg>
+    ),
+  },
+  {
+    id: 'ryuji', label: 'SKULL',
+    node: (
+      <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style={{width:'100%',height:'100%'}}>
+        <rect width="100" height="100" fill="#0a0a0a"/>
+        <polygon points="0,0 22,0 0,22" fill="#E8C840" opacity="0.8"/>
+        <path d="M22 100 Q26 72 50 68 Q74 72 78 100 Z" fill="#1a1220"/>
+        <ellipse cx="50" cy="44" rx="18" ry="20" fill="#f0c880"/>
+        <ellipse cx="50" cy="29" rx="19" ry="13" fill="#E8C840"/>
+        <path d="M31 26 Q28 14 35 22" fill="#E8C840"/>
+        <path d="M35 22 Q33 8 41 19" fill="#E8C840"/>
+        <path d="M42 19 Q42 7 48 18" fill="#E8C840"/>
+        <path d="M52 18 Q55 7 58 19" fill="#E8C840"/>
+        <path d="M62 22 Q67 10 68 24" fill="#E8C840"/>
+        <path d="M68 26 Q74 16 70 28" fill="#E8C840"/>
+        <ellipse cx="40" cy="48" rx="4" ry="4" fill="#1a1a1a"/>
+        <ellipse cx="60" cy="48" rx="4" ry="4" fill="#1a1a1a"/>
+        <circle cx="42" cy="46" r="1.2" fill="white" opacity="0.9"/>
+        <circle cx="62" cy="46" r="1.2" fill="white" opacity="0.9"/>
+        <path d="M34 42 Q40 39 46 42" stroke="#6b4400" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+        <path d="M54 42 Q60 39 66 42" stroke="#6b4400" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+        <path d="M38 59 Q50 68 62 59" stroke="#c08060" strokeWidth="1.5" fill="rgba(200,100,80,0.3)" strokeLinecap="round"/>
+        <circle cx="82" cy="12" r="7" fill="none" stroke="#E8C840" strokeWidth="1"/>
+        <circle cx="79" cy="11" r="1.5" fill="#E8C840"/>
+        <circle cx="85" cy="11" r="1.5" fill="#E8C840"/>
+        <path d="M79 14 L85 14" stroke="#E8C840" strokeWidth="1"/>
+        <rect x="0" y="95" width="100" height="2" fill="#E8C840" opacity="0.6"/>
+      </svg>
+    ),
+  },
+  {
+    id: 'ann', label: 'PANTHER',
+    node: (
+      <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style={{width:'100%',height:'100%'}}>
+        <rect width="100" height="100" fill="#0a0a0a"/>
+        <polygon points="0,0 22,0 0,22" fill="#ff4466" opacity="0.8"/>
+        <path d="M22 100 Q26 72 50 68 Q74 72 78 100 Z" fill="#1a0a10"/>
+        <ellipse cx="50" cy="44" rx="18" ry="20" fill="#fde8d8"/>
+        <path d="M28 34 Q24 60 26 85 Q32 70 34 60" fill="#f0d060"/>
+        <path d="M72 34 Q76 60 74 85 Q68 70 66 60" fill="#f0d060"/>
+        <ellipse cx="50" cy="28" rx="20" ry="12" fill="#f0d060"/>
+        <path d="M30 28 Q28 18 34 26" fill="#f0d060"/>
+        <path d="M70 28 Q72 18 66 26" fill="#f0d060"/>
+        <ellipse cx="40" cy="47" rx="4" ry="4.5" fill="#1a1a1a"/>
+        <ellipse cx="60" cy="47" rx="4" ry="4.5" fill="#1a1a1a"/>
+        <ellipse cx="40" cy="46" rx="2" ry="2.5" fill="#5588ff"/>
+        <ellipse cx="60" cy="46" rx="2" ry="2.5" fill="#5588ff"/>
+        <circle cx="41" cy="45" r="0.8" fill="white" opacity="0.9"/>
+        <circle cx="61" cy="45" r="0.8" fill="white" opacity="0.9"/>
+        <path d="M35 44 Q38 40 45 43" stroke="#111" strokeWidth="1.8" fill="none"/>
+        <path d="M55 43 Q62 40 65 44" stroke="#111" strokeWidth="1.8" fill="none"/>
+        <path d="M42 59 Q50 64 58 59" stroke="#ff4466" strokeWidth="1.5" fill="rgba(255,68,102,0.3)" strokeLinecap="round"/>
+        <rect x="0" y="95" width="100" height="2" fill="#ff4466" opacity="0.6"/>
+        <rect x="2" y="2" width="8" height="2" fill="#ff4466" opacity="0.7"/>
+        <rect x="2" y="2" width="2" height="8" fill="#ff4466" opacity="0.7"/>
+      </svg>
+    ),
+  },
+  {
+    id: 'makoto', label: 'QUEEN',
+    node: (
+      <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style={{width:'100%',height:'100%'}}>
+        <rect width="100" height="100" fill="#0a0a0a"/>
+        <polygon points="0,0 22,0 0,22" fill="#888" opacity="0.8"/>
+        <path d="M22 100 Q26 72 50 68 Q74 72 78 100 Z" fill="#1a1a20"/>
+        <ellipse cx="50" cy="44" rx="18" ry="20" fill="#f0d0c0"/>
+        <ellipse cx="50" cy="28" rx="19" ry="12" fill="#4a2800"/>
+        <path d="M31 30 Q30 50 32 58" fill="#4a2800"/>
+        <path d="M69 30 Q70 50 68 58" fill="#4a2800"/>
+        <path d="M34 24 Q50 16 66 24" fill="#4a2800"/>
+        <ellipse cx="40" cy="47" rx="4" ry="4" fill="#1a1a1a"/>
+        <ellipse cx="60" cy="47" rx="4" ry="4" fill="#1a1a1a"/>
+        <ellipse cx="40" cy="47" rx="2" ry="2" fill="#8b4513"/>
+        <ellipse cx="60" cy="47" rx="2" ry="2" fill="#8b4513"/>
+        <circle cx="41" cy="46" r="0.8" fill="white" opacity="0.8"/>
+        <circle cx="61" cy="46" r="0.8" fill="white" opacity="0.8"/>
+        <path d="M34 42 Q40 39 46 41" stroke="#4a2800" strokeWidth="2" fill="none" strokeLinecap="round"/>
+        <path d="M54 41 Q60 39 66 42" stroke="#4a2800" strokeWidth="2" fill="none" strokeLinecap="round"/>
+        <path d="M44 59 Q50 61 56 59" stroke="#c08060" strokeWidth="1.2" fill="none" strokeLinecap="round"/>
+        <path d="M36 20 L40 14 L44 20 L50 12 L56 20 L60 14 L64 20" stroke="#888" strokeWidth="1.5" fill="none"/>
+        <rect x="0" y="95" width="100" height="2" fill="#888" opacity="0.6"/>
+      </svg>
+    ),
+  },
+]
+
+const AVATAR_KEY = 'arcana-avatar'
 
 function PageHeader({ title, badge }: { title: string; badge: string }) {
   return (
@@ -69,15 +193,55 @@ export default function Profile({ onOpenArcana }: ProfileProps) {
 
   const [editingName, setEditingName] = useState(false)
   const [newName, setNewName] = useState('')
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false)
+  const [avatarId, setAvatarId] = useState<string>(() => localStorage.getItem(AVATAR_KEY) || 'joker')
+  const fileRef = useRef<HTMLInputElement>(null)
 
   const streak = getStreak()
   const totalLevel = getTotalLevel()
   const totalExp = dimensions.reduce((s, d) => s + d.exp + d.level * d.maxExp, 0)
   const totalExpDisplay = totalExp > 999 ? `${(totalExp / 1000).toFixed(1)}K` : String(totalExp)
 
+  const getAvatarNode = (id: string) => {
+    if (id.startsWith('data:')) {
+      return <img src={id} alt="头像" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+    }
+    const preset = PRESET_AVATARS.find(p => p.id === id) || PRESET_AVATARS[0]
+    return preset.node
+  }
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 500 * 1024) {
+      toast.error('图片不能超过 500KB，请压缩后重试')
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      const dataUrl = ev.target?.result as string
+      setAvatarId(dataUrl)
+      localStorage.setItem(AVATAR_KEY, dataUrl)
+      setShowAvatarPicker(false)
+      toast.success('头像已更新', '✦')
+    }
+    reader.readAsDataURL(file)
+    e.target.value = ''
+  }
+
+  const selectPreset = (id: string) => {
+    setAvatarId(id)
+    localStorage.setItem(AVATAR_KEY, id)
+    setShowAvatarPicker(false)
+    toast.success('头像已更新', '✦')
+  }
+
   return (
     <div className="page-container">
       <PageHeader title="档案" badge="怪盗团" />
+
+      {/* Hidden file input */}
+      <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileUpload} />
 
       <div style={{ padding: '18px 16px 0' }}>
 
@@ -89,14 +253,36 @@ export default function Profile({ onOpenArcana }: ProfileProps) {
           overflow: 'hidden',
         }}>
           <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: 'linear-gradient(90deg,var(--red),var(--gold) 60%,transparent)' }} />
-          {/* bg watermark */}
           <div style={{ position: 'absolute', right: -10, top: -10, fontFamily: 'Bebas Neue,sans-serif', fontSize: 100, letterSpacing: -2, color: 'transparent', WebkitTextStroke: '1px rgba(195,0,47,0.08)', pointerEvents: 'none', userSelect: 'none', lineHeight: 1, transform: 'skewX(-5deg)' }}>ARCANA</div>
 
           {/* Avatar + Info */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 14 }}>
-            <div style={{ width: 72, height: 72, border: '2px solid rgba(195,0,47,0.4)', clipPath: 'polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,12px 100%,0 calc(100% - 12px))', overflow: 'hidden', background: 'rgba(195,0,47,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <img src="/morgana-avatar.png" alt="头像" style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'hue-rotate(200deg) brightness(0.8) contrast(1.2)' }} />
+            {/* Clickable avatar */}
+            <div
+              onClick={() => setShowAvatarPicker(true)}
+              style={{
+                position: 'relative', width: 72, height: 72,
+                border: '2px solid rgba(195,0,47,0.4)',
+                clipPath: 'polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,12px 100%,0 calc(100% - 12px))',
+                overflow: 'hidden', background: 'rgba(195,0,47,0.06)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0, cursor: 'pointer',
+              }}
+            >
+              {getAvatarNode(avatarId)}
+              {/* Edit badge */}
+              <div style={{
+                position: 'absolute', bottom: 2, right: 2, background: 'var(--red)',
+                borderRadius: '50%', width: 18, height: 18,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: '0 0 6px rgba(195,0,47,0.6)',
+              }}>
+                <svg width="9" height="9" viewBox="0 0 24 24" fill="none">
+                  <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
+                </svg>
+              </div>
             </div>
+
             <div>
               <div style={{ fontFamily: 'Bebas Neue,sans-serif', fontSize: 28, letterSpacing: 4, color: 'var(--white)', transform: 'skewX(-3deg)', display: 'inline-block', lineHeight: 1 }}>{username.toUpperCase()}</div>
               <div style={{ fontFamily: 'Share Tech Mono,monospace', fontSize: 9, letterSpacing: 2, color: 'var(--gold)', marginTop: 3 }}>◆ 怪盗团见习成员 · Lv.{totalLevel}</div>
@@ -118,6 +304,83 @@ export default function Profile({ onOpenArcana }: ProfileProps) {
             ))}
           </div>
         </div>
+
+        {/* ===== Avatar Picker Bottom Sheet ===== */}
+        {showAvatarPicker && (
+          <div
+            style={{
+              position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)',
+              zIndex: 1000, display: 'flex', flexDirection: 'column',
+              alignItems: 'center', justifyContent: 'flex-end',
+              backdropFilter: 'blur(4px)',
+            }}
+            onClick={() => setShowAvatarPicker(false)}
+          >
+            <div
+              style={{
+                width: '100%', maxWidth: 480, background: '#111',
+                borderTop: '2px solid var(--red)',
+                padding: '24px 20px 40px',
+              }}
+              onClick={e => e.stopPropagation()}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                <span style={{ fontFamily: 'Bebas Neue,sans-serif', fontSize: 16, letterSpacing: 4, color: 'var(--white)', transform: 'skewX(-4deg)', display: 'inline-block' }}>选择头像</span>
+                <div onClick={() => setShowAvatarPicker(false)} style={{ cursor: 'pointer', color: 'var(--muted)', fontSize: 22, lineHeight: 1, padding: 4 }}>×</div>
+              </div>
+
+              <div style={{ fontFamily: 'Share Tech Mono,monospace', fontSize: 9, color: 'var(--muted)', letterSpacing: 2, marginBottom: 12 }}>// 怪盗团成员</div>
+
+              {/* Preset grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 20 }}>
+                {PRESET_AVATARS.map(p => (
+                  <div
+                    key={p.id}
+                    onClick={() => selectPreset(p.id)}
+                    style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}
+                  >
+                    <div style={{
+                      width: 64, height: 64,
+                      border: avatarId === p.id ? '2px solid var(--red)' : '1px solid var(--dim)',
+                      clipPath: 'polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,8px 100%,0 calc(100% - 8px))',
+                      overflow: 'hidden', background: '#0a0a0a',
+                      boxShadow: avatarId === p.id ? '0 0 12px rgba(195,0,47,0.5)' : 'none',
+                      transition: 'all 0.2s',
+                    }}>
+                      {p.node}
+                    </div>
+                    <span style={{
+                      fontFamily: 'Bebas Neue,sans-serif', fontSize: 10, letterSpacing: 2,
+                      color: avatarId === p.id ? 'var(--red)' : 'var(--muted)',
+                    }}>{p.label}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Upload custom */}
+              <div style={{ borderTop: '1px solid var(--dim)', paddingTop: 16 }}>
+                <div style={{ fontFamily: 'Share Tech Mono,monospace', fontSize: 9, color: 'var(--muted)', letterSpacing: 2, marginBottom: 10 }}>// 自定义上传 (≤500KB)</div>
+                <button
+                  onClick={() => fileRef.current?.click()}
+                  style={{
+                    width: '100%', background: 'var(--card2)', border: '1px dashed var(--dim)',
+                    color: 'var(--muted)', fontFamily: 'Share Tech Mono,monospace', fontSize: 11,
+                    letterSpacing: 2, padding: '12px', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                    transition: 'border-color 0.2s',
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--red)')}
+                  onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--dim)')}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  从相册选择图片
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Achievements */}
         <SectionHead label="成就徽章" />
@@ -153,8 +416,21 @@ export default function Profile({ onOpenArcana }: ProfileProps) {
         >
           <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg,var(--red),transparent 70%)' }} />
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <div style={{ width: 40, height: 40, borderRadius: 4, overflow: 'hidden', border: '1px solid rgba(195,0,47,0.3)', flexShrink: 0 }}>
-              <img src="/morgana-avatar.png" style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="莫尔加纳" />
+            <div style={{ width: 40, height: 40, overflow: 'hidden', border: '1px solid rgba(195,0,47,0.3)', flexShrink: 0, clipPath: 'polygon(0 0,calc(100% - 6px) 0,100% 6px,100% 100%,6px 100%,0 calc(100% - 6px))', background: '#0a0a0a' }}>
+              {/* Morgana — SVG cat AI avatar */}
+              <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" style={{width:'100%',height:'100%'}}>
+                <rect width="40" height="40" fill="#0a0a0a"/>
+                <ellipse cx="20" cy="22" rx="12" ry="10" fill="#1a1a2e"/>
+                <path d="M10 18 Q8 10 14 14" fill="#1a1a2e"/>
+                <path d="M30 18 Q32 10 26 14" fill="#1a1a2e"/>
+                <ellipse cx="15" cy="21" rx="3" ry="3" fill="#fff" opacity="0.9"/>
+                <ellipse cx="25" cy="21" rx="3" ry="3" fill="#fff" opacity="0.9"/>
+                <ellipse cx="15" cy="21" rx="1.5" ry="2" fill="#C3002F"/>
+                <ellipse cx="25" cy="21" rx="1.5" ry="2" fill="#C3002F"/>
+                <path d="M18 25 Q20 27 22 25" stroke="#aaa" strokeWidth="0.8" fill="none" strokeLinecap="round"/>
+                <circle cx="34" cy="6" r="4" fill="#C3002F" opacity="0.7"/>
+                <text x="34" y="9" textAnchor="middle" fill="white" fontSize="5" fontWeight="bold">AI</text>
+              </svg>
             </div>
             <div>
               <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--white)', marginBottom: 4 }}>与莫尔加纳对话</div>
@@ -169,7 +445,7 @@ export default function Profile({ onOpenArcana }: ProfileProps) {
 
         {/* Settings */}
         <SectionHead label="设置" />
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2, paddingBottom: 110 }}>
           {SETTINGS.map(s => (
             <div key={s.name} style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -234,7 +510,7 @@ export default function Profile({ onOpenArcana }: ProfileProps) {
             )}
           </div>
 
-          {/* Danger row */}
+          {/* Sign out */}
           <div
             onClick={async () => {
               await signOut()

@@ -2,8 +2,19 @@ import { useState, useEffect } from 'react'
 import useProfileStore from '@/stores/useProfileStore'
 import useHabitStore from '@/stores/useHabitStore'
 
-const CX = 115, CY = 115
-const TIPS: [number,number][] = [[115,20],[178,77],[178,134],[115,210],[52,134],[52,77]]
+// 正六边形，宽屏 viewBox: 280x240，CX=140 CY=120
+// 6个顶点从顶部开始顺时针: top, top-right, bottom-right, bottom, bottom-left, top-left
+// 外接圆半径 R=100，但因为宽度更宽，水平方向给R*cos30°≈86.6，垂直R=100
+const CX = 140, CY = 120, R = 100
+const TIPS: [number,number][] = [
+  [CX,         CY - R],           // 0: top     (专业力)
+  [CX + R*Math.sqrt(3)/2, CY - R/2], // 1: top-right (体能)
+  [CX + R*Math.sqrt(3)/2, CY + R/2], // 2: bottom-right (社交)
+  [CX,         CY + R],           // 3: bottom  (创造力)
+  [CX - R*Math.sqrt(3)/2, CY + R/2], // 4: bottom-left (自律)
+  [CX - R*Math.sqrt(3)/2, CY - R/2], // 5: top-left (魅力)
+].map(([x,y]) => [+x.toFixed(1), +y.toFixed(1)] as [number,number])
+
 const DIM_ORDER = ['pro','fitness','social','create','self','charm'] as const
 type DId = typeof DIM_ORDER[number]
 
@@ -114,32 +125,40 @@ export default function Status() {
 
         {/* Radar */}
         <SH label="奥义雷达"/>
-        <div style={{position:'relative',background:'var(--card)',marginBottom:16,padding:'24px 20px',clipPath:'polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px))',overflow:'hidden'}}>
+        <div style={{position:'relative',background:'var(--card)',marginBottom:16,padding:'20px 12px 16px',clipPath:'polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px))',overflow:'hidden'}}>
           <div style={{position:'absolute',top:0,left:0,right:0,height:2,background:'linear-gradient(90deg,var(--red),transparent 70%)'}}/>
-          <svg viewBox="0 0 230 230" fill="none" style={{display:'block',margin:'0 auto',width:220,height:220}}>
-            {/* Grid polygons: 5 layers t=0.2..1.0 */}
+          <svg viewBox="0 0 280 240" fill="none" style={{display:'block',margin:'0 auto',width:'100%',maxWidth:340,height:'auto'}}>
+            {/* Grid polygons: 5 layers */}
             <g opacity="0.15" stroke="var(--red)" strokeWidth="0.5">
               {[0.2,0.4,0.6,0.8,1.0].map(t=>(
                 <polygon key={t} points={TIPS.map(([tx,ty])=>`${(CX+(tx-CX)*t).toFixed(1)},${(CY+(ty-CY)*t).toFixed(1)}`).join(' ')} fill="none"/>
               ))}
-              {/* Grid lines from center to tips */}
               {TIPS.map(([tx,ty],i)=>(
                 <line key={i} x1={CX} y1={CY} x2={tx} y2={ty}/>
               ))}
             </g>
-            <polygon points={pts} fill="rgba(195,0,47,0.25)" stroke="var(--red)" strokeWidth="1.5" strokeLinejoin="round" style={{transition:'all 1.2s cubic-bezier(0.22,1,0.36,1)'}}/>
+            {/* Data area */}
+            <polygon
+              points={pts}
+              fill="rgba(195,0,47,0.2)"
+              stroke="var(--red)"
+              strokeWidth="1.5"
+              strokeLinejoin="round"
+              style={{transition:'all 1.4s cubic-bezier(0.22,1,0.36,1)',filter:radar?'drop-shadow(0 0 6px rgba(195,0,47,0.4))':'none'}}
+            />
+            {/* Data points (diamonds) — appear after expand */}
             {radar && TIPS.map(([tx,ty],i)=>{
               const t=Math.max(0,Math.min(1,ratios[i]))
               const px=CX+(tx-CX)*t,py=CY+(ty-CY)*t
               return <rect key={i} x={px-4} y={py-4} width={8} height={8} fill="var(--white)" stroke="var(--red)" strokeWidth="1" transform={`rotate(45,${px},${py})`}/>
             })}
             {/* Labels */}
-            <text x="115" y="12" textAnchor="middle" fill="var(--white)" fontFamily="Share Tech Mono,monospace" fontSize="9" letterSpacing="1">专业力</text>
-            <text x="188" y="77" textAnchor="start" fill="var(--white)" fontFamily="Share Tech Mono,monospace" fontSize="9" letterSpacing="1">体能</text>
-            <text x="188" y="136" textAnchor="start" fill="var(--white)" fontFamily="Share Tech Mono,monospace" fontSize="9" letterSpacing="1">社交</text>
-            <text x="115" y="222" textAnchor="middle" fill="var(--white)" fontFamily="Share Tech Mono,monospace" fontSize="9" letterSpacing="1">创造力</text>
-            <text x="42" y="136" textAnchor="end" fill="var(--white)" fontFamily="Share Tech Mono,monospace" fontSize="9" letterSpacing="1">自律</text>
-            <text x="42" y="77" textAnchor="end" fill="var(--white)" fontFamily="Share Tech Mono,monospace" fontSize="9" letterSpacing="1">魅力</text>
+            <text x={CX}         y={CY-R-12}   textAnchor="middle" fill="var(--white)" fontFamily="Share Tech Mono,monospace" fontSize="9" letterSpacing="1">专业力</text>
+            <text x={CX+R*Math.sqrt(3)/2+8} y={CY-R/2+4} textAnchor="start" fill="var(--white)" fontFamily="Share Tech Mono,monospace" fontSize="9" letterSpacing="1">体能</text>
+            <text x={CX+R*Math.sqrt(3)/2+8} y={CY+R/2+4} textAnchor="start" fill="var(--white)" fontFamily="Share Tech Mono,monospace" fontSize="9" letterSpacing="1">社交</text>
+            <text x={CX}         y={CY+R+18}   textAnchor="middle" fill="var(--white)" fontFamily="Share Tech Mono,monospace" fontSize="9" letterSpacing="1">创造力</text>
+            <text x={CX-R*Math.sqrt(3)/2-8} y={CY+R/2+4} textAnchor="end" fill="var(--white)" fontFamily="Share Tech Mono,monospace" fontSize="9" letterSpacing="1">自律</text>
+            <text x={CX-R*Math.sqrt(3)/2-8} y={CY-R/2+4} textAnchor="end" fill="var(--white)" fontFamily="Share Tech Mono,monospace" fontSize="9" letterSpacing="1">魅力</text>
           </svg>
         </div>
 
