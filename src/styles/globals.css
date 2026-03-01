@@ -1,0 +1,86 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Share+Tech+Mono&family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --arcana-red:   #C3002F;
+  --arcana-red2:  #FF1744;
+  --arcana-black: #080808;
+  --arcana-card:  #0E0E0E;
+  --arcana-card2: #161616;
+  --arcana-white: #EFEFEF;
+  --arcana-gold:  #E8C840;
+  --arcana-dim:   #3A3A3A;
+  --arcana-muted: #5A5A5A;
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    background-color: var(--arcana-black);
+    color: var(--arcana-white);
+    font-family: 'Noto Sans SC', sans-serif;
+    overscroll-behavior: none;
+  }
+
+  #root {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* P5 斜切卡片 */
+  .card-skew-tr {
+    clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%);
+  }
+  .card-skew-tl {
+    clip-path: polygon(16px 0, 100% 0, 100% 100%, 0 100%, 0 16px);
+  }
+  .card-skew-br {
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%);
+  }
+
+  /* P5 风格滚动条 */
+  ::-webkit-scrollbar {
+    width: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--arcana-black);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--arcana-red);
+  }
+
+  /* 半色调装饰点阵 */
+  .halftone {
+    background-image: radial-gradient(circle, var(--arcana-dim) 1px, transparent 1px);
+    background-size: 12px 12px;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-arcana-red text-arcana-white font-display tracking-widest px-6 py-3 card-skew-tr transition-all hover:bg-arcana-red2 active:scale-95;
+  }
+
+  .btn-ghost {
+    @apply border border-arcana-dim text-arcana-white font-display tracking-widest px-6 py-3 card-skew-tr transition-all hover:border-arcana-red active:scale-95;
+  }
+
+  .arcana-card {
+    @apply bg-arcana-card border border-arcana-dim card-skew-tr p-4;
+  }
+
+  .page-container {
+    @apply flex-1 overflow-y-auto px-4 pt-4 pb-24 bg-arcana-black;
+  }
+}
