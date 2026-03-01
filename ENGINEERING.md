@@ -1,3 +1,14 @@
+---
+AIGC:
+    ContentProducer: Minimax Agent AI
+    ContentPropagator: Minimax Agent AI
+    Label: AIGC
+    ProduceID: "00000000000000000000000000000000"
+    PropagateID: "00000000000000000000000000000000"
+    ReservedCode1: 3045022017cd4dee65049900d247acfb4fc250aca360412df4d8ef49c780c60bdfbc8694022100fe15f98499c226ea2a0fae5b0c9a792f28104dae2f88757c68ad09c880df7065
+    ReservedCode2: 304502210085908d01c94e6863a88b1483ed2af7a9309eca5f5daf85a7be1616336731b91e02205c0bdd38a09b0f16f3d4375c8b413b8a7c1703e1f1eec12a8ff13a9ca4645f1a
+---
+
 # ARCANA 工程规范（供 AI 团队参考）
 
 ## 目录结构（规划）

@@ -1,3 +1,14 @@
+---
+AIGC:
+    ContentProducer: Minimax Agent AI
+    ContentPropagator: Minimax Agent AI
+    Label: AIGC
+    ProduceID: "00000000000000000000000000000000"
+    PropagateID: "00000000000000000000000000000000"
+    ReservedCode1: 304402203029627efd8bf898c19ec8b92bafebf5cd9d6719dccd9b9a7c06e7f58b6483eb02201f9ddf1abe882c77d356822dc0994e9c0117b5503336e07e7050bed7fae59790
+    ReservedCode2: 3045022100cd34f7dac03a24372477e4b485077db60344c0d43c42e2cba3d16b145faf3c360220424064855bdfd89ce4261a73fc2275e4cb7e4484cd44ebbd301347c769cd83a3
+---
+
 # ARCANA · 奥义
 
 > 命运由你书写 · YOUR ARCANA
