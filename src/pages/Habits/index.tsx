@@ -302,12 +302,23 @@ export default function Habits() {
   const { getHabitsBySlot, addHabit, removeHabit } = useHabitStore()
   const { openModal, closeModal } = useUIStore()
   const [modalOpen, setModalOpen] = useState(false)
+  const [actionLoading, setActionLoading] = useState<string | null>(null)
 
   const openAddModal = () => { setModalOpen(true); openModal() }
   const closeAddModal = () => { setModalOpen(false); closeModal() }
 
-  const handleAdd = (name: string, dimension: DimensionId, slot: TimeSlot, exp: number) => {
+  const handleAdd = async (name: string, dimension: DimensionId, slot: TimeSlot, exp: number) => {
+    setActionLoading('add')
+    await new Promise(r => setTimeout(r, 300)) // 模拟短暂延迟，让用户感知
     addHabit({ name, dimension, timeSlot: slot, exp, isAnchor: false })
+    setActionLoading(null)
+  }
+
+  const handleRemove = async (habitId: string) => {
+    setActionLoading('remove_' + habitId)
+    await new Promise(r => setTimeout(r, 300))
+    removeHabit(habitId)
+    setActionLoading(null)
   }
 
   return (
@@ -498,10 +509,12 @@ export default function Habits() {
 
                           {/* Delete × button */}
                           <button
-                            onClick={() => removeHabit(habit.id)}
+                            onClick={() => handleRemove(habit.id)}
+                            disabled={actionLoading === 'remove_' + habit.id}
                             style={{
                               background: 'none', border: 'none',
-                              color: 'var(--muted)', cursor: 'pointer',
+                              color: actionLoading === 'remove_' + habit.id ? 'var(--gold)' : 'var(--muted)', 
+                              cursor: actionLoading === 'remove_' + habit.id ? 'wait' : 'pointer',
                               fontSize: 14, lineHeight: 1,
                               padding: '2px 4px', flexShrink: 0,
                               transition: 'color 0.15s',

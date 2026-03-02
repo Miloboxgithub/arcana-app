@@ -155,9 +155,9 @@ export default function ArcanaPage({ onBack }: ArcanaPageProps) {
           </button>
           <span style={{ fontFamily: 'Bebas Neue,sans-serif', fontSize: 18, letterSpacing: 5, color: 'var(--white)', transform: 'skewX(-4deg)' }}>奥义</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-            <div style={{ width: 7, height: 7, background: loading ? 'var(--gold)' : '#1DB954', borderRadius: '50%', animation: 'aipulse 2s ease-in-out infinite', transition: 'background 0.3s' }} />
+            <div style={{ width: 7, height: 7, background: loading ? 'var(--gold)' : '#1DB954', borderRadius: '50%', animation: loading ? 'spin 1s linear infinite' : 'aipulse 2s ease-in-out infinite', transition: 'background 0.3s' }} />
             <span style={{ fontFamily: 'Share Tech Mono,monospace', fontSize: 9, color: loading ? 'var(--gold)' : '#1DB954', letterSpacing: 2, transition: 'color 0.3s' }}>
-              {loading ? 'THINKING' : 'ONLINE'}
+              {loading ? '分析中...' : 'ONLINE'}
             </span>
           </div>
         </div>

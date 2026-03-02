@@ -219,22 +219,27 @@ function SectionHead({ label }: { label: string }) {
 }
 
 // ── AI Input Bar ──────────────────────────────────────────
-function AIInputBar({ onSubmit }: { onSubmit: (text: string) => void }) {
+function AIInputBar({ onSubmit, disabled }: { onSubmit: (text: string) => void; disabled?: boolean }) {
   const [val, setVal] = useState('')
-  const send = () => { if (val.trim()) { onSubmit(val.trim()); setVal('') } }
+  const send = () => { if (val.trim() && !disabled) { onSubmit(val.trim()); setVal('') } }
   return (
     <div style={{ position: 'fixed', bottom: 64, left: '50%', transform: 'translateX(-50%)', width: 'calc(min(390px,100vw) - 24px)', zIndex: 50 }}>
-      <div style={{ background: 'rgba(14,14,14,0.97)', border: '1px solid var(--red)', display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', clipPath: 'polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%)', boxShadow: '0 0 24px rgba(195,0,47,0.3),0 8px 32px rgba(0,0,0,0.7)', backdropFilter: 'blur(12px)' }}>
-        <span style={{ fontFamily: 'Share Tech Mono,monospace', fontSize: 10, color: 'var(--red)', letterSpacing: 1, whiteSpace: 'nowrap', flexShrink: 0 }}>// 输入</span>
+      <div style={{ background: 'rgba(14,14,14,0.97)', border: `1px solid ${disabled ? 'var(--dim)' : 'var(--red)'}`, display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', clipPath: 'polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%)', boxShadow: disabled ? 'none' : '0 0 24px rgba(195,0,47,0.3),0 8px 32px rgba(0,0,0,0.7)', backdropFilter: 'blur(12px)' }}>
+        <span style={{ fontFamily: 'Share Tech Mono,monospace', fontSize: 10, color: disabled ? 'var(--muted)' : 'var(--red)', letterSpacing: 1, whiteSpace: 'nowrap', flexShrink: 0 }}>{disabled ? '分析中' : '// 输入'}</span>
         <input
           value={val}
           onChange={e => setVal(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && send()}
-          placeholder="今天做了什么？AI 自动分配经验值…"
-          style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: 'var(--white)', fontSize: 13, fontFamily: 'Noto Sans SC,sans-serif' }}
+          placeholder={disabled ? "AI 正在分析..." : "今天做了什么？AI 自动分配经验值…"}
+          disabled={disabled}
+          style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: disabled ? 'var(--muted)' : 'var(--white)', fontSize: 13, fontFamily: 'Noto Sans SC,sans-serif', opacity: disabled ? 0.5 : 1 }}
         />
-        <button onClick={send} style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 2, opacity: 0.7 }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><polygon points="5,3 19,12 5,21" fill="var(--red)" /></svg>
+        <button onClick={send} disabled={disabled} style={{ flexShrink: 0, background: 'none', border: 'none', cursor: disabled ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', padding: 2, opacity: disabled ? 0.3 : 0.7 }}>
+          {disabled ? (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ animation: 'spin 1s linear infinite' }}><circle cx="12" cy="12" r="10" stroke="var(--muted)" strokeWidth="2" strokeDasharray="30 15" /></svg>
+          ) : (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><polygon points="5,3 19,12 5,21" fill="var(--red)" /></svg>
+          )}
         </button>
       </div>
     </div>
@@ -250,6 +255,7 @@ export default function Today() {
   const [activeSlot, setActiveSlot] = useState<TimeSlot>('afternoon')
   const [toast, setToast] = useState({ visible: false, exp: 0, dim: '' })
   const [morgana, setMorgana] = useState({ visible: false, text: '' })
+  const [aiLoading, setAiLoading] = useState(false)
 
   const streak = getStreak()
   const slotHabits = getHabitsBySlot(activeSlot)
@@ -293,7 +299,11 @@ export default function Today() {
     }
 
     // 用 AI 智能分析输入（后端会直接写库）
+    setAiLoading(true)
+    showToast(0, '分析中...')
+    
     const result = await analyzeAndAddExp(text, ctx)
+    setAiLoading(false)
     
     burst(window.innerWidth / 2, window.innerHeight / 2, 14)
     
@@ -432,7 +442,7 @@ export default function Today() {
       </div>{/* end page-container */}
 
       {/* Fixed overlays */}
-      <AIInputBar onSubmit={handleAI} />
+      <AIInputBar onSubmit={handleAI} disabled={aiLoading} />
       <ExpToast visible={toast.visible} exp={toast.exp} dim={toast.dim} />
       <MorganaDialog
         visible={morgana.visible}
