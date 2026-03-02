@@ -164,6 +164,8 @@ ${ctx.habits.length > 0 ? ctx.habits.map(h => `- ${h.name}（${h.dimension}·${h
 
   try {
     // 调用后端的 analyze API
+    // 后端会判断是否加经验，并直接写入数据库
+    // 前端不需要再调用 addExp（后端已经处理了）
     const res = await api.chat.analyze(prompt, ANALYZE_SYSTEM_PROMPT)
     return {
       shouldAddExp: res.shouldAddExp,
@@ -173,7 +175,7 @@ ${ctx.habits.length > 0 ? ctx.habits.map(h => `- ${h.name}（${h.dimension}·${h
     }
   } catch (e) {
     console.warn('[analyze] API error:', e)
-    // 出错时保守处理，不添加经验值
+    // 出错时保守处理，不添加经验值（让用户知道分析失败了）
     return {
       shouldAddExp: false,
       dimension: null,

@@ -103,31 +103,38 @@ export default function ArcanaPage({ onBack }: ArcanaPageProps) {
     setMessages(newMessages)
     setLoading(true)
 
-    // 用 AI 智能分析输入，判断是否应该给 EXP（后端会直接写库）
+    // 用 AI 智能分析输入（后端会直接写库，不需要前端再加）
+    // 先分析经验值
     const analyzeResult = await analyzeAndAddExp(userMsg, ctx)
     let expResult: AnalyzeResult | null = null
+    
+    // 分析完成后，同步更新本地 state（后端已写入，这里是同步显示）
     if (analyzeResult.shouldAddExp && analyzeResult.dimension) {
+      // 直接用 analyze 返回的值更新本地显示（后端已加过，这里是同步 UI）
       addExp(analyzeResult.dimension, analyzeResult.exp)
       expResult = analyzeResult
     }
 
+    // 并行获取 AI 回复
     const reply = await askMorgana(userMsg, messages, ctx)
     setMessages([...newMessages, { role: 'assistant', content: reply }])
     setLoading(false)
 
-    // 把 EXP 信息插入到 AI 回复后（通过一个小 tag 显示）
-    setTimeout(() => {
-      setMessages(prev => {
-        const last = prev[prev.length - 1]
-        if (last.role === 'assistant') {
-          return [...prev.slice(0, -1), {
-            ...last,
-            _exp: expResult ? { dim: expResult.dimension, amount: expResult.exp, reason: expResult.reason } : null,
-          }]
-        }
-        return prev
-      })
-    }, 100)
+    // 显示经验值结果（带分析理由）
+    if (expResult) {
+      setTimeout(() => {
+        setMessages(prev => {
+          const last = prev[prev.length - 1]
+          if (last.role === 'assistant') {
+            return [...prev.slice(0, -1), {
+              ...last,
+              _exp: { dim: expResult!.dimension, amount: expResult!.exp, reason: expResult!.reason },
+            }]
+          }
+          return prev
+        })
+      }, 300)
+    }
   }
 
   // 维度颜色
