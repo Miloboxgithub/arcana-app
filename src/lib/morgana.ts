@@ -1,8 +1,9 @@
 /**
  * morgana.ts — 莫尔加纳 AI 对话模块
- * 使用 MiniMax LLM，OpenAI 兼容接口
+ * 通过后端 API 转发请求，避免直接暴露 API Key
  */
 
+import { api } from './api'
 import type { DimensionId } from '@/stores/useHabitStore'
 
 export interface ChatMessage {
@@ -21,8 +22,6 @@ export interface UserContext {
   weekExp: number
   recentChecks: number  // last 7 days
 }
-
-const API_KEY = import.meta.env.VITE_MINIMAX_API_KEY as string
 
 // 莫尔加纳的系统 prompt — P5 风格，有个性
 function buildSystemPrompt(ctx: UserContext): string {
@@ -75,39 +74,112 @@ export async function askMorgana(
   const recentHistory = history.slice(-10)
 
   const messages = [
-    { role: 'system', content: systemPrompt },
     ...recentHistory.map(m => ({ role: m.role, content: m.content })),
     { role: 'user', content: userMessage },
   ]
 
   try {
-    const res = await fetch('https://api.minimaxi.com/v1/text/chatcompletion_v2', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: 'MiniMax-Text-01',
-        messages,
-        temperature: 0.85,
-        max_tokens: 300,
-        top_p: 0.95,
-      }),
-    })
-
-    if (!res.ok) {
-      const errText = await res.text()
-      console.warn('[morgana] API error:', res.status, errText)
-      return fallback()
-    }
-
-    const data = await res.json()
-    const reply = data.choices?.[0]?.message?.content?.trim()
-    return reply || fallback()
+    // 通过后端 API 转发请求
+    const res = await api.chat.send(messages, systemPrompt)
+    return res.reply
   } catch (e) {
-    console.warn('[morgana] fetch failed:', e)
+    console.warn('[morgana] API error:', e)
     return fallback()
+  }
+}
+
+// 智能分析输入，判断是否应该添加经验值
+// 返回：是否添加成功、添加了哪个维度、经验值数量
+export interface AnalyzeResult {
+  shouldAddExp: boolean
+  dimension: DimensionId | null
+  exp: number
+  reason: string  // AI 给的原因，用于显示给用户
+}
+
+// 智能分析的系统 prompt
+const ANALYZE_SYSTEM_PROMPT = `你是 ARCANA 系统的经验值分析器。
+
+你的任务：根据用户的输入，判断是否应该给予经验值奖励。
+
+## 判断标准
+
+**应该给予经验值的情况：**
+1. 用户明确提到完成了某个习惯/任务（如：跑步、看书、刷题、冥想等）
+2. 用户描述了具体的行动（如：写了 1 小时代码、跑了 5km、看了一章书等）
+3. 用户记录了当天的学习/工作/锻炼进展
+
+**不应该给予经验值的情况：**
+1. 用户只是在提问/闲聊，没有具体行动（如："今天该干什么？""怎么提高？""有什么建议？"）
+2. 用户只是在抱怨/发牢骚，没有行动
+3. 用户只是在打招呼/闲聊
+4. 内容无意义或无法判断
+
+## 维度映射
+
+将行动归类到以下维度：
+- pro（专业力）：学习、 coding、阅读、工作、技术提升
+- fitness（体能）：运动、跑步、健身、锻炼
+- social（社交）：社交、聚会、聊天、交流
+- create（创造力）：创作、写作、绘画、设计
+- self（自律）：冥想、早起、计划、复盘、习惯坚持
+- charm（魅力）：穿搭、打扮、表达、演讲
+
+## 输出格式
+
+请返回 JSON 格式：
+{
+  "shouldAddExp": true/false,
+  "dimension": "pro/fitness/social/create/self/charm"（如果 shouldAddExp 为 true）,
+  "exp": 经验值数量（10-50之间的整数，根据行动的价值估算）,
+  "reason": "一句话说明为什么给予/不给予经验值"
+}
+
+注意：
+- 如果是通用的学习/工作/提升，默认归类到 pro
+- 如果是运动/锻炼，归类到 fitness
+- 如果是社交活动，归类到 social
+- 如果是创意创作，归类到 create
+- 如果是习惯坚持/自我管理，归类到 self
+- 如果是个人形象/表达，归类到 charm
+- 经验值不要太高，一般 15-30 为主`
+
+export async function analyzeAndAddExp(
+  userMessage: string,
+  ctx: UserContext
+): Promise<AnalyzeResult> {
+  const userContextInfo = `
+用户维度状态：
+${ctx.dimensions.map(d => `- ${d.name}: Lv${d.level}, ${d.exp}/${d.maxExp} EXP`).join('\n')}
+用户习惯列表：
+${ctx.habits.length > 0 ? ctx.habits.map(h => `- ${h.name}（${h.dimension}·${h.timeSlot}·+${h.exp}EXP）`).join('\n') : '暂无习惯'}
+今日已打卡：${ctx.todayCompleted.length} 个
+`
+
+  const prompt = `${userContextInfo}
+
+用户输入："${userMessage}"
+
+请分析这段输入，判断是否应该给予经验值奖励。`
+
+  try {
+    // 调用后端的 analyze API
+    const res = await api.chat.analyze(prompt, ANALYZE_SYSTEM_PROMPT)
+    return {
+      shouldAddExp: res.shouldAddExp,
+      dimension: res.dimension as DimensionId | null,
+      exp: res.exp,
+      reason: res.reason,
+    }
+  } catch (e) {
+    console.warn('[analyze] API error:', e)
+    // 出错时保守处理，不添加经验值
+    return {
+      shouldAddExp: false,
+      dimension: null,
+      exp: 0,
+      reason: '系统繁忙，无法分析',
+    }
   }
 }
 

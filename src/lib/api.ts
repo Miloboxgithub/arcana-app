@@ -97,6 +97,15 @@ export const api = {
     send: (messages: Array<{ role: string; content: string }>, system?: string) =>
       request<{ reply: string }>('POST', '/api/chat', { messages, system }),
 
+    // 智能分析输入，判断是否应该添加经验值
+    analyze: (userPrompt: string, systemPrompt: string) =>
+      request<{
+        shouldAddExp: boolean
+        dimension: string | null
+        exp: number
+        reason: string
+      }>('POST', '/api/chat/analyze', { prompt: userPrompt, system: systemPrompt }),
+
     profile: () =>
       request<{
         habits: Array<{ name: string; slot: string; exp: number; dimension: string }>

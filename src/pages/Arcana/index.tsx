@@ -104,8 +104,8 @@ export default function ArcanaPage({ onBack }: ArcanaPageProps) {
     setMessages(newMessages)
     setLoading(true)
 
-    // 同时用规则分类器给 EXP（不等 AI 回复）
-    const { dimension, exp } = classifyInput(userMsg)
+    // 暂时先用规则分类器（等后端 API 准备好后再切换到 AI 分析）
+    const { dimension, exp, label } = classifyInput(userMsg)
     addExp(dimension, exp)
 
     const reply = await askMorgana(userMsg, messages, ctx)
@@ -119,7 +119,7 @@ export default function ArcanaPage({ onBack }: ArcanaPageProps) {
         if (last.role === 'assistant' && !last.content.includes('[EXP]')) {
           return [...prev.slice(0, -1), {
             ...last,
-            _exp: { dim: dimension, amount: exp },
+            _exp: { dim: dimension, amount: exp, label },
           } as any]
         }
         return prev
