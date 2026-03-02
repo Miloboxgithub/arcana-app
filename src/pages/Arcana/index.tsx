@@ -2,8 +2,7 @@ import { useState, useRef, useEffect, useMemo } from 'react'
 import useProfileStore from '@/stores/useProfileStore'
 import useHabitStore from '@/stores/useHabitStore'
 import useAuthStore from '@/stores/useAuthStore'
-import { askMorgana, type ChatMessage, type UserContext } from '@/lib/morgana'
-import { classifyInput } from '@/utils/classifyInput'
+import { askMorgana, analyzeAndAddExp, type ChatMessage, type UserContext, type AnalyzeResult } from '@/lib/morgana'
 
 interface ArcanaPageProps {
   onBack: () => void
@@ -104,9 +103,13 @@ export default function ArcanaPage({ onBack }: ArcanaPageProps) {
     setMessages(newMessages)
     setLoading(true)
 
-    // 暂时先用规则分类器（等后端 API 准备好后再切换到 AI 分析）
-    const { dimension, exp, label } = classifyInput(userMsg)
-    addExp(dimension, exp)
+    // 用 AI 智能分析输入，判断是否应该给 EXP（后端会直接写库）
+    const analyzeResult = await analyzeAndAddExp(userMsg, ctx)
+    let expResult: AnalyzeResult | null = null
+    if (analyzeResult.shouldAddExp && analyzeResult.dimension) {
+      addExp(analyzeResult.dimension, analyzeResult.exp)
+      expResult = analyzeResult
+    }
 
     const reply = await askMorgana(userMsg, messages, ctx)
     setMessages([...newMessages, { role: 'assistant', content: reply }])
@@ -116,11 +119,11 @@ export default function ArcanaPage({ onBack }: ArcanaPageProps) {
     setTimeout(() => {
       setMessages(prev => {
         const last = prev[prev.length - 1]
-        if (last.role === 'assistant' && !last.content.includes('[EXP]')) {
+        if (last.role === 'assistant') {
           return [...prev.slice(0, -1), {
             ...last,
-            _exp: { dim: dimension, amount: exp, label },
-          } as any]
+            _exp: expResult ? { dim: expResult.dimension, amount: expResult.exp, reason: expResult.reason } : null,
+          }]
         }
         return prev
       })
