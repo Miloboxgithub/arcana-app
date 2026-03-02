@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react'
 import useHabitStore, { type TimeSlot, type Habit } from '@/stores/useHabitStore'
 import useProfileStore from '@/stores/useProfileStore'
 import { useStarBurst } from '@/hooks/useStarBurst'
-import { classifyInput } from '@/utils/classifyInput'
+import { analyzeAndAddExp } from '@/lib/morgana'
 
 // ── Constants ─────────────────────────────────────────────
 const DIM_LABELS: Record<string, string> = {
@@ -278,13 +278,36 @@ export default function Today() {
     }
   }, [toggleToday, addExp, removeExp, burst, showToast, showMorgana])
 
-  const handleAI = useCallback((text: string) => {
-    const { dimension, exp, label } = classifyInput(text)
+  const handleAI = useCallback(async (text: string) => {
+    // 构建用户上下文（用于 AI 分析）
+    const ctx = {
+      username: 'USER',
+      dimensions: dimensions.map(d => ({ id: d.id, name: d.name, level: d.level, exp: d.exp, maxExp: d.maxExp })),
+      habits: habits.map(h => ({ name: h.name, dimension: h.dimension, timeSlot: (h as any).timeSlot || 'morning', exp: h.exp })),
+      todayCompleted,
+      habitIds: Object.fromEntries(habits.map(h => [h.id, h.name])),
+      streak,
+      totalExp: 0,
+      weekExp: 0,
+      recentChecks: 0,
+    }
+
+    // 用 AI 智能分析输入（后端会直接写库）
+    const result = await analyzeAndAddExp(text, ctx)
+    
     burst(window.innerWidth / 2, window.innerHeight / 2, 14)
-    addExp(dimension, exp)
-    showToast(exp, label)
-    setTimeout(() => showMorgana(`收到！识别为「${label}」，+${exp} EXP 已记录在案。`), 500)
-  }, [addExp, burst, showToast, showMorgana])
+    
+    if (result.shouldAddExp && result.dimension) {
+      // 同步本地状态（后端已写入）
+      addExp(result.dimension, result.exp)
+      showToast(result.exp, result.dimension)
+      setTimeout(() => showMorgana(`收到！${result.reason} +${result.exp} EXP 已记录在案。`), 500)
+    } else {
+      // AI 判断不加经验，也给个反馈
+      showToast(0, '未识别')
+      setTimeout(() => showMorgana(`收到！但这段内容没有实际行动，暂时不给予经验值。继续加油！`), 500)
+    }
+  }, [dimensions, habits, todayCompleted, streak, addExp, burst, showToast, showMorgana])
 
   const previewDims = dimensions.slice(0, 4)
 
