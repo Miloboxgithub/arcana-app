@@ -28,6 +28,14 @@ function getDateStr() {
   return `${days[d.getDay()]} · ${String(d.getDate()).padStart(2,'0')} ${months[d.getMonth()]}`
 }
 
+function getTimeSlot() {
+  const h = new Date().getHours()
+  if (h >= 5 && h < 12) return '上午'
+  if (h >= 12 && h < 18) return '下午'
+  if (h >= 18 && h < 22) return '傍晚'
+  return '深夜'
+}
+
 // ── EXP Toast ─────────────────────────────────────────────
 function ExpToast({ visible, exp, dim }: { visible: boolean; exp: number; dim: string }) {
   return (
@@ -333,12 +341,18 @@ export default function Today() {
             </div>
             <span style={{ fontFamily: 'Share Tech Mono,monospace', fontSize: 9, letterSpacing: 4, color: 'var(--muted)', textTransform: 'uppercase', marginTop: 4, transform: 'skewX(-3deg)', display: 'block' }}>命运由你书写 · YOUR ARCANA</span>
           </div>
-          <div style={{ textAlign: 'right', paddingTop: 6 }}>
-            <div style={{ fontFamily: 'Share Tech Mono,monospace', fontSize: 9, color: 'var(--red)', letterSpacing: 2, lineHeight: 1.6 }}>
-              {getDateStr()}<br />{new Date().getFullYear()}
+          {/* P5风格日期天气时间段 - 右上角 */}
+          <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <div style={{ fontFamily: 'Bebas Neue,sans-serif', fontSize: 20, color: 'var(--white)', letterSpacing: 2, lineHeight: 1 }}>
+              {getDateStr().replace(' · ', ' ')}
+            </div>
+            <div style={{ fontFamily: 'Share Tech Mono,monospace', fontSize: 11, color: 'var(--gold)', letterSpacing: 1, display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-end' }}>
+              <span>☀️ +22°C</span>
+              <span style={{ color: 'var(--muted)' }}>|</span>
+              <span style={{ color: 'var(--red)' }}>{getTimeSlot()}</span>
             </div>
             <div style={{ fontFamily: 'Share Tech Mono,monospace', fontSize: 9, color: 'var(--muted)', letterSpacing: 1, display: 'flex', alignItems: 'center', gap: 5, justifyContent: 'flex-end', marginTop: 2 }}>
-              <span className="status-dot" style={{ width: 6, height: 6, background: 'var(--red)', transform: 'rotate(45deg)', display: 'inline-block' }} />
+              <span style={{ width: 6, height: 6, background: 'var(--red)', transform: 'rotate(45deg)', display: 'inline-block' }} />
               运行中
             </div>
           </div>
@@ -389,7 +403,10 @@ export default function Today() {
             clipPath: 'polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,0 100%)'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ fontSize: 14 }}>📊</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--white)" strokeWidth="2">
+                <path d="M9 11l3 3L22 4"/>
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+              </svg>
               <span style={{ fontFamily: 'Share Tech Mono,monospace', fontSize: 11, color: 'var(--white)' }}>
                 {todayCompleted.length}/{allHabits}
               </span>
@@ -397,7 +414,9 @@ export default function Today() {
             </div>
             <div style={{ width: 1, height: 16, background: 'var(--dim)' }} />
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ fontSize: 14 }}>🔥</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--red)" strokeWidth="2">
+                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+              </svg>
               <span style={{ fontFamily: 'Bebas Neue,sans-serif', fontSize: 16, color: 'var(--red)', letterSpacing: 1 }}>
                 {maxStreak}
               </span>
@@ -405,7 +424,9 @@ export default function Today() {
             </div>
             <div style={{ width: 1, height: 16, background: 'var(--dim)' }} />
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ fontSize: 14 }}>💎</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="2">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              </svg>
               <span style={{ fontFamily: 'Bebas Neue,sans-serif', fontSize: 16, color: 'var(--gold)', letterSpacing: 1 }}>
                 +{todayExp}
               </span>
