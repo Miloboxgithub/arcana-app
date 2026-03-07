@@ -253,7 +253,7 @@ export default function Growth() {
   const { dimensions } = useProfileStore()
 
   const streak = getStreak()
-  const totalExp = dimensions.reduce((s,d) => s + d.exp + d.level * d.maxExp, 0)
+  const totalExp = dimensions.reduce((s,d) => s + (d.totalExp ?? 0), 0)
 
   const weekExp = useMemo(() => {
     const weekAgo = Date.now() - 7 * 86400000

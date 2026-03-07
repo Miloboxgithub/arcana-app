@@ -9,6 +9,7 @@ export interface Dimension {
   level: number
   exp: number
   maxExp: number
+  totalExp: number  // 直接存储后端的 total_exp
   color: string
   rankTitle: string
   nextRank: string
@@ -27,12 +28,12 @@ interface ProfileStore {
 }
 
 const defaultDimensions: Dimension[] = [
-  { id: 'pro',     name: '专业力', level: 1, exp: 0,  maxExp: 1000, color: '#C3002F', rankTitle: 'NOVICE',   nextRank: 'SCHOLAR',      iconType: 'bar'      },
-  { id: 'fitness', name: '体能',   level: 1, exp: 0,  maxExp: 1000, color: '#E8C840', rankTitle: 'ROOKIE',   nextRank: 'ATHLETE',      iconType: 'dumbbell' },
-  { id: 'social',  name: '社交',   level: 1, exp: 0,  maxExp: 1000, color: '#4FC3F7', rankTitle: 'SHY',      nextRank: 'CHARMER',      iconType: 'users'    },
-  { id: 'create',  name: '创造力', level: 1, exp: 0,  maxExp: 1000, color: '#A5D6A7', rankTitle: 'DABBLER',  nextRank: 'ARTISAN',      iconType: 'star'     },
-  { id: 'self',    name: '自律',   level: 1, exp: 0,  maxExp: 1000, color: '#CE93D8', rankTitle: 'DRIFTER',  nextRank: 'RESOLVED',     iconType: 'grid'     },
-  { id: 'charm',   name: '魅力',   level: 1, exp: 0,  maxExp: 1000, color: '#FF8A65', rankTitle: 'PLAIN',    nextRank: 'ALLURING',     iconType: 'flame'    },
+  { id: 'pro',     name: '专业力', level: 1, exp: 0,  maxExp: 1000, totalExp: 0,  color: '#C3002F', rankTitle: 'NOVICE',   nextRank: 'SCHOLAR',      iconType: 'bar'      },
+  { id: 'fitness', name: '体能',   level: 1, exp: 0,  maxExp: 1000, totalExp: 0,  color: '#E8C840', rankTitle: 'ROOKIE',   nextRank: 'ATHLETE',      iconType: 'dumbbell' },
+  { id: 'social',  name: '社交',   level: 1, exp: 0,  maxExp: 1000, totalExp: 0,  color: '#4FC3F7', rankTitle: 'SHY',      nextRank: 'CHARMER',      iconType: 'users'    },
+  { id: 'create',  name: '创造力', level: 1, exp: 0,  maxExp: 1000, totalExp: 0,  color: '#A5D6A7', rankTitle: 'DABBLER',  nextRank: 'ARTISAN',      iconType: 'star'     },
+  { id: 'self',    name: '自律',   level: 1, exp: 0,  maxExp: 1000, totalExp: 0,  color: '#CE93D8', rankTitle: 'DRIFTER',  nextRank: 'RESOLVED',     iconType: 'grid'     },
+  { id: 'charm',   name: '魅力',   level: 1, exp: 0,  maxExp: 1000, totalExp: 0,  color: '#FF8A65', rankTitle: 'PLAIN',    nextRank: 'ALLURING',     iconType: 'flame'    },
 ]
 
 /** Compute level/exp/maxExp from total accumulated EXP */
@@ -68,15 +69,13 @@ const useProfileStore = create<ProfileStore>()(
               newLevel++
               newMax = Math.floor(newMax * 1.3)
             }
-            // 计算更新后的总经验值：使用升级前的旧maxExp计算
+            // 计算更新后的总经验值
             if (newLevel === d.level) {
-              // 没升级
               totalDimExp = d.exp + amount + (d.level - 1) * d.maxExp
             } else {
-              // 升级了
               totalDimExp = newExp + (newLevel - 1) * oldMax
             }
-            return { ...d, exp: newExp, level: newLevel, maxExp: newMax }
+            return { ...d, exp: newExp, level: newLevel, maxExp: newMax, totalExp: totalDimExp }
           })
           return { dimensions: dims, totalExp: s.totalExp + amount }
         })
@@ -108,17 +107,22 @@ const useProfileStore = create<ProfileStore>()(
         return Math.floor(dims.reduce((sum, d) => sum + d.level, 0) / dims.length)
       },
 
-      setDimensionExp: (map) => set(s => {
-        let totalExp = 0
-        const dims = s.dimensions.map(d => {
-          const raw = map[d.id]
-          if (raw === undefined) return d
-          const { level, exp, maxExp } = computeLevel(raw)
-          totalExp += raw
-          return { ...d, level, exp, maxExp }
+      setDimensionExp: (map) => {
+         // console.log 收到的map:', map)
+        set(s => {
+          let totalExp = 0
+          const dims = s.dimensions.map(d => {
+            const raw = map[d.id]
+            if (raw === undefined) return d
+            const { level, exp, maxExp } = computeLevel(raw)
+             // console.log ${d.id}: raw=${raw}, level=${level}, exp=${exp}, maxExp=${maxExp}`)
+            totalExp += raw
+            // 直接存储 totalExp
+            return { ...d, level, exp, maxExp, totalExp: raw }
+          })
+          return { dimensions: dims, totalExp }
         })
-        return { dimensions: dims, totalExp }
-      }),
+      },
     }),
     { name: 'arcana-profile' }
   )

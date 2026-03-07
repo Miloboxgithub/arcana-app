@@ -186,7 +186,7 @@ export default function Status() {
   const totalLevel = getTotalLevel()
   const streak = getStreak()
   // 正确的总经验计算: exp + (level-1) * maxExp
-  const totalExp = dimensions.reduce((s,d)=>s+d.exp+(d.level-1)*d.maxExp,0)
+  const totalExp = dimensions.reduce((s,d)=>s+(d.totalExp ?? 0),0)
   const wk = Math.ceil((Date.now()-new Date(new Date().getFullYear(),0,1).getTime())/(7*86400000))
 
   // Weekly EXP per dimension (for expanded detail panel)
@@ -204,13 +204,12 @@ export default function Status() {
 
   // 雷达图使用总经验值比例，设置合理的最大值使图表美观
   // 基础1500，动态扩展到实际最大值的1.5倍
-  const maxDimExp = Math.max(...dimensions.map(d => d.exp + (d.level - 1) * d.maxExp))
+  const maxDimExp = Math.max(...dimensions.map(d => d.totalExp ?? 0))
   const MAX_DIM_EXP = Math.max(1500, maxDimExp * 1.5)
   const ratios = DIM_ORDER.map(id=>{ 
     const d=dmap[id]
     if (!d) return 0
-    const dimTotalExp = d.exp + (d.level - 1) * d.maxExp
-    return Math.min(1, dimTotalExp / MAX_DIM_EXP)
+    return Math.min(1, (d.totalExp ?? 0) / MAX_DIM_EXP)
   })
   // Interpolate from 0 to actual ratios using radarProgress
   const animatedRatios = ratios.map(r => r * radarProgress)
@@ -345,7 +344,7 @@ export default function Status() {
                     </div>
                     {/* 三项统计 */}
                     {[
-                      {k:'累计经验', v:`${(level*maxExp+exp).toLocaleString()} EXP`, gold:true,  red:false},
+                      {k:'累计经验', v:`${(d?.totalExp ?? 0).toLocaleString()} EXP`, gold:true,  red:false},
                       {k:'本周经验', v:`+${weekExpByDim.get(id) ?? 0} EXP`,          gold:false, red:true },
                       {k:'下一等级', v:`${meta.ranks[Math.min(level+1,meta.ranks.length-1)]} · Lv${level+1}`, gold:false, red:false},
                     ].map(r=>(

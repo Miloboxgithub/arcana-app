@@ -61,16 +61,22 @@ export async function syncFromCloud(_userId?: string) {
       })))
     }
 
-    // ── 维度经验 ──
+// ── 维度经验 ──
     if (dims.length > 0) {
       const expMap: Record<string, number> = {}
       for (const d of dims) expMap[d.dim_id] = d.total_exp ?? 0
+       // console.log 后端获取的维度经验:', expMap)
+      
+      // 清除旧的 localStorage，强制从后端拉取最新数据
+      localStorage.removeItem('arcana-profile')
+      
       profileStore.setDimensionExp(expMap)
+       // console.log 已调用 setDimensionExp')
     } else {
       await pushAllDimsToCloud()
     }
 
-    console.log('[sync] ✓ cloud → local complete')
+     // console.log ✓ cloud → local complete')
   } catch (e) {
     console.error('[sync] syncFromCloud failed:', e)
   }

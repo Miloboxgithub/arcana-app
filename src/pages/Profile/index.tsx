@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useMemo } from 'react'
 import useProfileStore from '@/stores/useProfileStore'
 import useHabitStore from '@/stores/useHabitStore'
 import useAuthStore from '@/stores/useAuthStore'
@@ -185,7 +185,7 @@ interface ProfileProps {
 
 export default function Profile({ onOpenArcana }: ProfileProps) {
   const { dimensions, getTotalLevel } = useProfileStore()
-  const { getStreak } = useHabitStore()
+  const { getStreak, checkRecords } = useHabitStore()
   const { user, signOut } = useAuthStore()
   const { openModal, closeModal } = useUIStore()
 
@@ -204,8 +204,19 @@ export default function Profile({ onOpenArcana }: ProfileProps) {
 
   const streak = getStreak()
   const totalLevel = getTotalLevel()
-  const totalExp = dimensions.reduce((s, d) => s + d.exp + d.level * d.maxExp, 0)
+  const totalExp = dimensions.reduce((s, d) => s + (d.totalExp ?? 0), 0)
   const totalExpDisplay = totalExp > 999 ? `${(totalExp / 1000).toFixed(1)}K` : String(totalExp)
+  
+  // 完成率：过去30天有打卡的次数/30
+  const completionRate = useMemo(() => {
+    const days30 = new Set<string>()
+    for (let i = 0; i < 30; i++) {
+      const d = new Date(); d.setDate(d.getDate() - i)
+      days30.add(d.toISOString().split('T')[0])
+    }
+    const activeDays = [...days30].filter(d => checkRecords.some(r => r.date === d)).length
+    return Math.round((activeDays / 30) * 100)
+  }, [checkRecords])
 
   const getAvatarNode = (id: string) => {
     if (id.startsWith('data:')) {
@@ -321,7 +332,7 @@ export default function Profile({ onOpenArcana }: ProfileProps) {
             {[
               { num: totalExpDisplay, lbl: '累计经验' },
               { num: String(streak), lbl: '连击天' },
-              { num: '89%', lbl: '完成率' },
+              { num: `${completionRate}%`, lbl: '完成率' },
             ].map(({ num, lbl }) => (
               <div key={lbl} style={{ background: 'var(--black)', padding: '10px 0', textAlign: 'center' }}>
                 <div style={{ fontFamily: 'Bebas Neue,sans-serif', fontSize: 26, color: 'var(--white)', letterSpacing: 2, lineHeight: 1 }}>{num}</div>
