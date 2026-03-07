@@ -3,6 +3,7 @@ import useAuthStore from '@/stores/useAuthStore'
 import useProfileStore from '@/stores/useProfileStore'
 import useHabitStore from '@/stores/useHabitStore'
 import { pushOnboardingDims } from '@/lib/sync'
+import { api } from '@/lib/api'
 import type { DimensionId } from '@/stores/useHabitStore'
 
 // ── Types ─────────────────────────────────────────────────
@@ -17,40 +18,81 @@ const ALL_DIMS: DimConfig[] = [
   { id: 'charm',   label: '魅力',   desc: '形象、气质、表达力',     emoji: '◉' },
 ]
 
-// ── AI 评估引擎（规则式，无需 API）────────────────────────
-const EVAL_KEYWORDS: Record<DimensionId, string[]> = {
-  pro:     ['学习','技术','代码','编程','算法','研究','工作','考研','专业','实习','项目','英语','数学','考试'],
-  fitness: ['跑步','健身','运动','锻炼','游泳','篮球','足球','爬山','减肥','体重','公里'],
-  social:  ['朋友','社交','聚会','聊天','活动','认识','交流','团队','组织','演讲'],
-  create:  ['写作','设计','画画','音乐','创作','摄影','视频','博客','作品','灵感'],
-  self:    ['早起','规律','计划','打卡','坚持','自律','冥想','日记','复盘','总结','习惯'],
-  charm:   ['穿搭','形象','气质','表达','自信','护肤','礼仪','演讲'],
+// AI System Prompt for onboarding analysis
+const ONBOARDING_SYSTEM_PROMPT = `你是 ARCANA 系统的"命运档案"分析师。用户正在创建游戏档案，需要你根据他们的"前世档案"描述来分析他们的初始属性。
+
+## 你的任务
+根据用户的描述，分析他们在6个维度上的初始经验值（EXP）。
+
+## 维度说明
+- pro（专业力）：学习、技术、工作能力
+- fitness（体能）：运动、健康、身体状态  
+- social（社交）：人际关系、沟通、网络
+- create（创造力）：创作、设计、艺术表达
+- self（自律）：习惯、规律、执行力
+- charm（魅力）：形象、气质、表达力
+
+## 评分规则
+1. 根据描述中的关键词、能力描述、经验年限等综合评估
+2. 初始经验值范围：300-1200 EXP
+   - 新手/零基础：300-500
+   - 有一定基础：500-800
+   - 经验丰富：800-1000
+   - 高手/多年经验：1000-1200
+3. 如果用户明确提到在某领域很强/很弱，相应调整
+
+## 输出格式
+请直接返回 JSON，不要其他文字：
+{
+  "pro": 500,
+  "fitness": 400,
+  "social": 600,
+  "create": 350,
+  "self": 450,
+  "charm": 500
 }
 
-const LEVEL_KEYWORDS = {
-  high: ['很强','非常','精通','大神','擅长','专业','高手','厉害','优秀','多年','丰富'],
-  low:  ['差','弱','不好','没有','从来','很少','极少','不太','零基础','新手','菜'],
-}
+注意：只返回 JSON，不要有任何解释或额外文字。`
 
-function analyzeDescription(text: string, selectedDims: DimensionId[]): Record<DimensionId, number> {
-  const lower = text.toLowerCase()
-  const result: Record<DimensionId, number> = {} as any
-
-  for (const id of selectedDims) {
-    const keywords = EVAL_KEYWORDS[id]
-    const hits = keywords.filter(k => lower.includes(k)).length
-    // Base score 200-600 EXP, adjusted by keyword hits + sentiment
-    let base = 200 + hits * 40
-
-    // High/low modifiers
-    if (LEVEL_KEYWORDS.high.some(k => lower.includes(k))) base = Math.min(800, base + 200)
-    if (LEVEL_KEYWORDS.low.some(k => lower.includes(k)))  base = Math.max(50,  base - 150)
-
-    // Small random variance ±50
-    base += Math.floor(Math.random() * 101) - 50
-    result[id] = Math.max(50, Math.min(900, base))
+async function analyzeWithAI(description: string, selectedDims: DimensionId[]): Promise<Record<DimensionId, number>> {
+  // 如果描述为空，返回默认值
+  if (!description.trim()) {
+    const defaults: Record<DimensionId, number> = {} as any
+    selectedDims.forEach(id => { defaults[id] = 500 })
+    return defaults
   }
-  return result
+
+  try {
+    // 使用 chat API 直接获取分析结果
+    const result = await api.chat.send(
+      [
+        { role: 'user', content: `请根据以下"前世档案"描述，分析我的初始属性。只返回JSON，不要其他文字。\n\n我的描述：${description}` }
+      ],
+      ONBOARDING_SYSTEM_PROMPT
+    )
+    
+    // 解析返回的 JSON
+    const parsed = JSON.parse(result.reply)
+    const validDims = ['pro', 'fitness', 'social', 'create', 'self', 'charm'] as DimensionId[]
+    
+    // 确保所有选择的维度都有值
+    const resultMap: Record<DimensionId, number> = {} as any
+    for (const id of selectedDims) {
+      if (validDims.includes(id) && parsed[id] !== undefined) {
+        // 限制在合理范围内
+        resultMap[id] = Math.max(300, Math.min(1200, parsed[id]))
+      } else {
+        resultMap[id] = 500 // 默认值
+      }
+    }
+    return resultMap
+  } catch (e) {
+    console.error('[Onboarding AI] 分析失败，使用默认值:', e)
+    // AI 失败时返回默认值
+    const defaults: Record<DimensionId, number> = {} as any
+    selectedDims.forEach(id => { defaults[id] = 500 })
+    return defaults
+  }
 }
 
 // Convert raw EXP to level + remaining exp
@@ -110,9 +152,9 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   const [analysisProgress, setAnalysisProgress] = useState(0)
   const [analysisLines, setAnalysisLines] = useState<string[]>([])
   const [initExp, setInitExp] = useState<Record<DimensionId, number>>(() => {
-    // Pre-fill with defaults so Step 4 never renders empty
+    // Pre-fill with defaults (500 base for better radar chart display)
     const defaults: Partial<Record<DimensionId, number>> = {}
-    ALL_DIMS.forEach(d => { defaults[d.id] = 200 })
+    ALL_DIMS.forEach(d => { defaults[d.id] = 500 })
     return defaults as Record<DimensionId, number>
   })
   const [radarProgress, setRadarProgress] = useState(0)
@@ -136,26 +178,26 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
     })
   }
 
-  // Step 3: run fake analysis animation then compute results
+  // Step 3: run AI analysis animation then compute results
   useEffect(() => {
     if (step !== 3) return
     const lines = [
-      '// 正在扫描你的档案数据...',
-      '// 分析能力维度关键词...',
-      '// 匹配怪盗团历史记录...',
+      '// 正在连接命运档案系统...',
+      '// 读取你的前世档案...',
+      '// AI 正在分析能力维度...',
       '// 计算初始属性分布...',
       '// 生成专属命运牌...',
       '// 分析完成 ✓',
     ]
     let i = 0
-    const iv = setInterval(() => {
+    const iv = setInterval(async () => {
       i++
       setAnalysisProgress(Math.min(100, Math.round((i / lines.length) * 100)))
       setAnalysisLines(prev => [...prev, lines[i-1]])
       if (i >= lines.length) {
         clearInterval(iv)
-        // Compute initExp synchronously and store before transitioning
-        const result = analyzeDescription(description, selectedDims)
+        // Use AI to analyze the description
+        const result = await analyzeWithAI(description, selectedDims)
         setInitExp(result)
         // Give React one frame to commit the state before moving to step 4
         requestAnimationFrame(() => {
@@ -500,9 +542,10 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
               <div style={{position:'absolute',top:0,left:0,right:0,height:2,background:'linear-gradient(90deg,var(--red),transparent 70%)'}}/>
               {(() => {
                 const orderedDims = ALL_DIMS.filter(d => selectedDims.includes(d.id))
+                const maxExp = Math.max(...Object.values(initExp), 1000)
                 const ratios = orderedDims.map(d => {
                   const exp = initExp[d.id] || 0
-                  return Math.min(1, exp / 1000)
+                  return Math.min(1, exp / maxExp)
                 })
                 const animRatios = ratios.map(r => r * radarProgress)
                 const pts = buildRadarPts(animRatios)

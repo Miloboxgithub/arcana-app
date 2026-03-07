@@ -54,6 +54,10 @@ const useAuthStore = create<AuthState>((set, get) => ({
 
   signOut: () => {
     localStorage.removeItem(TOKEN_KEY)
+    // 清理所有本地数据，确保切换账号时数据隔离
+    localStorage.removeItem('arcana-habits')
+    localStorage.removeItem('arcana-profile')
+    localStorage.removeItem('arcana-auth')
     set({ user: null })
   },
 

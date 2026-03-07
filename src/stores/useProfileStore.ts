@@ -73,7 +73,8 @@ const useProfileStore = create<ProfileStore>()(
         // Cloud sync: compute current total exp for this dim
         const dim = get().dimensions.find(d => d.id === dimensionId)
         if (dim) {
-          const totalDimExp = dim.exp + dim.level * dim.maxExp
+          // totalExp = exp + (level-1) * maxExp (level 1时不需要乘)
+          const totalDimExp = dim.exp + (dim.level - 1) * dim.maxExp
           pushDimExp(dimensionId, totalDimExp)
         }
       },
@@ -87,7 +88,7 @@ const useProfileStore = create<ProfileStore>()(
         }))
         const dim = get().dimensions.find(d => d.id === dimensionId)
         if (dim) {
-          const totalDimExp = dim.exp + dim.level * dim.maxExp
+          const totalDimExp = dim.exp + (dim.level - 1) * dim.maxExp
           pushDimExp(dimensionId, totalDimExp)
         }
       },

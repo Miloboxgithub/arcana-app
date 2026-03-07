@@ -135,10 +135,10 @@ export default function AuthPage() {
             </AnimatePresence>
 
             <div style={{ marginBottom: 14 }}>
-              <Field label="邮箱" value={email} onChange={setEmail} placeholder="you@example.com" type="email" />
+              <Field label="用户名 / 邮箱" value={email} onChange={setEmail} type="email" />
             </div>
             <div style={{ marginBottom: 24 }}>
-              <Field label="密码" value={password} onChange={setPassword} placeholder="••••••••" type="password" />
+              <Field label="密码" value={password} onChange={setPassword} type="password" />
             </div>
 
             {error && (
@@ -181,12 +181,12 @@ export default function AuthPage() {
 }
 
 function Field({
-  label, value, onChange, placeholder, type = 'text'
+  label, value, onChange, placeholder = '', type = 'text'
 }: {
   label: string
   value: string
   onChange: (v: string) => void
-  placeholder: string
+  placeholder?: string
   type?: string
 }) {
   return (
