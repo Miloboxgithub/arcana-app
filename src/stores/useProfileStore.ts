@@ -61,14 +61,21 @@ const useProfileStore = create<ProfileStore>()(
             if (d.id !== dimensionId) return d
             let newExp = d.exp + amount
             let newLevel = d.level
-            let newMax = d.maxExp
+            let oldMax = d.maxExp
+            let newMax = oldMax
             while (newExp >= newMax) {
               newExp -= newMax
               newLevel++
               newMax = Math.floor(newMax * 1.3)
             }
-            // 计算更新后的总经验值
-            totalDimExp = newExp + (newLevel - 1) * newMax
+            // 计算更新后的总经验值：使用升级前的旧maxExp计算
+            if (newLevel === d.level) {
+              // 没升级
+              totalDimExp = d.exp + amount + (d.level - 1) * d.maxExp
+            } else {
+              // 升级了
+              totalDimExp = newExp + (newLevel - 1) * oldMax
+            }
             return { ...d, exp: newExp, level: newLevel, maxExp: newMax }
           })
           return { dimensions: dims, totalExp: s.totalExp + amount }
