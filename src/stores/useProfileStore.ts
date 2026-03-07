@@ -55,6 +55,7 @@ const useProfileStore = create<ProfileStore>()(
       dimensions: defaultDimensions,
 
       addExp: (dimensionId, amount) => {
+        let totalDimExp = 0
         set(s => {
           const dims = s.dimensions.map(d => {
             if (d.id !== dimensionId) return d
@@ -66,29 +67,31 @@ const useProfileStore = create<ProfileStore>()(
               newLevel++
               newMax = Math.floor(newMax * 1.3)
             }
+            // 计算更新后的总经验值
+            totalDimExp = newExp + (newLevel - 1) * newMax
             return { ...d, exp: newExp, level: newLevel, maxExp: newMax }
           })
           return { dimensions: dims, totalExp: s.totalExp + amount }
         })
-        // Cloud sync: compute current total exp for this dim
-        const dim = get().dimensions.find(d => d.id === dimensionId)
-        if (dim) {
-          // totalExp = exp + (level-1) * maxExp (level 1时不需要乘)
-          const totalDimExp = dim.exp + (dim.level - 1) * dim.maxExp
+        // Cloud sync: push updated total exp
+        if (totalDimExp > 0) {
           pushDimExp(dimensionId, totalDimExp)
         }
       },
 
       removeExp: (dimensionId, amount) => {
+        let totalDimExp = 0
         set(s => ({
-          dimensions: s.dimensions.map(d =>
-            d.id !== dimensionId ? d : { ...d, exp: Math.max(0, d.exp - amount) }
-          ),
+          dimensions: s.dimensions.map(d => {
+            if (d.id !== dimensionId) return d
+            const newExp = Math.max(0, d.exp - amount)
+            totalDimExp = newExp + (d.level - 1) * d.maxExp
+            return { ...d, exp: newExp }
+          }),
           totalExp: Math.max(0, s.totalExp - amount),
         }))
-        const dim = get().dimensions.find(d => d.id === dimensionId)
-        if (dim) {
-          const totalDimExp = dim.exp + (dim.level - 1) * dim.maxExp
+        // Cloud sync
+        if (totalDimExp >= 0) {
           pushDimExp(dimensionId, totalDimExp)
         }
       },
