@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import BottomNav, { type TabId } from '@/components/layout/BottomNav'
 import Today from '@/pages/Today'
@@ -7,6 +7,11 @@ import Habits from '@/pages/Habits'
 import Growth from '@/pages/Growth'
 import ArcanaPage from '@/pages/Arcana'
 import Profile from '@/pages/Profile'
+import AuthPage from '@/pages/Auth'
+import Onboarding from '@/pages/Onboarding'
+import useAuthStore from '@/stores/useAuthStore'
+import useUIStore from '@/stores/useUIStore'
+import { syncFromCloud } from '@/lib/sync'
 
 const pageVariants = {
   initial: { opacity: 0, y: 6 },
@@ -18,10 +23,29 @@ const pageTransition = { duration: 0.18, ease: 'easeInOut' as const }
 function App() {
   const [activeTab, setActiveTab] = useState<TabId>('today')
   const [prevArcana, setPrevArcana] = useState<TabId>('profile')
+  const { user, loading, init } = useAuthStore()
+  const { modalOpen } = useUIStore()
+
+  useEffect(() => { init() }, [init])
+
+  // 登录后自动从云端同步数据
+  useEffect(() => {
+    if (user) syncFromCloud(user.id)
+  }, [user?.id])
+
+  // 每30分钟验证一次token有效性
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      await useAuthStore.getState().refreshUser()
+    }, 30 * 60 * 1000)
+    return () => clearInterval(interval)
+  }, [])
 
   const handleTabChange = (id: TabId) => {
     if (id === 'arcana') setPrevArcana(activeTab)
     setActiveTab(id)
+    // 切换 tab 时确保 modal 状态重置（防止习惯页 modal 未关导致 FAB 消失）
+    useUIStore.getState().closeModal()
     // Scroll to top on tab change
     window.scrollTo(0, 0)
   }
@@ -38,7 +62,29 @@ function App() {
     }
   }
 
-  const showNav = activeTab !== 'arcana'
+  const showNav = activeTab !== 'arcana' && !modalOpen
+
+  // Loading state
+  if (loading) {
+    return (
+      <div style={{ minHeight: '100vh', background: 'var(--black)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 24, letterSpacing: 6, color: 'var(--red)', opacity: 0.7 }}>
+          ARCANA
+        </div>
+      </div>
+    )
+  }
+
+  // Not logged in → show auth page
+  if (!user) return <AuthPage />
+
+  // New user → show onboarding
+  const onboardingDone = user.onboarding_done
+  if (!onboardingDone) {
+    return <Onboarding onComplete={() => {
+      useAuthStore.getState().refreshUser()
+    }} />
+  }
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--black)', position: 'relative' }}>

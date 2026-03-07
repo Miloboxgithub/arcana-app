@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react'
 import useHabitStore, { type TimeSlot, type Habit } from '@/stores/useHabitStore'
 import useProfileStore from '@/stores/useProfileStore'
 import { useStarBurst } from '@/hooks/useStarBurst'
-import { classifyInput } from '@/utils/classifyInput'
+import { analyzeAndAddExp } from '@/lib/morgana'
 
 // ── Constants ─────────────────────────────────────────────
 const DIM_LABELS: Record<string, string> = {
@@ -21,8 +21,8 @@ const MORGANA_LINES = [
   '完美执行！这就是怪盗团的行动力！',
 ]
 let morganaIdx = 0
-const SLOTS: TimeSlot[] = ['morning', 'afternoon', 'evening']
-const SLOT_LABELS: Record<TimeSlot, string> = { morning: '早晨', afternoon: '下午', evening: '夜晚' }
+const SLOTS: TimeSlot[] = ['morning', 'afternoon', 'evening', 'night']
+const SLOT_LABELS: Record<TimeSlot, string> = { morning: '早晨', afternoon: '白天', evening: '傍晚', night: '夜晚' }
 
 function getDateStr() {
   const d = new Date()
@@ -146,32 +146,56 @@ function ChainConn() {
 
 // ── Slot Button ───────────────────────────────────────────
 function SlotBtn({ slot, active, onClick }: { slot: TimeSlot; active: boolean; onClick: () => void }) {
+  const icons: Record<TimeSlot, JSX.Element> = {
+    morning: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="4" fill="currentColor"/>
+        <line x1="12" y1="2" x2="12" y2="5" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="12" y1="19" x2="12" y2="22" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="4.22" y1="4.22" x2="6.34" y2="6.34" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="17.66" y1="17.66" x2="19.78" y2="19.78" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="2" y1="12" x2="5" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="19" y1="12" x2="22" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      </svg>
+    ),
+    afternoon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="5" fill="currentColor"/>
+        <line x1="12" y1="2" x2="12" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="12" y1="18" x2="12" y2="22" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="4.22" y1="4.22" x2="7.05" y2="7.05" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="16.95" y1="16.95" x2="19.78" y2="19.78" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="2" y1="12" x2="6" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="18" y1="12" x2="22" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="4.22" y1="19.78" x2="7.05" y2="16.95" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="16.95" y1="7.05" x2="19.78" y2="4.22" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      </svg>
+    ),
+    evening: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path d="M12 3a9 9 0 0 0 0 18 9 9 0 0 0 6.36-2.64A7 7 0 0 1 9 8a7 7 0 0 1 6.36-5A9 9 0 0 0 12 3z" fill="currentColor" opacity="0.6"/>
+        <circle cx="12" cy="12" r="3" fill="currentColor"/>
+        <line x1="12" y1="2" x2="12" y2="5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" opacity="0.5"/>
+        <line x1="20" y1="12" x2="22" y2="12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" opacity="0.5"/>
+      </svg>
+    ),
+    night: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z" fill="currentColor"/>
+        <circle cx="18" cy="5" r="0.9" fill="currentColor" opacity="0.6"/>
+        <circle cx="21" cy="9" r="0.6" fill="currentColor" opacity="0.4"/>
+        <circle cx="19" cy="3" r="0.5" fill="currentColor" opacity="0.35"/>
+      </svg>
+    ),
+  }
   return (
-    <button className={`slot-btn${active ? ' active' : ''}`} onClick={onClick}>
-      <div className="slot-icon-wrap">
-        {slot === 'morning' && (
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="4" fill="currentColor"/>
-            <line x1="12" y1="2" x2="12" y2="5" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            <line x1="12" y1="19" x2="12" y2="22" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            <line x1="4.22" y1="4.22" x2="6.34" y2="6.34" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            <line x1="17.66" y1="17.66" x2="19.78" y2="19.78" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            <line x1="2" y1="12" x2="5" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            <line x1="19" y1="12" x2="22" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-          </svg>
-        )}
-        {slot === 'afternoon' && (
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <polygon points="12,2 15,9 22,9 16.5,14 18.5,21 12,17 5.5,21 7.5,14 2,9 9,9" fill="currentColor" opacity="0.9"/>
-          </svg>
-        )}
-        {slot === 'evening' && (
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z" fill="currentColor"/>
-            <circle cx="17" cy="5" r="1" fill="currentColor" opacity="0.6"/>
-            <circle cx="20" cy="9" r="0.7" fill="currentColor" opacity="0.4"/>
-          </svg>
-        )}
+    <button
+      className={`slot-btn${active ? ' active' : ''}`}
+      onClick={onClick}
+      style={{ flex: 1, minWidth: 0 }}
+    >
+      <div className="slot-icon-wrap" style={{ transform: 'scale(0.85)' }}>
+        {icons[slot]}
       </div>
       <span className="slot-label">{SLOT_LABELS[slot]}</span>
     </button>
@@ -195,22 +219,27 @@ function SectionHead({ label }: { label: string }) {
 }
 
 // ── AI Input Bar ──────────────────────────────────────────
-function AIInputBar({ onSubmit }: { onSubmit: (text: string) => void }) {
+function AIInputBar({ onSubmit, disabled }: { onSubmit: (text: string) => void; disabled?: boolean }) {
   const [val, setVal] = useState('')
-  const send = () => { if (val.trim()) { onSubmit(val.trim()); setVal('') } }
+  const send = () => { if (val.trim() && !disabled) { onSubmit(val.trim()); setVal('') } }
   return (
     <div style={{ position: 'fixed', bottom: 64, left: '50%', transform: 'translateX(-50%)', width: 'calc(min(390px,100vw) - 24px)', zIndex: 50 }}>
-      <div style={{ background: 'rgba(14,14,14,0.97)', border: '1px solid var(--red)', display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', clipPath: 'polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%)', boxShadow: '0 0 24px rgba(195,0,47,0.3),0 8px 32px rgba(0,0,0,0.7)', backdropFilter: 'blur(12px)' }}>
-        <span style={{ fontFamily: 'Share Tech Mono,monospace', fontSize: 10, color: 'var(--red)', letterSpacing: 1, whiteSpace: 'nowrap', flexShrink: 0 }}>// 输入</span>
+      <div style={{ background: 'rgba(14,14,14,0.97)', border: `1px solid ${disabled ? 'var(--dim)' : 'var(--red)'}`, display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', clipPath: 'polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%)', boxShadow: disabled ? 'none' : '0 0 24px rgba(195,0,47,0.3),0 8px 32px rgba(0,0,0,0.7)', backdropFilter: 'blur(12px)' }}>
+        <span style={{ fontFamily: 'Share Tech Mono,monospace', fontSize: 10, color: disabled ? 'var(--muted)' : 'var(--red)', letterSpacing: 1, whiteSpace: 'nowrap', flexShrink: 0 }}>{disabled ? '分析中' : '// 输入'}</span>
         <input
           value={val}
           onChange={e => setVal(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && send()}
-          placeholder="今天做了什么？AI 自动分配经验值…"
-          style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: 'var(--white)', fontSize: 13, fontFamily: 'Noto Sans SC,sans-serif' }}
+          placeholder={disabled ? "AI 正在分析..." : "今天做了什么？AI 自动分配经验值…"}
+          disabled={disabled}
+          style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: disabled ? 'var(--muted)' : 'var(--white)', fontSize: 13, fontFamily: 'Noto Sans SC,sans-serif', opacity: disabled ? 0.5 : 1 }}
         />
-        <button onClick={send} style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 2, opacity: 0.7 }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><polygon points="5,3 19,12 5,21" fill="var(--red)" /></svg>
+        <button onClick={send} disabled={disabled} style={{ flexShrink: 0, background: 'none', border: 'none', cursor: disabled ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', padding: 2, opacity: disabled ? 0.3 : 0.7 }}>
+          {disabled ? (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ animation: 'spin 1s linear infinite' }}><circle cx="12" cy="12" r="10" stroke="var(--muted)" strokeWidth="2" strokeDasharray="30 15" /></svg>
+          ) : (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><polygon points="5,3 19,12 5,21" fill="var(--red)" /></svg>
+          )}
         </button>
       </div>
     </div>
@@ -226,6 +255,7 @@ export default function Today() {
   const [activeSlot, setActiveSlot] = useState<TimeSlot>('afternoon')
   const [toast, setToast] = useState({ visible: false, exp: 0, dim: '' })
   const [morgana, setMorgana] = useState({ visible: false, text: '' })
+  const [aiLoading, setAiLoading] = useState(false)
 
   const streak = getStreak()
   const slotHabits = getHabitsBySlot(activeSlot)
@@ -254,13 +284,40 @@ export default function Today() {
     }
   }, [toggleToday, addExp, removeExp, burst, showToast, showMorgana])
 
-  const handleAI = useCallback((text: string) => {
-    const { dimension, exp, label } = classifyInput(text)
+  const handleAI = useCallback(async (text: string) => {
+    // 构建用户上下文（用于 AI 分析）
+    const ctx = {
+      username: 'USER',
+      dimensions: dimensions.map(d => ({ id: d.id, name: d.name, level: d.level, exp: d.exp, maxExp: d.maxExp })),
+      habits: habits.map(h => ({ name: h.name, dimension: h.dimension, timeSlot: (h as any).timeSlot || 'morning', exp: h.exp })),
+      todayCompleted,
+      habitIds: Object.fromEntries(habits.map(h => [h.id, h.name])),
+      streak,
+      totalExp: 0,
+      weekExp: 0,
+      recentChecks: 0,
+    }
+
+    // 用 AI 智能分析输入（后端会直接写库）
+    setAiLoading(true)
+    showToast(0, '分析中...')
+    
+    const result = await analyzeAndAddExp(text, ctx)
+    setAiLoading(false)
+    
     burst(window.innerWidth / 2, window.innerHeight / 2, 14)
-    addExp(dimension, exp)
-    showToast(exp, label)
-    setTimeout(() => showMorgana(`收到！识别为「${label}」，+${exp} EXP 已记录在案。`), 500)
-  }, [addExp, burst, showToast, showMorgana])
+    
+    if (result.shouldAddExp && result.dimension) {
+      // 同步本地状态（后端已写入）
+      addExp(result.dimension, result.exp)
+      showToast(result.exp, result.dimension)
+      setTimeout(() => showMorgana(`收到！${result.reason} +${result.exp} EXP 已记录在案。`), 500)
+    } else {
+      // AI 判断不加经验，也给个反馈
+      showToast(0, '未识别')
+      setTimeout(() => showMorgana(`收到！但这段内容没有实际行动，暂时不给予经验值。继续加油！`), 500)
+    }
+  }, [dimensions, habits, todayCompleted, streak, addExp, burst, showToast, showMorgana])
 
   const previewDims = dimensions.slice(0, 4)
 
@@ -385,7 +442,7 @@ export default function Today() {
       </div>{/* end page-container */}
 
       {/* Fixed overlays */}
-      <AIInputBar onSubmit={handleAI} />
+      <AIInputBar onSubmit={handleAI} disabled={aiLoading} />
       <ExpToast visible={toast.visible} exp={toast.exp} dim={toast.dim} />
       <MorganaDialog
         visible={morgana.visible}

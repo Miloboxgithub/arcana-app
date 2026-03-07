@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import useHabitStore, { type TimeSlot, type DimensionId } from '@/stores/useHabitStore'
+import useUIStore from '@/stores/useUIStore'
 
 // ── Constants ──────────────────────────────────────────────
 const DIM_LABELS: Record<DimensionId, string> = {
@@ -9,11 +10,12 @@ const DIM_LABELS: Record<DimensionId, string> = {
 
 const SLOT_CONFIG: Record<TimeSlot, { label: string; cn: string }> = {
   morning:   { label: '早晨', cn: 'morning'   },
-  afternoon: { label: '下午', cn: 'afternoon' },
-  evening:   { label: '夜晚', cn: 'evening'   },
+  afternoon: { label: '白天', cn: 'afternoon' },
+  evening:   { label: '傍晚', cn: 'evening'   },
+  night:     { label: '夜晚', cn: 'night'     },
 }
 
-const SLOTS: TimeSlot[] = ['morning', 'afternoon', 'evening']
+const SLOTS: TimeSlot[] = ['morning', 'afternoon', 'evening', 'night']
 
 const DIMS: DimensionId[] = ['pro', 'fitness', 'social', 'create', 'self', 'charm']
 
@@ -30,14 +32,29 @@ function SlotIcon({ slot }: { slot: TimeSlot }) {
   )
   if (slot === 'afternoon') return (
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-      <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"
-        fill="currentColor" opacity="0.9"/>
+      <circle cx="12" cy="12" r="5" fill="currentColor"/>
+      <line x1="12" y1="2" x2="12" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      <line x1="12" y1="18" x2="12" y2="22" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      <line x1="2" y1="12" x2="6" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      <line x1="18" y1="12" x2="22" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      <line x1="4.93" y1="4.93" x2="7.76" y2="7.76" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      <line x1="16.24" y1="16.24" x2="19.07" y2="19.07" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      <line x1="4.93" y1="19.07" x2="7.76" y2="16.24" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      <line x1="16.24" y1="7.76" x2="19.07" y2="4.93" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
     </svg>
   )
-  // evening / moon
+  if (slot === 'evening') return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+      <path d="M12 3a9 9 0 0 0 0 18 9 9 0 0 0 6.36-2.64A7 7 0 0 1 9 8a7 7 0 0 1 6.36-5A9 9 0 0 0 12 3z" fill="currentColor" opacity="0.7"/>
+      <circle cx="12" cy="12" r="2.5" fill="currentColor"/>
+    </svg>
+  )
+  // night / moon
   return (
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
       <path d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z" fill="currentColor"/>
+      <circle cx="18" cy="5" r="0.8" fill="currentColor" opacity="0.6"/>
+      <circle cx="21" cy="9" r="0.5" fill="currentColor" opacity="0.4"/>
     </svg>
   )
 }
@@ -45,8 +62,9 @@ function SlotIcon({ slot }: { slot: TimeSlot }) {
 // Slot icon background/color
 const SLOT_ICO_STYLE: Record<TimeSlot, { background: string; color: string }> = {
   morning:   { background: 'rgba(255,175,0,0.1)',   color: 'rgba(255,175,0,0.75)' },
-  afternoon: { background: 'rgba(195,0,47,0.1)',    color: 'var(--red)' },
-  evening:   { background: 'rgba(110,100,200,0.1)', color: 'rgba(150,140,230,0.75)' },
+  afternoon: { background: 'rgba(255,120,0,0.1)',   color: 'rgba(255,120,0,0.8)' },
+  evening:   { background: 'rgba(195,0,47,0.1)',    color: 'var(--red)' },
+  night:     { background: 'rgba(110,100,200,0.1)', color: 'rgba(150,140,230,0.75)' },
 }
 
 // ── Chain connector (div-based, no ::before) ───────────────
@@ -282,10 +300,25 @@ function AddModal({ open, onClose, onAdd }: AddModalProps) {
 // ── MAIN: Habits Page ──────────────────────────────────────
 export default function Habits() {
   const { getHabitsBySlot, addHabit, removeHabit } = useHabitStore()
+  const { openModal, closeModal } = useUIStore()
   const [modalOpen, setModalOpen] = useState(false)
+  const [actionLoading, setActionLoading] = useState<string | null>(null)
 
-  const handleAdd = (name: string, dimension: DimensionId, slot: TimeSlot, exp: number) => {
+  const openAddModal = () => { setModalOpen(true); openModal() }
+  const closeAddModal = () => { setModalOpen(false); closeModal() }
+
+  const handleAdd = async (name: string, dimension: DimensionId, slot: TimeSlot, exp: number) => {
+    setActionLoading('add')
+    await new Promise(r => setTimeout(r, 300)) // 模拟短暂延迟，让用户感知
     addHabit({ name, dimension, timeSlot: slot, exp, isAnchor: false })
+    setActionLoading(null)
+  }
+
+  const handleRemove = async (habitId: string) => {
+    setActionLoading('remove_' + habitId)
+    await new Promise(r => setTimeout(r, 300))
+    removeHabit(habitId)
+    setActionLoading(null)
   }
 
   return (
@@ -334,7 +367,7 @@ export default function Habits() {
 
           {/* Add button */}
           <button
-            onClick={() => setModalOpen(true)}
+            onClick={openAddModal}
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               gap: 8, background: 'transparent',
@@ -476,10 +509,12 @@ export default function Habits() {
 
                           {/* Delete × button */}
                           <button
-                            onClick={() => removeHabit(habit.id)}
+                            onClick={() => handleRemove(habit.id)}
+                            disabled={actionLoading === 'remove_' + habit.id}
                             style={{
                               background: 'none', border: 'none',
-                              color: 'var(--muted)', cursor: 'pointer',
+                              color: actionLoading === 'remove_' + habit.id ? 'var(--gold)' : 'var(--muted)', 
+                              cursor: actionLoading === 'remove_' + habit.id ? 'wait' : 'pointer',
                               fontSize: 14, lineHeight: 1,
                               padding: '2px 4px', flexShrink: 0,
                               transition: 'color 0.15s',
@@ -510,7 +545,7 @@ export default function Habits() {
       {/* ── ADD HABIT MODAL ── */}
       <AddModal
         open={modalOpen}
-        onClose={() => setModalOpen(false)}
+        onClose={closeAddModal}
         onAdd={handleAdd}
       />
     </>

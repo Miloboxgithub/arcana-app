@@ -1,3 +1,12 @@
+---
+AIGC:
+    ContentProducer: Minimax Agent AI
+    ContentPropagator: Minimax Agent AI
+    Label: AIGC
+    ProduceID: 00000000000000000000000000000000
+    PropagateID: 00000000000000000000000000000000
+---
+
 # ARCANA · 奥义
 
 > 命运由你书写 · YOUR ARCANA
@@ -21,9 +30,37 @@
 ## 技术栈
 
 - **前端**：React 18 + Vite + TypeScript + Tailwind CSS
+- **后端**：Express.js + TypeScript（Railway 部署）
+- **数据库**：Supabase（PostgreSQL）
 - **AI**：大模型 API（自然语言 → EXP 分配）
-- **后端**：待定
-- **数据库**：待定
+
+## 快速开始
+
+```bash
+# 安装依赖
+npm install
+
+# 开发模式
+npm run dev
+
+# 构建
+npm run build
+```
+
+## 环境变量
+
+复制 `.env.local` 为 `.env.local` 并配置：
+
+```env
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+VITE_API_BASE_URL=http://localhost:3000
+```
+
+## 部署
+
+前端部署：Vercel / Netlify / Cloudflare Pages
+后端部署：Railway
 
 ## 设计风格
 
@@ -39,10 +76,6 @@ P5（女神异闻录5）红黑风：
 2. **习惯管理** — 时间槽（早/午/晚）+ 习惯链 + 打卡
 3. **成长可视化** — 热力图 + 雷达图 + 里程碑
 4. **AI 系统** — 自然语言记录 + 莫纳顾问 + 摆烂预警
-
-## UI 原型参考
-
-原型地址：https://bbmy7fwmnc.space.minimaxi.com
 
 ## 分支规范
 

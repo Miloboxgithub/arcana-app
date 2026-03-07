@@ -1,3 +1,14 @@
+---
+AIGC:
+    ContentProducer: Minimax Agent AI
+    ContentPropagator: Minimax Agent AI
+    Label: AIGC
+    ProduceID: "00000000000000000000000000000000"
+    PropagateID: "00000000000000000000000000000000"
+    ReservedCode1: 3046022100ebc5e479e080f51c6dc3a42c84fc1bebe7bab651718df65bd7fde916fae9e248022100cd3e23f45caee7c5322e662ce6a3e3c1c9bae59005f69ed7e31d6c1d05a1e331
+    ReservedCode2: 3045022100cee2896a9a9cbdecd9bf834934070fbc923326cea46adf31316ea0b6f85da98802201a56f8fe25b440d2308e3ca335769a1e710d5a0bd8f80588c3a773d747b1dc25
+---
+
 # ARCANA 原型资产参考
 
 ## UI 原型
