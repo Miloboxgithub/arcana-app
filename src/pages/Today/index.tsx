@@ -9,9 +9,6 @@ const DIM_LABELS: Record<string, string> = {
   pro: '专业力', fitness: '体能', social: '社交',
   create: '创造力', self: '自律', charm: '魅力',
 }
-const DIM_ICONS: Record<string, string> = {
-  pro: '⚙', fitness: '◈', social: '◇', create: '✦', self: '▲', charm: '◉',
-}
 const MORGANA_LINES = [
   '干得不错！每次打卡都是怪盗的行动证明。继续！',
   '经验值到手！你的成长我都记录在案了，侦探。',
@@ -260,6 +257,8 @@ export default function Today() {
   const streak = getStreak()
   const slotHabits = getHabitsBySlot(activeSlot)
   const todayExp = habits.filter(h => todayCompleted.includes(h.id)).reduce((s, h) => s + h.exp, 0)
+  const allHabits = habits.length
+  const maxStreak = Math.max(0, ...habits.map(h => h.streak))
 
   const showToast = useCallback((exp: number, dim: string) => {
     setToast({ visible: true, exp, dim })
@@ -319,8 +318,7 @@ export default function Today() {
     }
   }, [dimensions, habits, todayCompleted, streak, addExp, burst, showToast, showMorgana])
 
-  const previewDims = dimensions.slice(0, 4)
-
+  
   return (
     <>
       {/* PAGE wrapper — natural height, body scrolls */}
@@ -380,31 +378,38 @@ export default function Today() {
             </div>
           </div>
 
-          {/* STATUS PANEL */}
-          <div style={{ position: 'relative', background: 'var(--card)', marginBottom: 14, overflow: 'hidden', clipPath: 'polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%)' }}>
-            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg,var(--red),transparent 60%)' }} />
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px 9px', borderBottom: '1px solid var(--dim)', position: 'relative' }}>
-              <div style={{ fontFamily: 'Bebas Neue,sans-serif', fontSize: 12, letterSpacing: 4, color: 'var(--red)', transform: 'skewX(-6deg)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ width: 3, height: 14, background: 'var(--red)', display: 'inline-block' }} />属性面板
-              </div>
-              <div style={{ fontFamily: 'Share Tech Mono,monospace', fontSize: 11, color: 'var(--gold)', display: 'flex', alignItems: 'baseline', gap: 3 }}>
-                <span style={{ fontSize: 20, fontWeight: 'bold', lineHeight: 1 }}>{todayExp}</span>
-                <span style={{ fontSize: 9, opacity: 0.7 }}>今日经验值</span>
-              </div>
+          {/* QUICK STATS */}
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center', 
+            background: 'var(--card)', 
+            marginBottom: 14, 
+            padding: '12px 16px',
+            clipPath: 'polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,0 100%)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ fontSize: 14 }}>📊</span>
+              <span style={{ fontFamily: 'Share Tech Mono,monospace', fontSize: 11, color: 'var(--white)' }}>
+                {todayCompleted.length}/{allHabits}
+              </span>
+              <span style={{ fontSize: 9, color: 'var(--muted)', letterSpacing: 1 }}>完成</span>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, background: 'var(--dim)' }}>
-              {previewDims.map(dim => (
-                <div key={dim.id} className="stat-cell" data-icon={DIM_ICONS[dim.id] || '◆'} style={{ background: 'var(--card)', padding: '10px 14px' }}>
-                  <div style={{ fontFamily: 'Share Tech Mono,monospace', fontSize: 9, color: 'var(--muted)', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 5 }}>{dim.name}</div>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 5, marginBottom: 6 }}>
-                    <span style={{ fontFamily: 'Bebas Neue,sans-serif', fontSize: 28, lineHeight: 1, color: 'var(--white)' }}>{dim.level}</span>
-                    <span style={{ fontFamily: 'Share Tech Mono,monospace', fontSize: 10, color: 'var(--muted)' }}>/ {dim.level + 1}</span>
-                  </div>
-                  <div className="bar-track" style={{ height: 3, background: 'var(--dim)', position: 'relative', overflow: 'visible' }}>
-                    <div className="bar-fill" style={{ width: `${Math.min(100, (dim.exp / dim.maxExp) * 100)}%` }} />
-                  </div>
-                </div>
-              ))}
+            <div style={{ width: 1, height: 16, background: 'var(--dim)' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ fontSize: 14 }}>🔥</span>
+              <span style={{ fontFamily: 'Bebas Neue,sans-serif', fontSize: 16, color: 'var(--red)', letterSpacing: 1 }}>
+                {maxStreak}
+              </span>
+              <span style={{ fontSize: 9, color: 'var(--muted)', letterSpacing: 1 }}>天</span>
+            </div>
+            <div style={{ width: 1, height: 16, background: 'var(--dim)' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ fontSize: 14 }}>💎</span>
+              <span style={{ fontFamily: 'Bebas Neue,sans-serif', fontSize: 16, color: 'var(--gold)', letterSpacing: 1 }}>
+                +{todayExp}
+              </span>
+              <span style={{ fontSize: 9, color: 'var(--muted)', letterSpacing: 1 }}>经验</span>
             </div>
           </div>
 
