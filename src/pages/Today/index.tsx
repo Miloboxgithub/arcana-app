@@ -254,7 +254,7 @@ function AIInputBar({ onSubmit, disabled }: { onSubmit: (text: string) => void; 
 // ── MAIN TODAY PAGE ────────────────────────────────────────
 export default function Today() {
   const { habits, todayCompleted, toggleToday, getHabitsBySlot, getStreak } = useHabitStore()
-  const { dimensions, addExp, removeExp } = useProfileStore()
+  const { dimensions, addExp, removeExp, getTotalLevel } = useProfileStore()
   const { burst } = useStarBurst()
 
   const [activeSlot, setActiveSlot] = useState<TimeSlot>('afternoon')
@@ -266,7 +266,7 @@ export default function Today() {
   const slotHabits = getHabitsBySlot(activeSlot)
   const todayExp = habits.filter(h => todayCompleted.includes(h.id)).reduce((s, h) => s + h.exp, 0)
   const allHabits = habits.length
-  const maxStreak = Math.max(0, ...habits.map(h => h.streak))
+  const totalLevel = getTotalLevel()
 
   const showToast = useCallback((exp: number, dim: string) => {
     setToast({ visible: true, exp, dim })
@@ -414,16 +414,6 @@ export default function Today() {
             </div>
             <div style={{ width: 1, height: 16, background: 'var(--dim)' }} />
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--red)" strokeWidth="2">
-                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
-              </svg>
-              <span style={{ fontFamily: 'Bebas Neue,sans-serif', fontSize: 16, color: 'var(--red)', letterSpacing: 1 }}>
-                {maxStreak}
-              </span>
-              <span style={{ fontSize: 9, color: 'var(--muted)', letterSpacing: 1 }}>天</span>
-            </div>
-            <div style={{ width: 1, height: 16, background: 'var(--dim)' }} />
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="2">
                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
               </svg>
@@ -431,6 +421,18 @@ export default function Today() {
                 +{todayExp}
               </span>
               <span style={{ fontSize: 9, color: 'var(--muted)', letterSpacing: 1 }}>经验</span>
+            </div>
+            <div style={{ width: 1, height: 16, background: 'var(--dim)' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--red)" strokeWidth="2">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                <path d="M2 17l10 5 10-5"/>
+                <path d="M2 12l10 5 10-5"/>
+              </svg>
+              <span style={{ fontFamily: 'Bebas Neue,sans-serif', fontSize: 16, color: 'var(--red)', letterSpacing: 1 }}>
+                {totalLevel}
+              </span>
+              <span style={{ fontSize: 9, color: 'var(--muted)', letterSpacing: 1 }}>Lv</span>
             </div>
           </div>
 

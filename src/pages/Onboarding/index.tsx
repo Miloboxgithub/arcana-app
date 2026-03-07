@@ -22,7 +22,7 @@ const ALL_DIMS: DimConfig[] = [
 const ONBOARDING_SYSTEM_PROMPT = `你是 ARCANA 系统的"命运档案"分析师。用户正在创建游戏档案，需要你根据他们的"前世档案"描述来分析他们的初始属性。
 
 ## 你的任务
-根据用户的描述，分析他们在6个维度上的初始经验值（EXP）。
+根据用户的描述，分析他们在6个维度上的初始经验值（EXP），并给出理由。
 
 ## 维度说明
 - pro（专业力）：学习、技术、工作能力
@@ -42,24 +42,21 @@ const ONBOARDING_SYSTEM_PROMPT = `你是 ARCANA 系统的"命运档案"分析师
 3. 如果用户明确提到在某领域很强/很弱，相应调整
 
 ## 输出格式
-请直接返回 JSON，不要其他文字：
+请返回 JSON 格式，包含每个维度的经验和简短理由：
 {
-  "pro": 500,
-  "fitness": 400,
-  "social": 600,
-  "create": 350,
-  "self": 450,
-  "charm": 500
+  "pro": {"exp": 500, "reason": "因为...所以..."},
+  "fitness": {"exp": 400, "reason": "因为...所以..."},
+  ...
 }
 
-注意：只返回 JSON，不要有任何解释或额外文字。`
+注意：只返回 JSON，不要其他文字。`
 
-async function analyzeWithAI(description: string, selectedDims: DimensionId[]): Promise<Record<DimensionId, number>> {
+async function analyzeWithAI(description: string, selectedDims: DimensionId[]): Promise<{ expMap: Record<DimensionId, number>; analysisText: string }> {
   // 如果描述为空，返回默认值
   if (!description.trim()) {
     const defaults: Record<DimensionId, number> = {} as any
     selectedDims.forEach(id => { defaults[id] = 500 })
-    return defaults
+    return { expMap: defaults, analysisText: '描述为空，使用默认初始值。' }
   }
 
   try {
@@ -71,27 +68,40 @@ async function analyzeWithAI(description: string, selectedDims: DimensionId[]): 
       ONBOARDING_SYSTEM_PROMPT
     )
     
-    // 解析返回的 JSON
+    // 解析返回的 JSON（新格式包含 reason）
     const parsed = JSON.parse(result.reply)
     const validDims = ['pro', 'fitness', 'social', 'create', 'self', 'charm'] as DimensionId[]
+    const dimLabels: Record<DimensionId, string> = { pro: '专业力', fitness: '体能', social: '社交', create: '创造力', self: '自律', charm: '魅力' }
     
-    // 确保所有选择的维度都有值
+    // 确保所有选择的维度都有值，并生成分析说明
     const resultMap: Record<DimensionId, number> = {} as any
+    const reasons: string[] = []
     for (const id of selectedDims) {
       if (validDims.includes(id) && parsed[id] !== undefined) {
+        const data = parsed[id]
+        const exp = typeof data === 'number' ? data : (data?.exp ?? 500)
+        const reason = typeof data === 'object' ? (data?.reason ?? '') : ''
         // 限制在合理范围内
-        resultMap[id] = Math.max(300, Math.min(1200, parsed[id]))
+        resultMap[id] = Math.max(300, Math.min(1200, exp))
+        if (reason) {
+          reasons.push(`${dimLabels[id]}：${reason} → ${resultMap[id]} EXP`)
+        }
       } else {
         resultMap[id] = 500 // 默认值
       }
     }
-    return resultMap
+    
+    const analysisText = reasons.length > 0 
+      ? reasons.join('\n')
+      : '分析完成。'
+    
+    return { expMap: resultMap, analysisText }
   } catch (e) {
     console.error('[Onboarding AI] 分析失败，使用默认值:', e)
     // AI 失败时返回默认值
     const defaults: Record<DimensionId, number> = {} as any
     selectedDims.forEach(id => { defaults[id] = 500 })
-    return defaults
+    return { expMap: defaults, analysisText: 'AI分析失败，使用默认初始值。' }
   }
 }
 
@@ -121,15 +131,18 @@ function buildRadarPts(ratios: number[]) {
 }
 
 // ── Components ─────────────────────────────────────────────
-function StepDot({ n, active, done }: { n: number; active: boolean; done: boolean }) {
+function StepDot({ n, active, done, onClick }: { n: number; active: boolean; done: boolean; onClick?: () => void }) {
   return (
-    <div style={{
-      width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: done ? 'var(--red)' : active ? 'rgba(195,0,47,0.2)' : 'var(--card2)',
-      border: `1px solid ${active || done ? 'var(--red)' : 'var(--dim)'}`,
-      clipPath: 'polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%)',
-      transition: 'all 0.3s',
-    }}>
+    <div 
+      onClick={onClick}
+      style={{
+        width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: done ? 'var(--red)' : active ? 'rgba(195,0,47,0.2)' : 'var(--card2)',
+        border: `1px solid ${active || done ? 'var(--red)' : 'var(--dim)'}`,
+        clipPath: 'polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%)',
+        transition: 'all 0.3s',
+        cursor: done && !active ? 'pointer' : 'default',
+      }}>
       {done
         ? <span style={{color:'var(--white)',fontSize:12}}>✓</span>
         : <span style={{fontFamily:'Bebas Neue,sans-serif',fontSize:13,color:active?'var(--red)':'var(--muted)'}}>{n}</span>
@@ -147,10 +160,14 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   const { addHabit } = useHabitStore()
 
   const [step, setStep] = useState(1)
+  const [filledTags, setFilledTags] = useState<Array<{ label: string; value: string }>>([])
+  const [tipModal, setTipModal] = useState<{ label: string; key: string } | null>(null)
+  const [tipValue, setTipValue] = useState('')
   const [selectedDims, setSelectedDims] = useState<DimensionId[]>(['pro','fitness','social','create','self','charm'])
   const [description, setDescription] = useState('')
   const [analysisProgress, setAnalysisProgress] = useState(0)
   const [analysisLines, setAnalysisLines] = useState<string[]>([])
+  const [aiAnalysisResult, setAiAnalysisResult] = useState('')
   const [initExp, setInitExp] = useState<Record<DimensionId, number>>(() => {
     // Pre-fill with defaults (500 base for better radar chart display)
     const defaults: Partial<Record<DimensionId, number>> = {}
@@ -181,30 +198,38 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   // Step 3: run AI analysis animation then compute results
   useEffect(() => {
     if (step !== 3) return
+
+    // 先发送AI请求
+    const tagText = filledTags.map(t => `#${t.label}：${t.value}`).join('；')
+    const fullDescription = description + (tagText ? '；' + tagText : '')
+    
+    const analysisPromise = analyzeWithAI(fullDescription, selectedDims)
+
+    // 动画进度条
     const lines = [
       '// 正在连接命运档案系统...',
       '// 读取你的前世档案...',
       '// AI 正在分析能力维度...',
       '// 计算初始属性分布...',
       '// 生成专属命运牌...',
-      '// 分析完成 ✓',
     ]
     let i = 0
-    const iv = setInterval(async () => {
+    const iv = setInterval(() => {
       i++
-      setAnalysisProgress(Math.min(100, Math.round((i / lines.length) * 100)))
+      setAnalysisProgress(Math.min(90, Math.round((i / lines.length) * 100)))
       setAnalysisLines(prev => [...prev, lines[i-1]])
       if (i >= lines.length) {
         clearInterval(iv)
-        // Use AI to analyze the description
-        const result = await analyzeWithAI(description, selectedDims)
-        setInitExp(result)
-        // Give React one frame to commit the state before moving to step 4
-        requestAnimationFrame(() => {
-          setTimeout(() => setStep(4), 600)
+        // 等待AI响应
+        analysisPromise.then(({ expMap, analysisText }) => {
+          setInitExp(expMap)
+          setAiAnalysisResult(analysisText)
+          setAnalysisProgress(100)
+          setAnalysisLines(prev => [...prev, '// 分析完成 ✓'])
+          setTimeout(() => setStep(4), 500)
         })
       }
-    }, 500)
+    }, 400)
     return () => clearInterval(iv)
   }, [step])
 
@@ -298,7 +323,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
           <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:6,marginBottom:32}}>
             {[1,2,3,4,5].map((n,i) => (
               <>
-                <StepDot key={n} n={n} active={step===n} done={step>n}/>
+                <StepDot key={n} n={n} active={step===n} done={step>n} onClick={() => step > n && setStep(n)}/>
                 {i < 4 && (
                   <div key={`line-${n}`} style={{
                     flex:1, height:1, maxWidth:32,
@@ -400,7 +425,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                 描述你的现状
               </div>
               <div style={{fontFamily:'Share Tech Mono,monospace',fontSize:10,color:'var(--muted)',letterSpacing:1,lineHeight:1.7}}>
-                用自己的话说说你现在的水平和生活状态。AI 会根据描述给你分配合理的初始属性值——就像 P5 开头的"前世记忆"测试。
+                用自己的话说说你现在的水平和生活状态。AI 会根据描述给你分配合理的初始属性值。
               </div>
             </div>
 
@@ -416,7 +441,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
               <textarea
                 value={description}
                 onChange={e => setDescription(e.target.value)}
-                placeholder={`例如：我是大三学生，学计算机，平时会刷 LeetCode，英语一般，很少运动，社交圈子不大，偶尔写写博客…`}
+                placeholder={`例如：去年刚毕业，在一家互联网公司做技术人员，每天朝九晚六，下班后会健身或者看看小说，周末会和朋友聚会，喜欢尝试新餐厅...`}
                 style={{
                   width:'100%', minHeight:140, background:'transparent', border:'none',
                   color:'var(--white)', fontSize:13, padding:'8px 14px 16px',
@@ -427,9 +452,105 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
               />
             </div>
 
-            <div style={{fontFamily:'Share Tech Mono,monospace',fontSize:9,color:'var(--muted)',letterSpacing:1,marginBottom:24,textAlign:'right'}}>
-              {description.length} 字 / 越详细越准确
+            {/* 已填写标签（和添加按钮分开显示） */}
+            {filledTags.length > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+                {filledTags.map((tag, idx) => (
+                  <span key={idx} style={{
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    padding: '6px 10px', background: 'var(--card2)',
+                    border: '1px solid var(--gold)', borderRadius: 6,
+                    fontSize: 10, color: 'var(--gold)'
+                  }}>
+                    <span>#{tag.label}：{tag.value}</span>
+                    <span 
+                      onClick={() => setFilledTags(prev => prev.filter((_, i) => i !== idx))}
+                      style={{ cursor: 'pointer', opacity: 0.7 }}
+                    >✕</span>
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* 分类标签按钮 */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
+              {[
+                { label: '专业/技能', key: 'pro' },
+                { label: '运动/健康', key: 'fitness' },
+                { label: '社交/朋友', key: 'social' },
+                { label: '兴趣爱好', key: 'create' },
+                { label: '生活习惯', key: 'self' },
+                { label: '过往成就', key: 'achievement' },
+                { label: '学习经历', key: 'education' },
+                { label: '工作经历', key: 'work' },
+                { label: '个人特质', key: 'personality' },
+              ].map((tip, i) => (
+                <span key={i} style={{
+                  padding: '6px 14px', background: 'rgba(195,0,47,0.1)', 
+                  border: '1px solid rgba(195,0,47,0.3)', borderRadius: 4, 
+                  color: 'var(--red)', cursor: 'pointer', fontSize: 11,
+                  transition: 'all 0.2s'
+                }} onClick={() => { setTipModal(tip); setTipValue('') }}>
+                  + {tip.label}
+                </span>
+              ))}
             </div>
+
+            {/* 弹窗 */}
+            {tipModal && (
+              <div style={{
+                position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                zIndex: 1000
+              }} onClick={() => setTipModal(null)}>
+                <div style={{
+                  background: 'var(--card)', padding: 24, width: '80%', maxWidth: 320,
+                  clipPath: 'polygon(0 0,calc(100% - 16px) 0,100% 16px,100% 100%,16px 100%,0 calc(100% - 16px))',
+                }} onClick={e => e.stopPropagation()}>
+                  <div style={{ fontFamily: 'Bebas Neue,sans-serif', fontSize: 18, color: 'var(--red)', marginBottom: 16, letterSpacing: 2 }}>
+                    #{tipModal.label}
+                  </div>
+                  <textarea
+                    autoFocus
+                    value={tipValue}
+                    onChange={e => setTipValue(e.target.value)}
+                    placeholder={`描述你的${tipModal.label}...`}
+                    style={{
+                      width: '100%', height: 100, background: 'var(--card2)', border: '1px solid var(--dim)',
+                      color: 'var(--white)', fontSize: 13, padding: 12, resize: 'none',
+                      outline: 'none', caretColor: 'var(--red)', marginBottom: 16,
+                      fontFamily: 'Noto Sans SC,sans-serif', lineHeight: 1.6
+                    }}
+                  />
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    <button
+                      onClick={() => setTipModal(null)}
+                      style={{
+                        flex: 1, padding: '12px', background: 'var(--card2)', border: '1px solid var(--dim)',
+                        color: 'var(--muted)', fontFamily: 'Bebas Neue,sans-serif', fontSize: 14, letterSpacing: 2, cursor: 'pointer'
+                      }}
+                    >
+                      取消
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (tipValue.trim()) {
+                          // 确认时不拼接到文本框，只添加到标签列表
+                          setFilledTags(prev => [...prev, { label: tipModal.label, value: tipValue.trim() }])
+                        }
+                        setTipModal(null)
+                      }}
+                      style={{
+                        flex: 1, padding: '12px', background: 'var(--red)', border: 'none',
+                        color: 'var(--white)', fontFamily: 'Bebas Neue,sans-serif', fontSize: 14, letterSpacing: 2, cursor: 'pointer'
+                      }}
+                    >
+                      确认
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div style={{display:'flex',gap:10}}>
               <button
@@ -535,7 +656,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
 
             {/* Radar */}
             <div style={{
-              background:'var(--card)', marginBottom:16, padding:'16px 10px 12px',
+              background:'var(--card)', marginBottom: 16, padding:'16px 10px 12px',
               clipPath:'polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px))',
               position:'relative', overflow:'hidden',
             }}>
@@ -580,6 +701,30 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                 )
               })()}
             </div>
+
+            {/* AI分析理由 */}
+            {aiAnalysisResult && (
+              <div style={{
+                background: 'rgba(195,0,47,0.08)',
+                border: '1px solid rgba(195,0,47,0.25)',
+                padding: '14px 16px',
+                marginBottom: 16,
+                clipPath: 'polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%)',
+              }}>
+                <div style={{
+                  fontFamily: 'Share Tech Mono,monospace', fontSize: 9, color: 'var(--red)',
+                  letterSpacing: 2, marginBottom: 8
+                }}>
+                  ⚡ AI 分析理由
+                </div>
+                <div style={{
+                  fontFamily: 'Share Tech Mono,monospace', fontSize: 10, color: 'var(--gold)',
+                  lineHeight: 1.8, whiteSpace: 'pre-line'
+                }}>
+                  {aiAnalysisResult}
+                </div>
+              </div>
+            )}
 
             {/* Dimension stats */}
             <div style={{display:'flex',flexDirection:'column',gap:4,marginBottom:24}}>
