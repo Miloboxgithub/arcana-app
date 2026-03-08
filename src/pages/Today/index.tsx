@@ -37,21 +37,30 @@ function getTimeSlot() {
 }
 
 // ── EXP Toast ─────────────────────────────────────────────
-function ExpToast({ visible, exp, dim }: { visible: boolean; exp: number; dim: string }) {
+function ExpToast({ visible, exp, dim, isLoading }: { visible: boolean; exp: number; dim: string; isLoading?: boolean }) {
   return (
     <div style={{
       position: 'fixed', top: '50%', left: '50%', zIndex: 300,
       transform: `translate(-50%,-50%) scale(${visible ? 1 : 0}) rotate(-1deg)`,
       transition: 'transform 0.3s cubic-bezier(0.175,0.885,0.32,1.275)',
       pointerEvents: 'none',
-      background: 'var(--card)', border: '2px solid var(--gold)',
+      background: 'var(--card)', border: `2px solid ${isLoading ? 'var(--muted)' : 'var(--gold)'}`,
       padding: '16px 40px', textAlign: 'center',
       clipPath: 'polygon(10px 0,100% 0,calc(100% - 10px) 100%,0 100%)',
-      boxShadow: '0 0 40px rgba(232,200,64,0.15)',
+      boxShadow: isLoading ? 'none' : '0 0 40px rgba(232,200,64,0.15)',
+      opacity: isLoading ? 0.7 : 1,
     }}>
-      <div style={{ fontFamily: 'Share Tech Mono,monospace', fontSize: 9, letterSpacing: 3, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 2 }}>获得经验</div>
-      <div style={{ fontFamily: 'Bebas Neue,sans-serif', fontSize: 56, color: 'var(--gold)', letterSpacing: 4, lineHeight: 1 }}>+{exp}</div>
-      <div style={{ fontFamily: 'Share Tech Mono,monospace', fontSize: 10, color: 'var(--red)', letterSpacing: 2, textTransform: 'uppercase', marginTop: 3 }}>{dim}</div>
+      <div style={{ fontFamily: 'Share Tech Mono,monospace', fontSize: 9, letterSpacing: 3, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 2 }}>
+        {isLoading ? '分析中' : '获得经验'}
+      </div>
+      {isLoading ? (
+        <div style={{ fontFamily: 'Share Tech Mono,monospace', fontSize: 14, color: 'var(--muted)', letterSpacing: 2 }}>...</div>
+      ) : (
+        <>
+          <div style={{ fontFamily: 'Bebas Neue,sans-serif', fontSize: 56, color: 'var(--gold)', letterSpacing: 4, lineHeight: 1 }}>+{exp}</div>
+          <div style={{ fontFamily: 'Share Tech Mono,monospace', fontSize: 10, color: 'var(--red)', letterSpacing: 2, textTransform: 'uppercase', marginTop: 3 }}>{dim}</div>
+        </>
+      )}
     </div>
   )
 }
@@ -259,7 +268,7 @@ export default function Today() {
   const { burst } = useStarBurst()
 
   const [activeSlot, setActiveSlot] = useState<TimeSlot>('afternoon')
-  const [toast, setToast] = useState({ visible: false, exp: 0, dim: '' })
+  const [toast, setToast] = useState({ visible: false, exp: 0, dim: '', isLoading: false })
   const [morgana, setMorgana] = useState({ visible: false, text: '' })
   const [aiLoading, setAiLoading] = useState(false)
 
@@ -272,9 +281,10 @@ export default function Today() {
   const allHabits = habits.length
   const totalLevel = getTotalLevel()
 
-  const showToast = useCallback((exp: number, dim: string) => {
-    setToast({ visible: true, exp, dim })
-    setTimeout(() => setToast(t => ({ ...t, visible: false })), 1800)
+  const showToast = useCallback((exp: number, dim: string, isLoading = false) => {
+    setToast({ visible: true, exp, dim, isLoading })
+    // 加载中不自动消失，结果显示更长时间(3秒)
+    setTimeout(() => setToast(t => ({ ...t, visible: false })), isLoading ? 1800 : 3000)
   }, [])
 
   const showMorgana = useCallback((text?: string) => {
@@ -336,7 +346,7 @@ export default function Today() {
 
     // 用 AI 智能分析输入
     setAiLoading(true)
-    showToast(0, 'AI分析中...')
+    showToast(0, 'AI分析中...', true)
     
     const result = await analyzeAndAddExp(text, ctx)
     setAiLoading(false)
@@ -507,7 +517,7 @@ export default function Today() {
 
       {/* Fixed overlays */}
       <AIInputBar onSubmit={handleAI} disabled={aiLoading} />
-      <ExpToast visible={toast.visible} exp={toast.exp} dim={toast.dim} />
+      <ExpToast visible={toast.visible} exp={toast.exp} dim={toast.dim} isLoading={toast.isLoading} />
       <MorganaDialog
         visible={morgana.visible}
         text={morgana.text}
