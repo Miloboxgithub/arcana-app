@@ -117,8 +117,79 @@ function SectionHead({ label, count }: { label: string; count: number }) {
 }
 
 // ── AI Analysis Function ───────────────────────────────────
+import { api } from '@/lib/api'
+
+// 习惯分析的系统 prompt
+const HABIT_ANALYZE_PROMPT = `你是 ARCANA 系统的习惯分析器。
+
+你的任务：根据用户输入的习惯名称，判断这个习惯会提升哪些维度的经验值。支持多维度！
+
+## 维度映射
+
+一个习惯可能涉及多个维度：
+- pro（专业力）：学习、 coding、阅读、工作、技术提升、写代码、背单词
+- fitness（体能、健身、锻炼）：运动、跑步、游泳、踢球、篮球、瑜伽
+- social（社交）：社交、聚会、聊天、交流、和朋友、组队
+- create（创造力）：创作、写作、绘画、设计、音乐、弹琴
+- self（自律）：冥想，早起、计划、复盘、习惯坚持、反思
+- charm（魅力）：穿搭、打扮、化妆、护肤、演讲、展示
+
+## 判断示例
+
+- "踢足球" → 体能(15) + 社交(10)
+- "跑步" → 体能(20)
+- "早上冥想" → 自律(15) + 体能(5)
+- "写代码" → 专业力(20)
+- "读书" → 专业力(15) + 自律(5)
+- "和朋友聊天" → 社交(15) + 魅力(5)
+- "画画" → 创造力(20)
+- "早上起床" → 自律(15)
+
+## 输出格式
+
+请返回 JSON 格式：
+{
+  "dimensions": [
+    {"dimension": "维度名", "exp": 经验值},
+    {"dimension": "维度名", "exp": 经验值}
+  ]
+}
+
+注意：
+- 一个习惯可能涉及多个维度，尽量分析完整
+- 每个维度的经验值在 10-25 之间
+- 如果不确定，默认专业力 pro(20)`
+
 async function analyzeHabitWithAI(habitName: string): Promise<{ dimensions: { dimension: DimensionId; exp: number }[] }> {
-  // Simple rule-based analysis (can be replaced with real AI later)
+  try {
+    // 调用后端的 chat API 来分析习惯
+    const res = await api.chat.analyze(
+      `请分析这个习惯会提升哪些维度：${habitName}`,
+      HABIT_ANALYZE_PROMPT
+    )
+    
+    // 从API响应中提取多维度结果
+    // API返回的是 { shouldAddExp, dimension, exp, reason }
+    // 我们需要解析 reason 或者让后端返回多维度格式
+    
+    // 临时方案：从 reason 中提取维度信息
+    // 实际应该让后端返回多维度格式
+    if (res.shouldAddExp && res.dimension) {
+      return {
+        dimensions: [{ dimension: res.dimension as DimensionId, exp: res.exp }]
+      }
+    }
+    
+    // 如果API没有返回有效结果，使用fallback
+    return analyzeHabitFallback(habitName)
+  } catch (e) {
+    console.warn('[analyzeHabit] API error, using fallback:', e)
+    return analyzeHabitFallback(habitName)
+  }
+}
+
+// Fallback: 本地关键词匹配
+function analyzeHabitFallback(habitName: string): { dimensions: { dimension: DimensionId; exp: number }[] } {
   const name = habitName.toLowerCase()
   
   // Keywords mapping to dimensions

@@ -292,14 +292,15 @@ export default function Today() {
       if (dims.length > 0) {
         addMultiExp(dims)
         const totalExp = dims.reduce((s, d) => s + d.exp, 0)
-        const dimNames = dims.map(d => DIM_LABELS[d.dimension]).join('/')
-        showToast(totalExp, dimNames)
+        // 显示每个维度的经验值，如 "体能+15 社交+10"
+        const dimExpDetails = dims.map(d => `${DIM_LABELS[d.dimension] || d.dimension}+${d.exp}`).join(' ')
+        showToast(totalExp, dimExpDetails)
       } else {
         // Legacy single dimension support
         const dim = habit.dimensions?.[0]?.dimension || 'pro'
         const exp = habit.dimensions?.[0]?.exp || 10
         addExp(dim, exp)
-        showToast(exp, DIM_LABELS[dim])
+        showToast(exp, `${DIM_LABELS[dim]}+${exp}`)
       }
       setTimeout(() => showMorgana(), 600)
     } else {
