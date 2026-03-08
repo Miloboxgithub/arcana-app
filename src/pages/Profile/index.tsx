@@ -2,7 +2,7 @@ import { useState, useRef, useMemo } from 'react'
 import useProfileStore from '@/stores/useProfileStore'
 import useHabitStore from '@/stores/useHabitStore'
 import useAuthStore from '@/stores/useAuthStore'
-import useUIStore from '@/stores/useUIStore'
+import useUIStore, { THEMES } from '@/stores/useUIStore'
 import { toast } from '@/components/ui/Toast'
 // ---- Preset SVG Avatars (P5 characters, zero external deps) ----
 const PRESET_AVATARS = [
@@ -171,7 +171,8 @@ const SETTINGS = [
   },
   {
     ico: <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" fill="currentColor"/><path d="M19.07 4.93A10 10 0 115 19.07" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>,
-    name: '主题皮肤', val: '红黑 · 默认',
+    name: '主题皮肤', val: null, // will be replaced dynamically
+    action: 'theme',
   },
   {
     ico: <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2"/><path d="M8 12h8M12 8v8" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>,
@@ -187,11 +188,12 @@ export default function Profile({ onOpenArcana }: ProfileProps) {
   const { dimensions, getTotalLevel } = useProfileStore()
   const { getStreak, checkRecords } = useHabitStore()
   const { user, signOut } = useAuthStore()
-  const { openModal, closeModal } = useUIStore()
+  const { openModal, closeModal, theme, setTheme } = useUIStore()
 
   const username = user?.username || user?.email?.split('@')[0] || 'PHANTOM'
 
   const [showAvatarPicker, setShowAvatarPicker] = useState(false)
+  const [showThemePicker, setShowThemePicker] = useState(false)
   // Read avatar from user state first, fallback to localStorage, then default
   const [avatarId, setAvatarId] = useState<string>(
     () => user?.avatar_id || localStorage.getItem(AVATAR_KEY) || 'joker'
@@ -466,6 +468,79 @@ export default function Profile({ onOpenArcana }: ProfileProps) {
           </div>
         )}
 
+        {/* ===== Theme Picker Bottom Sheet ===== */}
+        {showThemePicker && (
+          <div
+            style={{
+              position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)',
+              zIndex: 1000, display: 'flex', flexDirection: 'column',
+              alignItems: 'center', justifyContent: 'flex-end',
+              backdropFilter: 'blur(4px)',
+            }}
+            onClick={() => { setShowThemePicker(false); closeModal() }}
+          >
+            <div
+              style={{
+                width: '100%', maxWidth: 480, background: '#111',
+                borderTop: '2px solid var(--red)',
+                padding: '24px 20px 40px',
+              }}
+              onClick={e => e.stopPropagation()}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                <span style={{ fontFamily: 'Bebas Neue,sans-serif', fontSize: 16, letterSpacing: 4, color: 'var(--white)', transform: 'skewX(-4deg)', display: 'inline-block' }}>主题皮肤</span>
+                <div onClick={() => { setShowThemePicker(false); closeModal() }} style={{ cursor: 'pointer', color: 'var(--muted)', fontSize: 22, lineHeight: 1, padding: 4 }}>×</div>
+              </div>
+
+              <div style={{ fontFamily: 'Share Tech Mono,monospace', fontSize: 9, color: 'var(--muted)', letterSpacing: 2, marginBottom: 12 }}>// 选择你的风格</div>
+
+              {/* Theme options */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {THEMES.map(t => (
+                  <div
+                    key={t.id}
+                    onClick={() => {
+                      setTheme(t.id)
+                      setShowThemePicker(false)
+                      closeModal()
+                      toast.success(`已切换为 ${t.name}`, '✦')
+                    }}
+                    style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      background: theme === t.id ? 'var(--card2)' : 'var(--card)',
+                      padding: '14px 16px',
+                      border: theme === t.id ? '1px solid var(--red)' : '1px solid var(--dim)',
+                      cursor: 'pointer',
+                      clipPath: 'polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%)',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      {/* Color preview */}
+                      <div style={{
+                        width: 36, height: 36,
+                        background: t.id === 'p5' ? 'linear-gradient(135deg, #C3002F 0%, #FF1744 100%)' : 
+                                   t.id === 'p3' ? 'linear-gradient(135deg, #1E88E5 0%, #64B5F6 100%)' : 
+                                   'linear-gradient(135deg, #FFA000 0%, #FFD54F 100%)',
+                        clipPath: 'polygon(0 0,calc(100% - 6px) 0,100% 6px,100% 100%,6px 100%,0 calc(100% - 6px))',
+                        boxShadow: theme === t.id ? `0 0 12px ${t.id === 'p5' ? 'rgba(195,0,47,0.5)' : t.id === 'p3' ? 'rgba(30,136,229,0.5)' : 'rgba(255,160,0,0.5)'}` : 'none',
+                      }} />
+                      <div>
+                        <div style={{ fontFamily: 'Bebas Neue,sans-serif', fontSize: 14, letterSpacing: 2, color: 'var(--white)' }}>{t.name}</div>
+                        <div style={{ fontFamily: 'Share Tech Mono,monospace', fontSize: 8, color: 'var(--muted)', letterSpacing: 1, marginTop: 2 }}>{t.description}</div>
+                      </div>
+                    </div>
+                    {theme === t.id && (
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                        <polyline points="20,6 9,17 4,12" stroke="var(--red)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Achievements */}
         <SectionHead label="成就徽章" />
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 16 }}>
@@ -531,7 +606,15 @@ export default function Profile({ onOpenArcana }: ProfileProps) {
         <SectionHead label="设置" />
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2, paddingBottom: 110 }}>
           {SETTINGS.map(s => (
-            <div key={s.name} style={{
+            <div 
+              key={s.name} 
+              onClick={() => {
+                if (s.action === 'theme') {
+                  setShowThemePicker(true)
+                  openModal()
+                }
+              }}
+              style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               background: 'var(--card)', padding: '14px 16px',
               clipPath: 'polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%)',
@@ -543,7 +626,9 @@ export default function Profile({ onOpenArcana }: ProfileProps) {
                 </div>
                 <span style={{ fontSize: 13, color: 'var(--white)' }}>{s.name}</span>
               </div>
-              {s.val ? (
+              {s.name === '主题皮肤' ? (
+                <span style={{ fontFamily: 'Share Tech Mono,monospace', fontSize: 9, color: 'var(--gold)', letterSpacing: 1 }}>{THEMES.find(t => t.id === theme)?.name}</span>
+              ) : s.val ? (
                 <span style={{ fontFamily: 'Share Tech Mono,monospace', fontSize: 9, color: 'var(--muted)', letterSpacing: 1 }}>{s.val}</span>
               ) : (
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><polyline points="9,18 15,12 9,6" stroke="var(--dim)" strokeWidth="2" strokeLinecap="round"/></svg>

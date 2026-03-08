@@ -6,7 +6,7 @@
 
 /* ── CSS Variables ── */
 :root {
-  /* Short names (match prototype) */
+  /* P5 Theme (Default - Turbo Red) */
   --red:   #C3002F;
   --red2:  #FF1744;
   --black: #080808;
@@ -16,8 +16,11 @@
   --gold:  #E8C840;
   --dim:   #3A3A3A;
   --muted: #5A5A5A;
-
-  /* Aliases with arcana- prefix (for Tailwind config compatibility) */
+  
+  /* RGB for animations */
+  --red-rgb: 195, 0, 47;
+  
+  /* Aliases with arcana- prefix */
   --arcana-red:   #C3002F;
   --arcana-red2:  #FF1744;
   --arcana-black: #080808;
@@ -27,6 +30,59 @@
   --arcana-gold:  #E8C840;
   --arcana-dim:   #3A3A3A;
   --arcana-muted: #5A5A5A;
+  
+  /* Animations */
+  --anim-duration: 0.3s;
+}
+
+/* P3 Theme - Deep Sea Blue */
+[data-theme="p3"] {
+  --red:   #1E88E5;
+  --red2:  #64B5F6;
+  --black: #050A12;
+  --card:  #0A1628;
+  --card2: #0F2240;
+  --white: #E8F4FD;
+  --gold:  #4FC3F7;
+  --dim:   #1A3A5C;
+  --muted: #546E7A;
+  
+  --red-rgb: 30, 136, 229;
+  
+  --arcana-red:   #1E88E5;
+  --arcana-red2:  #64B5F6;
+  --arcana-black: #050A12;
+  --arcana-card:  #0A1628;
+  --arcana-card2: #0F2240;
+  --arcana-white: #E8F4FD;
+  --arcana-gold:  #4FC3F7;
+  --arcana-dim:   #1A3A5C;
+  --arcana-muted: #546E7A;
+}
+
+/* P4 Theme - Golden Country */
+[data-theme="p4"] {
+  --red:   #FFA000;
+  --red2:  #FFD54F;
+  --black: #0D0906;
+  --card:  #1A1510;
+  --card2: #2A2318;
+  --white: #FFF8E1;
+  --gold:  #FFD700;
+  --dim:   #4A3F2A;
+  --muted: #8B7355;
+  
+  --arcana-red:   #FFA000;
+  --arcana-red2:  #FFD54F;
+  --arcana-black: #0D0906;
+  --arcana-card:  #1A1510;
+  --arcana-card2: #2A2318;
+  --arcana-white: #FFF8E1;
+  --arcana-gold:  #FFD700;
+  --arcana-dim:   #4A3F2A;
+  --arcana-muted: #8B7355;
+  
+  --red-rgb: 255, 160, 0;
 }
 
 /* ── Reset ── */
@@ -76,16 +132,16 @@
   100% { top: 100vh; }
 }
 @keyframes pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(195,0,47,0.5); }
-  50%       { box-shadow: 0 0 0 5px rgba(195,0,47,0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(var(--red-rgb), 0.5); }
+  50%       { box-shadow: 0 0 0 5px rgba(var(--red-rgb), 0); }
 }
 @keyframes spin {
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }
 }
 @keyframes fabRing {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(195,0,47,0.4), 0 4px 20px rgba(195,0,47,0.2); }
-  50%       { box-shadow: 0 0 0 6px rgba(195,0,47,0), 0 4px 20px rgba(195,0,47,0.2); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(var(--red-rgb), 0.4), 0 4px 20px rgba(var(--red-rgb), 0.2); }
+  50%       { box-shadow: 0 0 0 6px rgba(var(--red-rgb), 0), 0 4px 20px rgba(var(--red-rgb), 0.2); }
 }
 
 /* ── Slot button ── */
