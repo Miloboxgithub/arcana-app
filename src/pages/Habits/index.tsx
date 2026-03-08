@@ -168,12 +168,17 @@ async function analyzeHabitWithAI(habitName: string): Promise<{ dimensions: { di
       HABIT_ANALYZE_PROMPT
     )
     
-    // 从API响应中提取多维度结果
-    // API返回的是 { shouldAddExp, dimension, exp, reason }
-    // 我们需要解析 reason 或者让后端返回多维度格式
+    // 优先处理后端返回的多维度结果
+    if (res.dimensions && Array.isArray(res.dimensions) && res.dimensions.length > 0) {
+      return {
+        dimensions: res.dimensions.map(d => ({ 
+          dimension: d.dimension as DimensionId, 
+          exp: d.exp 
+        }))
+      }
+    }
     
-    // 临时方案：从 reason 中提取维度信息
-    // 实际应该让后端返回多维度格式
+    // 兼容单维度返回
     if (res.shouldAddExp && res.dimension) {
       return {
         dimensions: [{ dimension: res.dimension as DimensionId, exp: res.exp }]
