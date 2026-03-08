@@ -61,12 +61,14 @@ export const api = {
     list: () =>
       request<Array<{
         id: string; name: string; slot: string; exp: number
-        dimension: string; is_anchor: boolean; streak: number; created_at: string
+        dimension: string; dimensions?: Array<{ dimension: string; exp: number }>
+        is_anchor: boolean; streak: number; created_at: string
       }>>('GET', '/api/habits'),
 
     upsert: (habit: {
       id: string; name: string; slot: string; exp: number
-      dimension: string; is_anchor: boolean; streak: number
+      dimension: string; dimensions?: Array<{ dimension: string; exp: number }>
+      is_anchor: boolean; streak: number
     }) =>
       request<{ ok: boolean }>('POST', '/api/habits', habit),
 

@@ -42,7 +42,11 @@ export async function syncFromCloud(_userId?: string) {
         id: h.id,
         name: h.name,
         timeSlot: h.slot as 'morning' | 'afternoon' | 'evening' | 'night',
-        dimensions: [{ dimension: h.dimension as import('@/stores/useHabitStore').DimensionId, exp: h.exp }],
+        // 优先使用 dimensions 字段（多维度），兼容旧的 dimension 字段
+        dimensions: h.dimensions ? h.dimensions.map((d: any) => ({ 
+          dimension: d.dimension as import('@/stores/useHabitStore').DimensionId, 
+          exp: d.exp 
+        })) : [{ dimension: h.dimension as import('@/stores/useHabitStore').DimensionId, exp: h.exp || 10 }],
         isAnchor: h.is_anchor ?? false,
         streak: h.streak ?? 0,
         createdAt: h.created_at ? new Date(h.created_at).getTime() : Date.now(),
@@ -88,10 +92,15 @@ export async function pushAllHabitsToCloud() {
   const habits = useHabitStore.getState().habits
   if (!habits.length) return
   for (const h of habits) {
-    const mainDim = h.dimensions[0] || { dimension: 'pro' as const, exp: 10 }
+    const dims = h.dimensions || [{ dimension: 'pro', exp: 10 }]
+    const mainDim = dims[0] || { dimension: 'pro', exp: 10 }
     await api.habits.upsert({
-      id: h.id, name: h.name, slot: h.timeSlot, exp: mainDim.exp,
-      dimension: mainDim.dimension, is_anchor: h.isAnchor, streak: h.streak,
+      id: h.id, name: h.name, slot: h.timeSlot, 
+      exp: dims.reduce((s, d) => s + d.exp, 0),
+      dimension: mainDim.dimension,
+      dimensions: dims,
+      is_anchor: h.isAnchor, 
+      streak: h.streak,
     }).catch(() => {})
   }
 }
