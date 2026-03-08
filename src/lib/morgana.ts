@@ -179,7 +179,19 @@ ${ctx.habits.length > 0 ? ctx.habits.map(h => {
     // 调用后端的 analyze API
     const res = await api.chat.analyze(prompt, ANALYZE_SYSTEM_PROMPT)
     
-    // 转换单维度结果为多维度格式
+    // 优先处理多维度返回结果
+    if (res.dimensions && Array.isArray(res.dimensions) && res.dimensions.length > 0) {
+      return {
+        shouldAddExp: true,
+        dimensions: res.dimensions.map(d => ({ 
+          dimension: d.dimension as DimensionId, 
+          exp: d.exp 
+        })),
+        reason: res.reason,
+      }
+    }
+    
+    // 兼容单维度返回结果
     if (res.shouldAddExp && res.dimension) {
       return {
         shouldAddExp: true,
@@ -191,7 +203,7 @@ ${ctx.habits.length > 0 ? ctx.habits.map(h => {
     return {
       shouldAddExp: false,
       dimensions: [],
-      reason: res.reason,
+      reason: res.reason || '未识别到有效行动',
     }
   } catch (e) {
     console.warn('[analyze] API error:', e)

@@ -103,6 +103,7 @@ export const api = {
         shouldAddExp: boolean
         dimension: string | null
         exp: number
+        dimensions?: Array<{ dimension: string; exp: number }>
         reason: string
       }>('POST', '/api/chat/analyze', { prompt: userPrompt, system: systemPrompt }),
 
