@@ -116,27 +116,127 @@ function SectionHead({ label, count }: { label: string; count: number }) {
   )
 }
 
+// ── AI Analysis Function ───────────────────────────────────
+async function analyzeHabitWithAI(habitName: string): Promise<{ dimensions: { dimension: DimensionId; exp: number }[] }> {
+  // Simple rule-based analysis (can be replaced with real AI later)
+  const name = habitName.toLowerCase()
+  
+  // Keywords mapping to dimensions
+  const keywordMap: Record<string, { dimension: DimensionId; weight: number }[]> = {
+    '跑步': [{ dimension: 'fitness', weight: 1.0 }],
+    '足球': [{ dimension: 'fitness', weight: 0.8 }, { dimension: 'social', weight: 0.5 }],
+    '篮球': [{ dimension: 'fitness', weight: 0.8 }, { dimension: 'social', weight: 0.4 }],
+    '健身': [{ dimension: 'fitness', weight: 1.0 }],
+    '运动': [{ dimension: 'fitness', weight: 1.0 }],
+    '游泳': [{ dimension: 'fitness', weight: 1.0 }],
+    '瑜伽': [{ dimension: 'fitness', weight: 0.6 }, { dimension: 'self', weight: 0.4 }],
+    
+    '学习': [{ dimension: 'pro', weight: 1.0 }],
+    '读书': [{ dimension: 'pro', weight: 0.8 }, { dimension: 'self', weight: 0.4 }],
+    '编程': [{ dimension: 'pro', weight: 1.0 }],
+    '写代码': [{ dimension: 'pro', weight: 1.0 }],
+    '英语': [{ dimension: 'pro', weight: 1.0 }],
+    '背单词': [{ dimension: 'pro', weight: 1.0 }],
+    '听力': [{ dimension: 'pro', weight: 0.8 }],
+    
+    '社交': [{ dimension: 'social', weight: 1.0 }],
+    '聚会': [{ dimension: 'social', weight: 1.0 }, { dimension: 'charm', weight: 0.3 }],
+    '聊天': [{ dimension: 'social', weight: 0.6 }],
+    '朋友': [{ dimension: 'social', weight: 0.7 }],
+    '交流': [{ dimension: 'social', weight: 0.8 }],
+    
+    '画画': [{ dimension: 'create', weight: 1.0 }],
+    '音乐': [{ dimension: 'create', weight: 1.0 }],
+    '创作': [{ dimension: 'create', weight: 1.0 }],
+    '写作': [{ dimension: 'create', weight: 0.9 }, { dimension: 'pro', weight: 0.3 }],
+    '设计': [{ dimension: 'create', weight: 1.0 }],
+    
+    '冥想': [{ dimension: 'self', weight: 1.0 }],
+    '反思': [{ dimension: 'self', weight: 1.0 }],
+    '计划': [{ dimension: 'self', weight: 0.8 }],
+    '总结': [{ dimension: 'self', weight: 0.8 }],
+    '早起': [{ dimension: 'self', weight: 1.0 }],
+    '早睡': [{ dimension: 'self', weight: 1.0 }, { dimension: 'fitness', weight: 0.3 }],
+    '睡眠': [{ dimension: 'self', weight: 0.5 }, { dimension: 'fitness', weight: 0.3 }],
+    
+    '穿搭': [{ dimension: 'charm', weight: 1.0 }],
+    '美容': [{ dimension: 'charm', weight: 1.0 }],
+    '护肤': [{ dimension: 'charm', weight: 1.0 }],
+    '化妆': [{ dimension: 'charm', weight: 1.0 }],
+    '自拍': [{ dimension: 'charm', weight: 0.6 }, { dimension: 'social', weight: 0.3 }],
+  }
+  
+  // Default: pro dimension
+  let results: { dimension: DimensionId; exp: number }[] = []
+  
+  for (const [keyword, dims] of Object.entries(keywordMap)) {
+    if (name.includes(keyword)) {
+      for (const d of dims) {
+        const existing = results.find(r => r.dimension === d.dimension)
+        if (existing) {
+          existing.exp = Math.max(existing.exp, Math.round(20 * d.weight))
+        } else {
+          results.push({ dimension: d.dimension, exp: Math.round(20 * d.weight) })
+        }
+      }
+    }
+  }
+  
+  // If no match, default to pro
+  if (results.length === 0) {
+    results = [{ dimension: 'pro', exp: 20 }]
+  }
+  
+  return { dimensions: results }
+}
+
 // ── Add Habit Modal ────────────────────────────────────────
 interface AddModalProps {
   open: boolean
   onClose: () => void
-  onAdd: (name: string, dim: DimensionId, slot: TimeSlot, exp: number) => void
+  onAdd: (name: string, dims: { dimension: DimensionId; exp: number }[], slot: TimeSlot) => void
 }
 
 function AddModal({ open, onClose, onAdd }: AddModalProps) {
-  const [name, setName]     = useState('')
-  const [dim, setDim]       = useState<DimensionId>('pro')
-  const [slot, setSlot]     = useState<TimeSlot>('afternoon')
-  const [exp, setExp]       = useState(20)
+  const [name, setName] = useState('')
+  const [dims, setDims] = useState<{ dimension: DimensionId; exp: number }[]>([{ dimension: 'pro', exp: 20 }])
+  const [slot, setSlot] = useState<TimeSlot>('afternoon')
+  const [analyzing, setAnalyzing] = useState(false)
 
   if (!open) return null
 
   const handleConfirm = () => {
-    if (!name.trim()) return
-    onAdd(name.trim(), dim, slot, exp)
+    if (!name.trim() || dims.length === 0) return
+    onAdd(name.trim(), dims, slot)
     // reset
-    setName(''); setDim('pro'); setSlot('afternoon'); setExp(20)
+    setName(''); setDims([{ dimension: 'pro', exp: 20 }]); setSlot('afternoon')
     onClose()
+  }
+
+  const handleAIAnalyze = async () => {
+    if (!name.trim()) return
+    setAnalyzing(true)
+    try {
+      const result = await analyzeHabitWithAI(name)
+      setDims(result.dimensions)
+    } catch (e) {
+      console.error('AI分析失败', e)
+    }
+    setAnalyzing(false)
+  }
+
+  const updateDimExp = (dimId: DimensionId, newExp: number) => {
+    setDims(prev => prev.map(d => d.dimension === dimId ? { ...d, exp: newExp } : d))
+  }
+
+  const removeDim = (dimId: DimensionId) => {
+    if (dims.length <= 1) return // Keep at least one
+    setDims(prev => prev.filter(d => d.dimension !== dimId))
+  }
+
+  const addDim = (dimId: DimensionId) => {
+    if (dims.find(d => d.dimension === dimId)) return // Already exists
+    setDims(prev => [...prev, { dimension: dimId, exp: 10 }])
   }
 
   // chip base styles
@@ -180,20 +280,44 @@ function AddModal({ open, onClose, onAdd }: AddModalProps) {
           新建习惯
         </div>
 
-        {/* Name field */}
+        {/* Name field - with AI Analyze button */}
         <div style={{ marginBottom: 14 }}>
-          <label style={{
-            fontFamily: "'Share Tech Mono', monospace",
-            fontSize: 9, color: 'var(--muted)', letterSpacing: 2,
-            textTransform: 'uppercase', display: 'block', marginBottom: 7,
-          }}>
-            习惯名称
-          </label>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 7 }}>
+            <label style={{
+              fontFamily: "'Share Tech Mono', monospace",
+              fontSize: 9, color: 'var(--muted)', letterSpacing: 2,
+              textTransform: 'uppercase',
+            }}>
+              习惯名称
+            </label>
+            <button
+              onClick={handleAIAnalyze}
+              disabled={!name.trim() || analyzing}
+              style={{
+                background: 'transparent', border: '1px solid var(--gold)',
+                color: 'var(--gold)', fontFamily: "'Share Tech Mono', monospace",
+                fontSize: 8, letterSpacing: 1, padding: '3px 8px',
+                cursor: analyzing ? 'wait' : 'pointer', opacity: analyzing ? 0.6 : 1,
+                display: 'flex', alignItems: 'center', gap: 4,
+              }}
+            >
+              {analyzing ? (
+                <>分析中...</>
+              ) : (
+                <>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  AI 分析
+                </>
+              )}
+            </button>
+          </div>
           <input
             value={name}
             onChange={e => setName(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleConfirm()}
-            placeholder="例：跑步 5km"
+            placeholder="例：踢足球、跑步、读书"
             style={{
               width: '100%', background: 'var(--card2)',
               border: `1px solid ${name ? 'var(--red)' : 'var(--dim)'}`,
@@ -206,26 +330,64 @@ function AddModal({ open, onClose, onAdd }: AddModalProps) {
           />
         </div>
 
-        {/* Dimension chips */}
+        {/* Multi-dimension selector */}
         <div style={{ marginBottom: 14 }}>
           <label style={{
             fontFamily: "'Share Tech Mono', monospace",
             fontSize: 9, color: 'var(--muted)', letterSpacing: 2,
             textTransform: 'uppercase', display: 'block', marginBottom: 7,
           }}>
-            绑定维度
+            经验维度 {dims.length > 1 && <span style={{ color: 'var(--gold)' }}>(多维)</span>}
           </label>
-          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-            {DIMS.map(d => (
-              <button
-                key={d}
-                onClick={() => setDim(d)}
-                style={d === dim ? chipActive : chipBase}
-              >
-                {DIM_LABELS[d]}
-              </button>
+          
+          {/* Selected dimensions with EXP sliders */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 8 }}>
+            {dims.map(d => (
+              <div key={d.dimension} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{
+                  flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  background: 'var(--card2)', padding: '6px 10px',
+                  border: '1px solid var(--dim)',
+                }}>
+                  <span style={{ color: 'var(--white)', fontSize: 11 }}>{DIM_LABELS[d.dimension]}</span>
+                  <span style={{ color: 'var(--gold)', fontFamily: "'Bebas Neue', sans-serif", fontSize: 14 }}>
+                    +{d.exp}
+                  </span>
+                </div>
+                <input
+                  type="range" min={5} max={50} step={5} value={d.exp}
+                  onChange={e => updateDimExp(d.dimension, Number(e.target.value))}
+                  style={{ flex: 1, accentColor: 'var(--red)' }}
+                />
+                {dims.length > 1 && (
+                  <button
+                    onClick={() => removeDim(d.dimension)}
+                    style={{
+                      background: 'transparent', border: 'none', color: 'var(--muted)',
+                      cursor: 'pointer', padding: 4, fontSize: 14,
+                    }}
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
             ))}
           </div>
+          
+          {/* Add more dimensions */}
+          {dims.length < 3 && (
+            <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+              {DIMS.filter(d => !dims.find(sel => sel.dimension === d)).map(d => (
+                <button
+                  key={d}
+                  onClick={() => addDim(d)}
+                  style={chipBase}
+                >
+                  + {DIM_LABELS[d]}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Time slot chips */}
@@ -250,30 +412,6 @@ function AddModal({ open, onClose, onAdd }: AddModalProps) {
           </div>
         </div>
 
-        {/* EXP slider */}
-        <div style={{ marginBottom: 14 }}>
-          <label style={{
-            fontFamily: "'Share Tech Mono', monospace",
-            fontSize: 9, color: 'var(--muted)', letterSpacing: 2,
-            textTransform: 'uppercase', display: 'block', marginBottom: 7,
-          }}>
-            EXP 奖励
-          </label>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <input
-              type="range" min={5} max={50} step={5} value={exp}
-              onChange={e => setExp(Number(e.target.value))}
-              style={{ flex: 1, accentColor: 'var(--red)' }}
-            />
-            <span style={{
-              fontFamily: "'Bebas Neue', sans-serif",
-              fontSize: 18, color: 'var(--gold)', minWidth: 72,
-            }}>
-              +{exp} EXP
-            </span>
-          </div>
-        </div>
-
         {/* Confirm button */}
         <button
           onClick={handleConfirm}
@@ -285,7 +423,7 @@ function AddModal({ open, onClose, onAdd }: AddModalProps) {
             padding: 14, cursor: 'pointer',
             clipPath: 'polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%)',
             marginTop: 4, transition: 'opacity 0.2s',
-            opacity: name.trim() ? 1 : 0.5,
+            opacity: name.trim() && dims.length > 0 ? 1 : 0.5,
           }}
           onMouseDown={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.8' }}
           onMouseUp={e => { (e.currentTarget as HTMLButtonElement).style.opacity = name.trim() ? '1' : '0.5' }}
@@ -307,10 +445,10 @@ export default function Habits() {
   const openAddModal = () => { setModalOpen(true); openModal() }
   const closeAddModal = () => { setModalOpen(false); closeModal() }
 
-  const handleAdd = async (name: string, dimension: DimensionId, slot: TimeSlot, exp: number) => {
+  const handleAdd = async (name: string, dims: { dimension: DimensionId; exp: number }[], slot: TimeSlot) => {
     setActionLoading('add')
-    await new Promise(r => setTimeout(r, 300)) // 模拟短暂延迟，让用户感知
-    addHabit({ name, dimension, timeSlot: slot, exp, isAnchor: false })
+    await new Promise(r => setTimeout(r, 300))
+    addHabit({ name, dimensions: dims, timeSlot: slot, isAnchor: false })
     setActionLoading(null)
   }
 
@@ -461,24 +599,26 @@ export default function Habits() {
                               }}>
                                 {habit.name}
                               </div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                {/* htag */}
-                                <span style={{
-                                  fontSize: 9, fontFamily: "'Share Tech Mono', monospace",
-                                  letterSpacing: 1, padding: '2px 8px',
-                                  background: 'rgba(195,0,47,0.12)', color: 'var(--red)',
-                                  clipPath: 'polygon(4px 0,100% 0,calc(100% - 4px) 100%,0 100%)',
-                                  display: 'inline-block',
-                                  border: '1px solid rgba(195,0,47,0.25)',
-                                }}>
-                                  {DIM_LABELS[habit.dimension]}
-                                </span>
-                                {/* hexp */}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                                {/* htag - show all dimensions */}
+                                {habit.dimensions?.map(d => (
+                                  <span key={d.dimension} style={{
+                                    fontSize: 9, fontFamily: "'Share Tech Mono', monospace",
+                                    letterSpacing: 1, padding: '2px 8px',
+                                    background: 'rgba(195,0,47,0.12)', color: 'var(--red)',
+                                    clipPath: 'polygon(4px 0,100% 0,calc(100% - 4px) 100%,0 100%)',
+                                    display: 'inline-block',
+                                    border: '1px solid rgba(195,0,47,0.25)',
+                                  }}>
+                                    {DIM_LABELS[d.dimension] || d.dimension}
+                                  </span>
+                                ))}
+                                {/* hexp - total exp */}
                                 <span style={{
                                   fontSize: 10, fontFamily: "'Share Tech Mono', monospace",
                                   color: 'var(--gold)',
                                 }}>
-                                  +{habit.exp} EXP
+                                  +{habit.dimensions?.reduce((s, d) => s + d.exp, 0) || 0} EXP
                                 </span>
                                 {/* hm-freq */}
                                 <span style={{

@@ -197,7 +197,10 @@ export default function Status() {
       if (r.completedAt < weekAgo) continue
       const h = habits.find(x => x.id === r.habitId)
       if (!h) continue
-      m.set(h.dimension, (m.get(h.dimension) ?? 0) + h.exp)
+      const dims = h.dimensions || []
+      dims.forEach(d => {
+        m.set(d.dimension, (m.get(d.dimension) ?? 0) + d.exp)
+      })
     }
     return m
   }, [checkRecords, habits])

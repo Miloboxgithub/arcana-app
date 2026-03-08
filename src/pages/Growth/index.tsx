@@ -261,7 +261,8 @@ export default function Growth() {
       .filter(r => r.completedAt >= weekAgo)
       .reduce((s, r) => {
         const h = habits.find(x => x.id === r.habitId)
-        return s + (h?.exp ?? 0)
+        const dims = h?.dimensions || []
+        return s + dims.reduce((sum, d) => sum + d.exp, 0)
       }, 0)
   }, [checkRecords, habits])
 

@@ -14,7 +14,7 @@ export interface ChatMessage {
 export interface UserContext {
   username: string
   dimensions: Array<{ id: DimensionId; name: string; level: number; exp: number; maxExp: number }>
-  habits: Array<{ name: string; dimension: string; timeSlot: string; exp: number }>
+  habits: Array<{ name: string; dimensions: Array<{ dimension: DimensionId; exp: number }>; timeSlot: string }>
   todayCompleted: string[]
   habitIds: Record<string, string> // habitId → name
   streak: number
@@ -30,7 +30,11 @@ function buildSystemPrompt(ctx: UserContext): string {
     .join('、')
 
   const habitSummary = ctx.habits.length > 0
-    ? ctx.habits.map(h => `"${h.name}"（${h.dimension}·${h.timeSlot}·+${h.exp}EXP）`).join('、')
+    ? ctx.habits.map(h => {
+        const dims = h.dimensions?.map(d => `${d.dimension}`).join('/') || 'pro'
+        const exps = h.dimensions?.reduce((s, d) => s + d.exp, 0) || 0
+        return `"${h.name}"（${dims}·${h.timeSlot}·+${exps}EXP）`
+      }).join('、')
     : '暂无习惯'
 
   const todayDone = ctx.todayCompleted.length
@@ -152,7 +156,11 @@ export async function analyzeAndAddExp(
 用户维度状态：
 ${ctx.dimensions.map(d => `- ${d.name}: Lv${d.level}, ${d.exp}/${d.maxExp} EXP`).join('\n')}
 用户习惯列表：
-${ctx.habits.length > 0 ? ctx.habits.map(h => `- ${h.name}（${h.dimension}·${h.timeSlot}·+${h.exp}EXP）`).join('\n') : '暂无习惯'}
+${ctx.habits.length > 0 ? ctx.habits.map(h => {
+  const dims = h.dimensions?.map(d => `${d.dimension}`).join('/') || 'pro'
+  const exps = h.dimensions?.reduce((s, d) => s + d.exp, 0) || 0
+  return `- ${h.name}（${dims}·${h.timeSlot}·+${exps}EXP）`
+}).join('\n') : '暂无习惯'}
 今日已打卡：${ctx.todayCompleted.length} 个
 `
 

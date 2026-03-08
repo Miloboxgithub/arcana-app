@@ -42,8 +42,7 @@ export async function syncFromCloud(_userId?: string) {
         id: h.id,
         name: h.name,
         timeSlot: h.slot as 'morning' | 'afternoon' | 'evening' | 'night',
-        exp: h.exp,
-        dimension: h.dimension as import('@/stores/useHabitStore').DimensionId,
+        dimensions: [{ dimension: h.dimension as import('@/stores/useHabitStore').DimensionId, exp: h.exp }],
         isAnchor: h.is_anchor ?? false,
         streak: h.streak ?? 0,
         createdAt: h.created_at ? new Date(h.created_at).getTime() : Date.now(),
@@ -89,9 +88,10 @@ export async function pushAllHabitsToCloud() {
   const habits = useHabitStore.getState().habits
   if (!habits.length) return
   for (const h of habits) {
+    const mainDim = h.dimensions[0] || { dimension: 'pro' as const, exp: 10 }
     await api.habits.upsert({
-      id: h.id, name: h.name, slot: h.timeSlot, exp: h.exp,
-      dimension: h.dimension, is_anchor: h.isAnchor, streak: h.streak,
+      id: h.id, name: h.name, slot: h.timeSlot, exp: mainDim.exp,
+      dimension: mainDim.dimension, is_anchor: h.isAnchor, streak: h.streak,
     }).catch(() => {})
   }
 }

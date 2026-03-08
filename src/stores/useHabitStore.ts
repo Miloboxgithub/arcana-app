@@ -5,15 +5,26 @@ import { pushAddHabit, pushRemoveHabit, pushCheckIn, pushUncheck } from '@/lib/s
 export type TimeSlot = 'morning' | 'afternoon' | 'evening' | 'night'
 export type DimensionId = 'pro' | 'fitness' | 'social' | 'create' | 'self' | 'charm'
 
+// Multi-dimension EXP: one habit can give EXP to multiple dimensions
+export interface DimensionExp {
+  dimension: DimensionId
+  exp: number
+}
+
 export interface Habit {
   id: string
   name: string
-  dimension: DimensionId
+  dimensions: DimensionExp[]  // Array of dimension+exp pairs
   timeSlot: TimeSlot
-  exp: number
   isAnchor: boolean
   streak: number
   createdAt: number
+}
+
+export interface CheckRecord {
+  habitId: string
+  date: string       // 'YYYY-MM-DD'
+  completedAt: number
 }
 
 export interface CheckRecord {
@@ -37,6 +48,7 @@ interface HabitStore {
   getStreak: () => number
   getTodayDate: () => string
   initDay: () => void
+  getHabitDimensions: (habitId: string) => DimensionExp[]
 
   // Cloud sync setters
   setHabitsFromCloud: (habits: Habit[]) => void
@@ -68,6 +80,11 @@ const useHabitStore = create<HabitStore>()(
         }
       },
 
+      getHabitDimensions: (habitId) => {
+        const habit = get().habits.find(h => h.id === habitId)
+        return habit?.dimensions || []
+      },
+
       getTodayCompleted: () => {
         // Lazily reset if stale
         const today = todayStr()
@@ -82,8 +99,17 @@ const useHabitStore = create<HabitStore>()(
         const id = Math.random().toString(36).slice(2, 9)
         const full: Habit = { ...habit, id, streak: 0, createdAt: Date.now() }
         set(s => ({ habits: [...s.habits, full] }))
-        // cloud
-        pushAddHabit({ id, name: habit.name, timeSlot: habit.timeSlot, exp: habit.exp, dimension: habit.dimension, isAnchor: habit.isAnchor, streak: 0 })
+        // cloud - send first dimension as main for legacy compat
+        const mainDim = habit.dimensions[0]
+        pushAddHabit({ 
+          id, 
+          name: habit.name, 
+          timeSlot: habit.timeSlot, 
+          exp: mainDim?.exp || 10, 
+          dimension: mainDim?.dimension || 'pro', 
+          isAnchor: habit.isAnchor, 
+          streak: 0 
+        })
         return id
       },
 

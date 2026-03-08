@@ -262,9 +262,8 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
     if (firstHabitName.trim()) {
       addHabit({
         name: firstHabitName.trim(),
-        dimension: firstHabitDim,
+        dimensions: [{ dimension: firstHabitDim, exp: 20 }],
         timeSlot: firstHabitSlot,
-        exp: 20,
         isAnchor: true,
       })
     }

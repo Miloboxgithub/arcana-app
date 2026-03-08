@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { DimensionId } from './useHabitStore'
+import type { DimensionId, DimensionExp } from './useHabitStore'
 import { pushDimExp } from '@/lib/sync'
 
 export interface Dimension {
@@ -22,6 +22,7 @@ interface ProfileStore {
   totalExp: number
   dimensions: Dimension[]
   addExp: (dimensionId: DimensionId, amount: number) => void
+  addMultiExp: (dimensionExps: DimensionExp[]) => void  // Add EXP to multiple dimensions
   removeExp: (dimensionId: DimensionId, amount: number) => void
   getTotalLevel: () => number
   setDimensionExp: (map: Record<string, number>) => void
@@ -83,6 +84,34 @@ const useProfileStore = create<ProfileStore>()(
         if (totalDimExp > 0) {
           pushDimExp(dimensionId, totalDimExp)
         }
+      },
+
+      addMultiExp: (dimensionExps) => {
+        let totalAdded = 0
+        set(s => {
+          const dims = s.dimensions.map(d => {
+            const dimExp = dimensionExps.find(de => de.dimension === d.id)
+            if (!dimExp) return d
+            
+            let newExp = d.exp + dimExp.exp
+            let newLevel = d.level
+            let oldMax = d.maxExp
+            let newMax = oldMax
+            while (newExp >= newMax) {
+              newExp -= newMax
+              newLevel++
+              newMax = Math.floor(newMax * 1.3)
+            }
+            const totalDimExp = newExp + (newLevel - 1) * oldMax
+            totalAdded += dimExp.exp
+            // Cloud sync each dimension
+            if (totalDimExp > 0) {
+              pushDimExp(d.id, totalDimExp)
+            }
+            return { ...d, exp: newExp, level: newLevel, maxExp: newMax, totalExp: totalDimExp }
+          })
+          return { dimensions: dims, totalExp: s.totalExp + totalAdded }
+        })
       },
 
       removeExp: (dimensionId, amount) => {

@@ -127,11 +127,12 @@ function HabitCard({ habit, done, onToggle, index }: { habit: Habit; done: boole
         <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--white)', marginBottom: 5, opacity: done ? 0.4 : 1, textDecoration: done ? 'line-through' : 'none', transition: 'all 0.2s' }}>
           {habit.name}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 9, fontFamily: 'Share Tech Mono,monospace', letterSpacing: 1, padding: '2px 8px', background: 'rgba(195,0,47,0.12)', color: 'var(--red)', clipPath: 'polygon(4px 0,100% 0,calc(100% - 4px) 100%,0 100%)', display: 'inline-block', border: '1px solid rgba(195,0,47,0.25)' }}>
-            {DIM_LABELS[habit.dimension] || habit.dimension}
-          </span>
-          <span style={{ fontSize: 10, fontFamily: 'Share Tech Mono,monospace', color: 'var(--gold)' }}>+{habit.exp} EXP</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          {habit.dimensions?.map(d => (
+            <span key={d.dimension} style={{ fontSize: 9, fontFamily: 'Share Tech Mono,monospace', letterSpacing: 1, padding: '2px 8px', background: 'rgba(195,0,47,0.12)', color: 'var(--red)', clipPath: 'polygon(4px 0,100% 0,calc(100% - 4px) 100%,0 100%)', display: 'inline-block', border: '1px solid rgba(195,0,47,0.25)' }}>
+              {DIM_LABELS[d.dimension] || d.dimension} +{d.exp}
+            </span>
+          ))}
         </div>
       </div>
     </div>
@@ -253,8 +254,8 @@ function AIInputBar({ onSubmit, disabled }: { onSubmit: (text: string) => void; 
 
 // ── MAIN TODAY PAGE ────────────────────────────────────────
 export default function Today() {
-  const { habits, todayCompleted, toggleToday, getHabitsBySlot, getStreak } = useHabitStore()
-  const { dimensions, addExp, removeExp, getTotalLevel } = useProfileStore()
+  const { habits, todayCompleted, toggleToday, getHabitsBySlot, getStreak, getHabitDimensions } = useHabitStore()
+  const { dimensions, addExp, addMultiExp, removeExp, getTotalLevel } = useProfileStore()
   const { burst } = useStarBurst()
 
   const [activeSlot, setActiveSlot] = useState<TimeSlot>('afternoon')
@@ -264,7 +265,10 @@ export default function Today() {
 
   const streak = getStreak()
   const slotHabits = getHabitsBySlot(activeSlot)
-  const todayExp = habits.filter(h => todayCompleted.includes(h.id)).reduce((s, h) => s + h.exp, 0)
+  const todayExp = habits.filter(h => todayCompleted.includes(h.id)).reduce((s, h) => {
+    const dims = h.dimensions || []
+    return s + dims.reduce((sum, d) => sum + d.exp, 0)
+  }, 0)
   const allHabits = habits.length
   const totalLevel = getTotalLevel()
 
@@ -283,20 +287,44 @@ export default function Today() {
     const checked = toggleToday(habit.id)
     if (checked) {
       burst(window.innerWidth / 2, window.innerHeight * 0.45, 22)
-      addExp(habit.dimension as any, habit.exp)
-      showToast(habit.exp, DIM_LABELS[habit.dimension] || habit.dimension)
+      // Use multi-dimension EXP if available, fallback to single dimension
+      const dims = getHabitDimensions(habit.id)
+      if (dims.length > 0) {
+        addMultiExp(dims)
+        const totalExp = dims.reduce((s, d) => s + d.exp, 0)
+        const dimNames = dims.map(d => DIM_LABELS[d.dimension]).join('/')
+        showToast(totalExp, dimNames)
+      } else {
+        // Legacy single dimension support
+        const dim = habit.dimensions?.[0]?.dimension || 'pro'
+        const exp = habit.dimensions?.[0]?.exp || 10
+        addExp(dim, exp)
+        showToast(exp, DIM_LABELS[dim])
+      }
       setTimeout(() => showMorgana(), 600)
     } else {
-      removeExp(habit.dimension as any, habit.exp)
+      // Remove EXP for all dimensions on uncheck
+      const dims = getHabitDimensions(habit.id)
+      if (dims.length > 0) {
+        dims.forEach(d => removeExp(d.dimension, d.exp))
+      } else {
+        const dim = habit.dimensions?.[0]?.dimension || 'pro'
+        const exp = habit.dimensions?.[0]?.exp || 10
+        removeExp(dim, exp)
+      }
     }
-  }, [toggleToday, addExp, removeExp, burst, showToast, showMorgana])
+  }, [toggleToday, addExp, addMultiExp, removeExp, getHabitDimensions, burst, showToast, showMorgana])
 
   const handleAI = useCallback(async (text: string) => {
     // 构建用户上下文（用于 AI 分析）
     const ctx = {
       username: 'USER',
       dimensions: dimensions.map(d => ({ id: d.id, name: d.name, level: d.level, exp: d.exp, maxExp: d.maxExp })),
-      habits: habits.map(h => ({ name: h.name, dimension: h.dimension, timeSlot: (h as any).timeSlot || 'morning', exp: h.exp })),
+      habits: habits.map(h => ({ 
+        name: h.name, 
+        dimensions: h.dimensions?.map(d => ({ dimension: d.dimension, exp: d.exp })) || [{ dimension: 'pro', exp: 10 }], 
+        timeSlot: h.timeSlot || 'morning'
+      })),
       todayCompleted,
       habitIds: Object.fromEntries(habits.map(h => [h.id, h.name])),
       streak,
