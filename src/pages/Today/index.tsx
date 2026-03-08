@@ -333,23 +333,30 @@ export default function Today() {
       recentChecks: 0,
     }
 
-    // 用 AI 智能分析输入（后端会直接写库）
+    // 用 AI 智能分析输入
     setAiLoading(true)
-    showToast(0, '分析中...')
+    showToast(0, 'AI分析中...')
     
     const result = await analyzeAndAddExp(text, ctx)
     setAiLoading(false)
     
-    burst(window.innerWidth / 2, window.innerHeight / 2, 14)
-    
-    if (result.shouldAddExp && result.dimension) {
-      // 同步本地状态（后端已写入）
-      addExp(result.dimension, result.exp)
-      showToast(result.exp, result.dimension)
-      setTimeout(() => showMorgana(`收到！${result.reason} +${result.exp} EXP 已记录在案。`), 500)
+    if (result.shouldAddExp && result.dimensions && result.dimensions.length > 0) {
+      // 同步本地状态（多维度）
+      const totalExp = result.dimensions.reduce((s, d) => s + d.exp, 0)
+      
+      result.dimensions.forEach(d => {
+        addExp(d.dimension, d.exp)
+      })
+      
+      // 显示每个维度的经验值
+      const expDetails = result.dimensions.map(d => `${DIM_LABELS[d.dimension] || d.dimension}+${d.exp}`).join(' ')
+      showToast(totalExp, expDetails)
+      burst(window.innerWidth / 2, window.innerHeight / 2, 14)
+      setTimeout(() => showMorgana(`收到！${result.reason} ${expDetails} 已记录！`), 500)
     } else {
       // AI 判断不加经验，也给个反馈
       showToast(0, '未识别')
+      burst(window.innerWidth / 2, window.innerHeight / 2, 8)
       setTimeout(() => showMorgana(`收到！但这段内容没有实际行动，暂时不给予经验值。继续加油！`), 500)
     }
   }, [dimensions, habits, todayCompleted, streak, addExp, burst, showToast, showMorgana])

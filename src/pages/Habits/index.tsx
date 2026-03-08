@@ -374,8 +374,8 @@ function AddModal({ open, onClose, onAdd }: AddModalProps) {
             ))}
           </div>
           
-          {/* Add more dimensions */}
-          {dims.length < 3 && (
+          {/* Add more dimensions - can add all 6 dims */}
+          {dims.length < 6 && (
             <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
               {DIMS.filter(d => !dims.find(sel => sel.dimension === d)).map(d => (
                 <button

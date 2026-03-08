@@ -1,8 +1,14 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import useProfileStore from '@/stores/useProfileStore'
-import useHabitStore from '@/stores/useHabitStore'
+import useHabitStore, { type DimensionId } from '@/stores/useHabitStore'
 import useAuthStore from '@/stores/useAuthStore'
 import { askMorgana, analyzeAndAddExp, type ChatMessage, type UserContext, type AnalyzeResult } from '@/lib/morgana'
+
+// Dimension labels
+const DIM_LABELS: Record<DimensionId, string> = {
+  pro: '专业力', fitness: '体能', social: '社交',
+  create: '创造力', self: '自律', charm: '魅力',
+}
 
 interface ArcanaPageProps {
   onBack: () => void
@@ -109,10 +115,11 @@ export default function ArcanaPage({ onBack }: ArcanaPageProps) {
     const analyzeResult = await analyzeAndAddExp(userMsg, ctx)
     let expResult: AnalyzeResult | null = null
     
-    // 分析完成后，同步更新本地 state（后端已写入，这里是同步显示）
-    if (analyzeResult.shouldAddExp && analyzeResult.dimension) {
-      // 直接用 analyze 返回的值更新本地显示（后端已加过，这里是同步 UI）
-      addExp(analyzeResult.dimension, analyzeResult.exp)
+    // 分析完成后，同步更新本地 state（多维度）
+    if (analyzeResult.shouldAddExp && analyzeResult.dimensions && analyzeResult.dimensions.length > 0) {
+      analyzeResult.dimensions.forEach(d => {
+        addExp(d.dimension, d.exp)
+      })
       expResult = analyzeResult
     }
 
@@ -127,9 +134,11 @@ export default function ArcanaPage({ onBack }: ArcanaPageProps) {
         setMessages(prev => {
           const last = prev[prev.length - 1]
           if (last.role === 'assistant') {
+            const dims = expResult!.dimensions || []
+            const totalExp = dims.reduce((s, d) => s + d.exp, 0)
             return [...prev.slice(0, -1), {
               ...last,
-              _exp: { dim: expResult!.dimension, amount: expResult!.exp, reason: expResult!.reason },
+              _exp: { dims, totalExp, reason: expResult!.reason },
             }]
           }
           return prev
@@ -221,18 +230,31 @@ export default function ArcanaPage({ onBack }: ArcanaPageProps) {
               }}>
                 {msg.content}
               </div>
-              {/* EXP tag */}
+              {/* EXP tag - support multi dimensions */}
               {msg.role === 'user' && (msg as any)._exp && (
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 4 }}>
-                  <span style={{
-                    fontFamily: 'Share Tech Mono,monospace', fontSize: 9, letterSpacing: 1,
-                    color: DIM_COLOR[(msg as any)._exp.dim] || 'var(--red)',
-                    background: 'rgba(0,0,0,0.3)', padding: '2px 8px',
-                    clipPath: 'polygon(4px 0,100% 0,calc(100% - 4px) 100%,0 100%)',
-                    border: `1px solid ${DIM_COLOR[(msg as any)._exp.dim] || 'var(--red)'}`,
-                  }}>
-                    +{(msg as any)._exp.amount} EXP
-                  </span>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 4, flexWrap: 'wrap', gap: 4 }}>
+                  {((msg as any)._exp.dims || []).map((d: { dimension: string; exp: number }, i: number) => (
+                    <span key={i} style={{
+                      fontFamily: 'Share Tech Mono,monospace', fontSize: 9, letterSpacing: 1,
+                      color: DIM_COLOR[d.dimension] || 'var(--red)',
+                      background: 'rgba(0,0,0,0.3)', padding: '2px 8px',
+                      clipPath: 'polygon(4px 0,100% 0,calc(100% - 4px) 100%,0 100%)',
+                      border: `1px solid ${DIM_COLOR[d.dimension] || 'var(--red)'}`,
+                    }}>
+                      {DIM_LABELS[d.dimension as DimensionId] || d.dimension} +{d.exp}
+                    </span>
+                  ))}
+                  {(msg as any)._exp.totalExp && (
+                    <span style={{
+                      fontFamily: 'Share Tech Mono,monospace', fontSize: 9, letterSpacing: 1,
+                      color: 'var(--gold)',
+                      background: 'rgba(0,0,0,0.3)', padding: '2px 8px',
+                      clipPath: 'polygon(4px 0,100% 0,calc(100% - 4px) 100%,0 100%)',
+                      border: '1px solid var(--gold)',
+                    }}>
+                      总计 +{(msg as any)._exp.totalExp} EXP
+                    </span>
+                  )}
                 </div>
               )}
             </div>
