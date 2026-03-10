@@ -99,14 +99,16 @@ const useHabitStore = create<HabitStore>()(
         const id = Math.random().toString(36).slice(2, 9)
         const full: Habit = { ...habit, id, streak: 0, createdAt: Date.now() }
         set(s => ({ habits: [...s.habits, full] }))
-        // cloud - send first dimension as main for legacy compat
+        // cloud - send all dimensions
+        const totalExp = habit.dimensions.reduce((s, d) => s + d.exp, 0)
         const mainDim = habit.dimensions[0]
         pushAddHabit({ 
           id, 
           name: habit.name, 
           timeSlot: habit.timeSlot, 
-          exp: mainDim?.exp || 10, 
-          dimension: mainDim?.dimension || 'pro', 
+          exp: totalExp,
+          dimension: mainDim?.dimension || 'pro',
+          dimensions: habit.dimensions,
           isAnchor: habit.isAnchor, 
           streak: 0 
         })

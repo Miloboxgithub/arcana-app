@@ -118,11 +118,11 @@ export async function pushAllDimsToCloud() {
 
 export function pushAddHabit(habit: {
   id: string; name: string; timeSlot: string; exp: number
-  dimension: string; isAnchor: boolean; streak: number
+  dimension: string; dimensions: { dimension: string; exp: number }[]; isAnchor: boolean; streak: number
 }) {
   quietly(api.habits.upsert({
     id: habit.id, name: habit.name, slot: habit.timeSlot, exp: habit.exp,
-    dimension: habit.dimension, is_anchor: habit.isAnchor, streak: habit.streak,
+    dimension: habit.dimension, dimensions: habit.dimensions, is_anchor: habit.isAnchor, streak: habit.streak,
   }))
 }
 
