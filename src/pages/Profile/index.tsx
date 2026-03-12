@@ -1,8 +1,9 @@
-import { useState, useRef, useMemo } from 'react'
+import { useState, useRef, useMemo, useEffect } from 'react'
 import useProfileStore from '@/stores/useProfileStore'
 import useHabitStore from '@/stores/useHabitStore'
 import useAuthStore from '@/stores/useAuthStore'
 import useUIStore, { THEMES } from '@/stores/useUIStore'
+import { useAchievementStore, Achievement } from '@/stores/useAchievementStore'
 import { toast } from '@/components/ui/Toast'
 // ---- Preset SVG Avatars (P5 characters, zero external deps) ----
 const PRESET_AVATARS = [
@@ -151,14 +152,57 @@ function SectionHead({ label }: { label: string }) {
   )
 }
 
-const ACHIEVEMENTS = [
-  { ico: '⚡', name: '怪盗初临', desc: '完成第一次打卡', badge: '完成', done: true },
-  { ico: '🔥', name: '连锁之力', desc: '连续打卡 7 天', badge: '完成', done: true },
-  { ico: '📚', name: '学者之路', desc: '专业力达到 Lv.5', badge: '72%', done: false },
-  { ico: '🌙', name: '月之怪盗', desc: '连续打卡 30 天', badge: '7/30', done: false },
-  { ico: '👑', name: '全能怪盗', desc: '所有维度 Lv.3+', badge: '锁定', done: false, locked: true },
-  { ico: '💎', name: '传说之心', desc: '累计 10000 EXP', badge: '锁定', done: false, locked: true },
-]
+// 动态成就组件 - 从 store 获取数据
+function AchievementCard({ achievement }: { achievement: Achievement }) {
+  const { done, progress, target, progressPct } = achievement
+  
+  const badgeText = done ? '完成' : (progress > 0 ? `${progress}/${target}` : '锁定')
+  
+  return (
+    <div style={{
+      background: 'var(--card)', padding: '12px 14px',
+      clipPath: 'polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%)',
+      position: 'relative', overflow: 'hidden',
+      opacity: !done && progress === 0 ? 0.4 : 1,
+    }}>
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: done ? 'var(--gold)' : 'var(--dim)' }} />
+      <div style={{ 
+        fontSize: 22, 
+        marginBottom: 6, 
+        filter: done ? 'drop-shadow(0 0 6px rgba(232,200,64,0.5))' : 'none',
+        opacity: !done && progress === 0 ? 0.5 : 1,
+      }}>{achievement.icon}</div>
+      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--white)', marginBottom: 2 }}>{achievement.name}</div>
+      <div style={{ fontFamily: 'Share Tech Mono,monospace', fontSize: 8, color: 'var(--muted)', letterSpacing: 0.5, lineHeight: 1.4 }}>{achievement.description}</div>
+      
+      {/* Progress bar for in-progress achievements */}
+      {!done && progress > 0 && (
+        <div style={{ height: 2, background: 'var(--dim)', marginTop: 6 }}>
+          <div style={{
+            height: '100%',
+            background: 'rgba(195,0,47,0.6)',
+            width: `${progressPct}%`,
+            transition: 'width 0.3s ease',
+          }}/>
+        </div>
+      )}
+      
+      <div style={{ 
+        position: 'absolute', 
+        top: 6, 
+        right: 6, 
+        fontFamily: 'Bebas Neue,sans-serif', 
+        fontSize: 8, 
+        letterSpacing: 1, 
+        color: done ? 'var(--gold)' : 'var(--muted)', 
+        background: done ? 'rgba(232,200,64,0.1)' : 'transparent', 
+        padding: done ? '1px 5px' : 0 
+      }}>
+        {badgeText}
+      </div>
+    </div>
+  )
+}
 
 const SETTINGS = [
   {
@@ -189,8 +233,14 @@ export default function Profile({ onOpenArcana }: ProfileProps) {
   const { getStreak, checkRecords } = useHabitStore()
   const { user, signOut } = useAuthStore()
   const { openModal, closeModal, theme, setTheme } = useUIStore()
+  const { achievements, fetchAchievements } = useAchievementStore()
 
   const username = user?.username || user?.email?.split('@')[0] || 'PHANTOM'
+
+  // Fetch achievements on mount
+  useEffect(() => {
+    fetchAchievements()
+  }, [fetchAchievements])
 
   const [showAvatarPicker, setShowAvatarPicker] = useState(false)
   const [showThemePicker, setShowThemePicker] = useState(false)
@@ -544,22 +594,20 @@ export default function Profile({ onOpenArcana }: ProfileProps) {
         {/* Achievements */}
         <SectionHead label="成就徽章" />
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 16 }}>
-          {ACHIEVEMENTS.map(ach => (
-            <div key={ach.name} style={{
-              background: 'var(--card)', padding: '12px 14px',
-              clipPath: 'polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%)',
-              position: 'relative', overflow: 'hidden',
-              opacity: ach.locked ? 0.4 : 1,
-            }}>
-              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: ach.done ? 'var(--gold)' : 'var(--dim)' }} />
-              <div style={{ fontSize: 22, marginBottom: 6, filter: ach.locked ? 'none' : 'drop-shadow(0 0 6px rgba(232,200,64,0.5))' }}>{ach.ico}</div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--white)', marginBottom: 2 }}>{ach.name}</div>
-              <div style={{ fontFamily: 'Share Tech Mono,monospace', fontSize: 8, color: 'var(--muted)', letterSpacing: 0.5, lineHeight: 1.4 }}>{ach.desc}</div>
-              <div style={{ position: 'absolute', top: 6, right: 6, fontFamily: 'Bebas Neue,sans-serif', fontSize: 8, letterSpacing: 1, color: ach.done ? 'var(--gold)' : 'var(--muted)', background: ach.done ? 'rgba(232,200,64,0.1)' : 'transparent', padding: ach.done ? '1px 5px' : 0 }}>
-                {ach.badge}
+          {achievements.length > 0 ? (
+            achievements.slice(0, 6).map(ach => (
+              <AchievementCard key={ach.id} achievement={ach} />
+            ))
+          ) : (
+            // Fallback while loading or no achievements
+            <>
+              <div style={{ background: 'var(--card)', padding: '12px 14px', clipPath: 'polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%)', opacity: 0.5 }}>
+                <div style={{ fontSize: 22, marginBottom: 6 }}>⚡</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--white)', marginBottom: 2 }}>加载中...</div>
+                <div style={{ fontFamily: 'Share Tech Mono,monospace', fontSize: 8, color: 'var(--muted)', letterSpacing: 0.5 }}>正在获取成就数据</div>
               </div>
-            </div>
-          ))}
+            </>
+          )}
         </div>
 
         {/* Arcana entry */}

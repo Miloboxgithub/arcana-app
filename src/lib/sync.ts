@@ -10,6 +10,8 @@
 import { api } from '@/lib/api'
 import useHabitStore from '@/stores/useHabitStore'
 import useProfileStore from '@/stores/useProfileStore'
+import { useAchievementStore } from '@/stores/useAchievementStore'
+import { toast } from '@/components/ui/Toast'
 
 // ─── fire-and-forget 工具 ───────────────────────────────
 function quietly(p: Promise<unknown>) {
@@ -131,7 +133,21 @@ export function pushRemoveHabit(habitId: string) {
 }
 
 export function pushCheckIn(habitId: string, date: string, completedAt: number) {
-  quietly(api.habits.checkIn(habitId, date, new Date(completedAt).toISOString()))
+  // 异步检查成就，不阻塞打卡
+  api.habits.checkIn(habitId, date, new Date(completedAt).toISOString())
+    .then(res => {
+      // 成就解锁通知
+      if (res.newAchievements && res.newAchievements.length > 0) {
+        const achievementStore = useAchievementStore.getState()
+        achievementStore.fetchAchievements() // 刷新成就列表
+        
+        // 弹窗通知
+        res.newAchievements.forEach((id: string) => {
+          toast.success(`🏆 成就解锁: ${id}`, '✨')
+        })
+      }
+    })
+    .catch((e: unknown) => console.warn('[sync] checkIn error:', e))
 }
 
 export function pushUncheck(habitId: string, date: string) {

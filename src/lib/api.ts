@@ -81,7 +81,7 @@ export const api = {
       ),
 
     checkIn: (habit_id: string, date: string, completed_at: string) =>
-      request<{ ok: boolean }>('POST', '/api/habits/records', { habit_id, date, completed_at }),
+      request<{ ok: boolean; newAchievements?: string[] }>('POST', '/api/habits/records', { habit_id, date, completed_at }),
 
     uncheck: (habit_id: string, date: string) =>
       request<{ ok: boolean }>('DELETE', '/api/habits/records', { habit_id, date }),
@@ -114,5 +114,26 @@ export const api = {
         habits: Array<{ name: string; slot: string; exp: number; dimension: string }>
         dimensions: Array<{ dim_id: string; total_exp: number }>
       }>('GET', '/api/chat/profile'),
+  },
+
+  achievements: {
+    list: () =>
+      request<{
+        achievements: Array<{
+          id: string
+          category: string
+          name: string
+          description: string
+          icon: string
+          target: number
+          progress: number
+          progressPct: number
+          done: boolean
+          unlockedAt: string | null
+          expReward: number
+          rarity: string
+          isHidden: boolean
+        }>
+      }>('GET', '/api/achievements'),
   },
 }
