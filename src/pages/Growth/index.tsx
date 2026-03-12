@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import useProfileStore from '@/stores/useProfileStore'
 import useHabitStore from '@/stores/useHabitStore'
+import { useAchievementStore } from '@/stores/useAchievementStore'
 
 // ── Helpers ───────────────────────────────────────────────
 const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
@@ -251,6 +252,12 @@ function MilestoneCard({ name, desc, icon, current, target, done }: {
 export default function Growth() {
   const { checkRecords, getStreak, habits } = useHabitStore()
   const { dimensions } = useProfileStore()
+  const { achievements, fetchAchievements } = useAchievementStore()
+
+  // Fetch achievements on mount
+  useMemo(() => {
+    fetchAchievements()
+  }, [])
 
   const streak = getStreak()
   const totalExp = dimensions.reduce((s,d) => s + (d.totalExp ?? 0), 0)
@@ -292,17 +299,15 @@ export default function Growth() {
     return m
   }, [checkRecords])
 
-  // Milestones
-  const proLevel = dimensions.find(d => d.id === 'pro')?.level ?? 0
-  const milestones = [
-    { name:'初心者',    desc:'完成第一次打卡',       icon:'⚡', current: Math.min(1, totalChecks), target:1,   done: totalChecks >= 1 },
-    { name:'怪盗团员',  desc:'连续打卡 7 天',        icon:'🔥', current: streak,                   target:7,   done: streak >= 7 },
-    { name:'学者之路',  desc:'专业力达到 Lv.5',      icon:'📚', current: proLevel,                 target:5,   done: proLevel >= 5 },
-    { name:'月之怪盗',  desc:'连续打卡 30 天',       icon:'🌙', current: streak,                   target:30,  done: streak >= 30 },
-    { name:'百日行者',  desc:'累计打卡 100 次',      icon:'💪', current: totalChecks,              target:100, done: totalChecks >= 100 },
-    { name:'全能怪盗',  desc:'所有维度达到 Lv.3+',   icon:'👑', current: dimensions.filter(d=>d.level>=3).length, target:6, done: dimensions.every(d=>d.level>=3) },
-    { name:'传说之心',  desc:'累计获得 10000 EXP',   icon:'💎', current: totalExp,                 target:10000, done: totalExp >= 10000 },
-  ]
+  // Milestones - use achievements from store
+  const milestones = achievements.map(a => ({
+    name: a.name,
+    desc: a.description,
+    icon: a.icon,
+    current: a.progress,
+    target: a.target,
+    done: a.done,
+  }))
 
   return (
     <div className="page-container">
