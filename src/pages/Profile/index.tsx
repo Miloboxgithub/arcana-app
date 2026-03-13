@@ -591,20 +591,20 @@ export default function Profile({ onOpenArcana }: ProfileProps) {
           </div>
         )}
 
-        {/* Achievements */}
+        {/* Achievements - only show completed ones */}
         <SectionHead label="成就徽章" />
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 16 }}>
-          {achievements.length > 0 ? (
-            achievements.slice(0, 6).map(ach => (
+          {achievements.filter(a => a.done).length > 0 ? (
+            achievements.filter(a => a.done).slice(0, 6).map(ach => (
               <AchievementCard key={ach.id} achievement={ach} />
             ))
           ) : (
-            // Fallback while loading or no achievements
+            // Fallback while loading or no completed achievements
             <>
               <div style={{ background: 'var(--card)', padding: '12px 14px', clipPath: 'polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%)', opacity: 0.5 }}>
-                <div style={{ fontSize: 22, marginBottom: 6 }}>⚡</div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--white)', marginBottom: 2 }}>加载中...</div>
-                <div style={{ fontFamily: 'Share Tech Mono,monospace', fontSize: 8, color: 'var(--muted)', letterSpacing: 0.5 }}>正在获取成就数据</div>
+                <div style={{ fontSize: 22, marginBottom: 6 }}>🔒</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--white)', marginBottom: 2 }}>暂无完成成就</div>
+                <div style={{ fontFamily: 'Share Tech Mono,monospace', fontSize: 8, color: 'var(--muted)', letterSpacing: 0.5 }}>继续打卡，解锁你的第一个成就</div>
               </div>
             </>
           )}
