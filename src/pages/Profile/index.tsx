@@ -5,6 +5,7 @@ import useAuthStore from '@/stores/useAuthStore'
 import useUIStore, { THEMES } from '@/stores/useUIStore'
 import { useAchievementStore, Achievement } from '@/stores/useAchievementStore'
 import { toast } from '@/components/ui/Toast'
+import AchievementsModal from '@/components/ui/AchievementsModal'
 // ---- Preset SVG Avatars (P5 characters, zero external deps) ----
 const PRESET_AVATARS = [
   {
@@ -244,6 +245,7 @@ export default function Profile({ onOpenArcana }: ProfileProps) {
 
   const [showAvatarPicker, setShowAvatarPicker] = useState(false)
   const [showThemePicker, setShowThemePicker] = useState(false)
+  const [showAchievements, setShowAchievements] = useState(false)
   // Read avatar from user state first, fallback to localStorage, then default
   const [avatarId, setAvatarId] = useState<string>(
     () => user?.avatar_id || localStorage.getItem(AVATAR_KEY) || 'joker'
@@ -592,7 +594,23 @@ export default function Profile({ onOpenArcana }: ProfileProps) {
         )}
 
         {/* Achievements - only show completed ones */}
-        <SectionHead label="成就徽章" />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+          <SectionHead label="成就徽章" />
+          {achievements.length > 0 && (
+            <button
+              onClick={() => { setShowAchievements(true); openModal() }}
+              style={{
+                background: 'none', border: 'none',
+                fontFamily: 'Share Tech Mono,monospace',
+                fontSize: 10, color: 'var(--red)',
+                letterSpacing: 1, cursor: 'pointer',
+                padding: '4px 8px',
+              }}
+            >
+              查看全部 →
+            </button>
+          )}
+        </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 16 }}>
           {achievements.filter(a => a.done).length > 0 ? (
             achievements.filter(a => a.done).slice(0, 6).map(ach => (
@@ -702,6 +720,14 @@ export default function Profile({ onOpenArcana }: ProfileProps) {
             </div>
           </div>
         </div>
+
+        {/* Achievements Modal */}
+        {showAchievements && (
+          <AchievementsModal
+            achievements={achievements}
+            onClose={() => { setShowAchievements(false); closeModal() }}
+          />
+        )}
 
       </div>
     </div>

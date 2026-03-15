@@ -12,6 +12,7 @@ import Onboarding from '@/pages/Onboarding'
 import useAuthStore from '@/stores/useAuthStore'
 import useUIStore from '@/stores/useUIStore'
 import { syncFromCloud } from '@/lib/sync'
+import { AchievementUnlockProvider } from '@/components/ui/AchievementUnlock'
 
 const pageVariants = {
   initial: { opacity: 0, y: 6 },
@@ -87,68 +88,70 @@ function App() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--black)', position: 'relative' }}>
+    <AchievementUnlockProvider>
+      <div style={{ minHeight: '100vh', background: 'var(--black)', position: 'relative' }}>
 
-      {/* Background layer */}
-      <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0, overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle, rgba(195,0,47,0.06) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
+        {/* Background layer */}
+        <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0, overflow: 'hidden' }}>
+          <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle, rgba(195,0,47,0.06) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
+        </div>
+
+        {/* Background watermark */}
+        <div style={{
+          position: 'fixed', top: -10, right: -18,
+          fontFamily: 'Bebas Neue,sans-serif', fontSize: 180, letterSpacing: -4, lineHeight: 1,
+          color: 'transparent', WebkitTextStroke: '1px rgba(195,0,47,0.07)',
+          transform: 'skewX(-8deg) rotate(-8deg)',
+          pointerEvents: 'none', zIndex: 0, userSelect: 'none', whiteSpace: 'nowrap',
+        }}>ARCANA</div>
+
+        {/* Left diamond decoration */}
+        <div style={{ position: 'fixed', pointerEvents: 'none', zIndex: 0 }}>
+          <div style={{ position: 'absolute', width: 80, height: 80, top: 120, left: -30, border: '1px solid rgba(195,0,47,0.10)', transform: 'rotate(45deg)' }} />
+          <div style={{ position: 'absolute', width: 44, height: 44, top: 160, left: 12, border: '1px solid rgba(195,0,47,0.10)', transform: 'rotate(45deg)' }} />
+        </div>
+
+        {/* Scanline */}
+        <div style={{ position: 'fixed', left: 0, right: 0, height: 1, background: 'rgba(195,0,47,0.05)', pointerEvents: 'none', zIndex: 999, animation: 'scan 6s linear infinite' }} />
+
+        {/* Morgana FAB */}
+        {showNav && (
+          <button
+            onClick={() => handleTabChange('arcana')}
+            title="找莫尔加纳聊聊"
+            className="morgana-fab-ring"
+            style={{
+              position: 'fixed', right: 16, bottom: 78,
+              width: 48, height: 48,
+              background: 'var(--card)', border: '1.5px solid rgba(195,0,47,0.5)',
+              clipPath: 'polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px))',
+              cursor: 'pointer', zIndex: 200,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            <img src="/morgana-avatar.png" alt="莫尔加纳" style={{ width: 36, height: 36, objectFit: 'contain' }} />
+          </button>
+        )}
+
+        {/* Page content — NO overflow:hidden here, let body scroll naturally */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            variants={pageVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={pageTransition}
+            style={{ position: 'relative', zIndex: 10 }}
+          >
+            {renderPage()}
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Bottom Nav — fixed at bottom */}
+        {showNav && <BottomNav active={activeTab} onChange={handleTabChange} />}
       </div>
-
-      {/* Background watermark */}
-      <div style={{
-        position: 'fixed', top: -10, right: -18,
-        fontFamily: 'Bebas Neue,sans-serif', fontSize: 180, letterSpacing: -4, lineHeight: 1,
-        color: 'transparent', WebkitTextStroke: '1px rgba(195,0,47,0.07)',
-        transform: 'skewX(-8deg) rotate(-8deg)',
-        pointerEvents: 'none', zIndex: 0, userSelect: 'none', whiteSpace: 'nowrap',
-      }}>ARCANA</div>
-
-      {/* Left diamond decoration */}
-      <div style={{ position: 'fixed', pointerEvents: 'none', zIndex: 0 }}>
-        <div style={{ position: 'absolute', width: 80, height: 80, top: 120, left: -30, border: '1px solid rgba(195,0,47,0.10)', transform: 'rotate(45deg)' }} />
-        <div style={{ position: 'absolute', width: 44, height: 44, top: 160, left: 12, border: '1px solid rgba(195,0,47,0.10)', transform: 'rotate(45deg)' }} />
-      </div>
-
-      {/* Scanline */}
-      <div style={{ position: 'fixed', left: 0, right: 0, height: 1, background: 'rgba(195,0,47,0.05)', pointerEvents: 'none', zIndex: 999, animation: 'scan 6s linear infinite' }} />
-
-      {/* Morgana FAB */}
-      {showNav && (
-        <button
-          onClick={() => handleTabChange('arcana')}
-          title="找莫尔加纳聊聊"
-          className="morgana-fab-ring"
-          style={{
-            position: 'fixed', right: 16, bottom: 78,
-            width: 48, height: 48,
-            background: 'var(--card)', border: '1.5px solid rgba(195,0,47,0.5)',
-            clipPath: 'polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px))',
-            cursor: 'pointer', zIndex: 200,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}
-        >
-          <img src="/morgana-avatar.png" alt="莫尔加纳" style={{ width: 36, height: 36, objectFit: 'contain' }} />
-        </button>
-      )}
-
-      {/* Page content — NO overflow:hidden here, let body scroll naturally */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={activeTab}
-          variants={pageVariants}
-          initial="initial"
-          animate="animate"
-          exit="exit"
-          transition={pageTransition}
-          style={{ position: 'relative', zIndex: 10 }}
-        >
-          {renderPage()}
-        </motion.div>
-      </AnimatePresence>
-
-      {/* Bottom Nav — fixed at bottom */}
-      {showNav && <BottomNav active={activeTab} onChange={handleTabChange} />}
-    </div>
+    </AchievementUnlockProvider>
   )
 }
 

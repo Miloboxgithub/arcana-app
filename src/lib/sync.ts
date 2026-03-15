@@ -10,7 +10,8 @@
 import { api } from '@/lib/api'
 import useHabitStore from '@/stores/useHabitStore'
 import useProfileStore from '@/stores/useProfileStore'
-import { useAchievementStore } from '@/stores/useAchievementStore'
+import { useAchievementStore, Achievement } from '@/stores/useAchievementStore'
+import { showAchievementUnlock } from '@/components/ui/AchievementUnlock'
 import { toast } from '@/components/ui/Toast'
 
 // ─── fire-and-forget 工具 ───────────────────────────────
@@ -135,16 +136,23 @@ export function pushRemoveHabit(habitId: string) {
 export function pushCheckIn(habitId: string, date: string, completedAt: number) {
   // 异步检查成就，不阻塞打卡
   api.habits.checkIn(habitId, date, new Date(completedAt).toISOString())
-    .then(res => {
+    .then(async res => {
       // 成就解锁通知
       if (res.newAchievements && res.newAchievements.length > 0) {
         const achievementStore = useAchievementStore.getState()
-        achievementStore.fetchAchievements() // 刷新成就列表
+        await achievementStore.fetchAchievements() // 刷新成就列表
         
-        // 弹窗通知
-        res.newAchievements.forEach((id: string) => {
-          toast.success(`🏆 成就解锁: ${id}`, '✨')
-        })
+        // 获取新解锁的成就详情，触发弹窗
+        const newUnlocked = achievementStore.achievements.filter(a => 
+          res.newAchievements!.includes(a.id) && a.done
+        )
+        
+        // 依次显示每个成就解锁弹窗
+        for (const achievement of newUnlocked) {
+          showAchievementUnlock(achievement)
+          // 每个弹窗间隔 1.5 秒
+          await new Promise(r => setTimeout(r, 1500))
+        }
       }
     })
     .catch((e: unknown) => console.warn('[sync] checkIn error:', e))

@@ -22,7 +22,9 @@ interface AchievementStore {
   loading: boolean
   error: string | null
   fetchAchievements: () => Promise<void>
-  lastUnlocked: string[] // IDs of newly unlocked achievements
+  lastUnlocked: Achievement[] // 存储完整成就对象用于弹窗显示
+  addUnlocked: (achievements: Achievement[]) => void
+  clearLastUnlocked: () => void
 }
 
 export const useAchievementStore = create<AchievementStore>((set) => ({
@@ -39,5 +41,13 @@ export const useAchievementStore = create<AchievementStore>((set) => ({
     } catch (err: any) {
       set({ error: err.message, loading: false })
     }
+  },
+
+  addUnlocked: (newAchievements: Achievement[]) => {
+    set({ lastUnlocked: newAchievements })
+  },
+
+  clearLastUnlocked: () => {
+    set({ lastUnlocked: [] })
   },
 }))
