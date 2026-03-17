@@ -27,7 +27,18 @@ function App() {
   const { user, loading, init } = useAuthStore()
   const { modalOpen } = useUIStore()
 
-  useEffect(() => { init() }, [init])
+  useEffect(() => { 
+    init() 
+    // 安全网：10秒后强制结束 loading 状态
+    const timeout = setTimeout(() => {
+      const state = useAuthStore.getState()
+      if (state.loading) {
+        console.warn('[App] Loading timeout, forcing navigation to show')
+        useAuthStore.setState({ loading: false })
+      }
+    }, 10000)
+    return () => clearTimeout(timeout)
+  }, [init])
 
   // 登录后自动从云端同步数据
   useEffect(() => {

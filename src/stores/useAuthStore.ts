@@ -24,7 +24,8 @@ const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const { user } = await api.auth.me()
       set({ user, loading: false })
-    } catch {
+    } catch (e) {
+      console.error('[Auth] init failed:', e)
       localStorage.removeItem(TOKEN_KEY)
       set({ user: null, loading: false })
     }
