@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import useHabitStore, { type TimeSlot, type Habit } from '@/stores/useHabitStore'
+import { toast } from '@/components/ui/Toast'
 
 const TIME_SLOTS: { id: TimeSlot; label: string; color: string }[] = [
   { id: 'morning',   label: '早晨', color: '#FFD54F' },
@@ -77,7 +78,7 @@ function HabitRow({ habit, onDelete }: { habit: Habit; onDelete: (id: string) =>
 }
 
 export default function Habits({ onCreateHabit }: { onCreateHabit: () => void }) {
-  const { habits } = useHabitStore()
+  const { habits, removeHabit } = useHabitStore()
   const todayCompleted = useHabitStore(s => s.todayCompleted)
   const checkRecords = useHabitStore(s => s.checkRecords)
   const getStreak = useHabitStore.getState().getStreak
@@ -93,6 +94,7 @@ export default function Habits({ onCreateHabit }: { onCreateHabit: () => void })
     if (confirmDelete === id) {
       removeHabit(id)
       setConfirmDelete(null)
+      toast.success('习惯已删除', '✦')
     } else {
       setConfirmDelete(id)
       setTimeout(() => setConfirmDelete(null), 3000)
@@ -163,7 +165,7 @@ export default function Habits({ onCreateHabit }: { onCreateHabit: () => void })
           width: 52, height: 52,
           background: 'var(--red)', border: 'none',
           clipPath: 'polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,12px 100%,0 calc(100% - 12px))',
-          cursor: 'pointer', zIndex: 100,
+          cursor: 'pointer', zIndex: 200,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           boxShadow: '0 4px 24px rgba(195,0,47,0.4)',
           fontFamily: 'Bebas Neue,sans-serif', fontSize: 28, color: 'var(--white)',

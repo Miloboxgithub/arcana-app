@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import BottomNav, { type TabId } from '@/components/layout/BottomNav'
 import Today from '@/pages/Today'
+import Status from '@/pages/Status'
 import Habits from '@/pages/Habits'
 import Growth from '@/pages/Growth'
 import ArcanaPage from '@/pages/Arcana'
@@ -65,6 +66,7 @@ function App() {
   const renderPage = () => {
     switch (activeTab) {
       case 'today':   return <Today />
+      case 'status':  return <Status />
       case 'habits':  return <Habits onCreateHabit={() => setShowCreateHabit(true)} />
       case 'growth':  return <Growth />
       case 'arcana':  return <ArcanaPage onBack={closeArcana} />
