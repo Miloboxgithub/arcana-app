@@ -1,5 +1,7 @@
 import { useState, useMemo } from 'react'
-import useHabitStore, { type TimeSlot, type DimensionId, type DimensionExp } from '@/stores/useHabitStore'
+import { analyzeAndAddExp } from '@/lib/morgana'
+import useProfileStore from '@/stores/useProfileStore'
+import useHabitStore, { type TimeSlot, type DimensionId } from '@/stores/useHabitStore'
 
 // ── Constants ─────────────────────────────────────────────
 const TIME_SLOTS: { id: TimeSlot; label: string; icon: string }[] = [
@@ -61,16 +63,9 @@ function ExpSlider({ value, onChange, color }: { value: number; onChange: (v: nu
       <input
         type="range" min="5" max="50" step="5" value={value}
         onChange={e => onChange(Number(e.target.value))}
-        style={{
-          flex: 1, accentColor: color,
-          height: 3,
-          cursor: 'pointer',
-        }}
+        style={{ flex: 1, accentColor: color, height: 3, cursor: 'pointer' }}
       />
-      <div style={{
-        fontFamily: 'Bebas Neue,sans-serif', fontSize: 16, color,
-        minWidth: 36, textAlign: 'right', letterSpacing: 1,
-      }}>
+      <div style={{ fontFamily: 'Bebas Neue,sans-serif', fontSize: 16, color, minWidth: 36, textAlign: 'right', letterSpacing: 1 }}>
         +{value}
       </div>
     </div>
@@ -80,13 +75,11 @@ function ExpSlider({ value, onChange, color }: { value: number; onChange: (v: nu
 function SectionHead({ label }: { label: string }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '20px 0 10px' }}>
-      <div style={{
-        fontFamily: 'Bebas Neue,sans-serif', fontSize: 12, letterSpacing: 3,
-        color: 'var(--white)', transform: 'skewX(-4deg)', whiteSpace: 'nowrap',
-        display: 'flex', alignItems: 'center',
-      }}>
-        <span style={{ width: 3, height: 12, background: 'var(--red)', marginRight: 6 }} />
-        {label}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div style={{ width: 3, height: 12, background: 'var(--red)' }} />
+        <span style={{ fontFamily: 'Bebas Neue,sans-serif', fontSize: 12, letterSpacing: 3, color: 'var(--white)', transform: 'skewX(-4deg)', whiteSpace: 'nowrap' }}>
+          {label}
+        </span>
       </div>
       <div style={{ flex: 1, height: 1, background: 'linear-gradient(90deg,var(--dim),transparent)' }} />
     </div>
@@ -99,11 +92,10 @@ interface CreateHabitProps {
 }
 
 export default function CreateHabit({ onClose }: CreateHabitProps) {
-  const { addHabit, habits } = useHabitStore()
+  const { addHabit } = useHabitStore()
 
   const [name, setName] = useState('')
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot>('morning')
-  // Multi-dimension: each selected dimension has its own exp
   const [dimExps, setDimExps] = useState<Record<DimensionId, { selected: boolean; exp: number }>>({
     pro:     { selected: false, exp: DEFAULT_EXP },
     fitness: { selected: false, exp: DEFAULT_EXP },
@@ -113,6 +105,8 @@ export default function CreateHabit({ onClose }: CreateHabitProps) {
     charm:   { selected: false, exp: DEFAULT_EXP },
   })
   const [showPresets, setShowPresets] = useState(true)
+  const [analyzing, setAnalyzing] = useState(false)
+  const [analyzeTip, setAnalyzeTip] = useState('')
 
   const selectedDimList = useMemo(() => {
     return (Object.entries(dimExps) as [DimensionId, { selected: boolean; exp: number }][])
@@ -131,12 +125,48 @@ export default function CreateHabit({ onClose }: CreateHabitProps) {
       newDimExps[k as DimensionId] = { selected: false, exp: DEFAULT_EXP }
     })
     preset.dims.forEach(d => {
-      if (newDimExps[d.dimension]) {
-        newDimExps[d.dimension] = { selected: true, exp: d.exp }
-      }
+      if (newDimExps[d.dimension]) newDimExps[d.dimension] = { selected: true, exp: d.exp }
     })
     setDimExps(newDimExps)
     setShowPresets(false)
+    setAnalyzeTip('')
+  }
+
+  const handleAIAnalyze = async () => {
+    if (!name.trim() || analyzing) return
+    setAnalyzing(true)
+    setAnalyzeTip('')
+    try {
+      const profileStore = useProfileStore.getState()
+      const ctx = {
+        username: profileStore.name || 'USER',
+        dimensions: profileStore.dimensions.map(d => ({ id: d.id, name: d.name, level: d.level, exp: d.exp, maxExp: d.maxExp })),
+        habits: [] as Array<{ name: string; dimensions: Array<{ dimension: DimensionId; exp: number }>; timeSlot: string }>,
+        todayCompleted: [] as string[],
+        habitIds: {} as Record<string, string>,
+        streak: 0,
+        totalExp: 0,
+        weekExp: 0,
+        recentChecks: 0,
+      }
+      const result = await analyzeAndAddExp(name.trim(), ctx)
+      if (result.shouldAddExp && result.dimensions.length > 0) {
+        const newDimExps = { ...dimExps }
+        Object.keys(newDimExps).forEach(k => {
+          newDimExps[k as DimensionId] = { selected: false, exp: DEFAULT_EXP }
+        })
+        result.dimensions.forEach(d => {
+          if (newDimExps[d.dimension]) newDimExps[d.dimension] = { selected: true, exp: d.exp }
+        })
+        setDimExps(newDimExps)
+        setAnalyzeTip('✨ ' + result.reason)
+      } else {
+        setAnalyzeTip('未能识别维度，请手动选择')
+      }
+    } catch {
+      setAnalyzeTip('分析失败，请手动选择维度')
+    }
+    setAnalyzing(false)
   }
 
   const handleSave = () => {
@@ -150,35 +180,25 @@ export default function CreateHabit({ onClose }: CreateHabitProps) {
     onClose()
   }
 
-
   return (
     <div style={{ maxWidth: 390, margin: '0 auto', padding: '0 0 80px' }}>
 
       {/* Header */}
       <div style={{ position: 'sticky', top: 0, zIndex: 20, background: 'rgba(8,8,8,0.97)', backdropFilter: 'blur(12px)' }}>
         <div style={{ padding: '14px 16px 10px', display: 'flex', alignItems: 'center', gap: 10 }}>
-          <button
-            onClick={onClose}
-            style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontSize: 18, padding: 4, lineHeight: 1 }}
-          >
-            ←
-          </button>
-          <span style={{ fontFamily: 'Bebas Neue,sans-serif', fontSize: 20, letterSpacing: 4, color: 'var(--white)', transform: 'skewX(-4deg)', display: 'inline-block' }}>
-            新建习惯
-          </span>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontSize: 18, padding: 4, lineHeight: 1 }}>←</button>
+          <span style={{ fontFamily: 'Bebas Neue,sans-serif', fontSize: 20, letterSpacing: 4, color: 'var(--white)', transform: 'skewX(-4deg)', display: 'inline-block' }}>新建习惯</span>
           <div style={{ marginLeft: 'auto' }}>
             <button
               onClick={handleSave}
               disabled={!canSave}
               style={{
                 fontFamily: 'Share Tech Mono,monospace', fontSize: 10, letterSpacing: 2,
-                padding: '7px 18px',
-                background: canSave ? 'var(--red)' : 'var(--dim)',
+                padding: '7px 18px', background: canSave ? 'var(--red)' : 'var(--dim)',
                 border: 'none', cursor: canSave ? 'pointer' : 'not-allowed',
                 clipPath: 'polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%)',
                 color: canSave ? 'var(--white)' : 'var(--muted)',
-                opacity: canSave ? 1 : 0.5,
-                transition: 'all 0.2s',
+                opacity: canSave ? 1 : 0.5, transition: 'all 0.2s',
               }}
             >
               保存
@@ -195,31 +215,57 @@ export default function CreateHabit({ onClose }: CreateHabitProps) {
         <div style={{ position: 'relative' }}>
           <input
             value={name}
-            onChange={e => { setName(e.target.value); setShowPresets(false) }}
+            onChange={e => { setName(e.target.value); setShowPresets(false); setAnalyzeTip('') }}
             placeholder="例如：晨跑 30 分钟、刷算法题 2 道…"
             style={{
-              width: '100%', background: 'var(--card)', border: `1px solid ${name.trim() ? 'var(--red)' : 'var(--dim)'}`,
+              width: '100%', background: 'var(--card)',
+              border: `1px solid ${name.trim() ? 'var(--red)' : 'var(--dim)'}`,
               outline: 'none', color: 'var(--white)', fontSize: 14,
               fontFamily: 'Noto Sans SC,sans-serif',
-              padding: '12px 16px',
+              padding: '12px 160px 12px 16px',
               clipPath: 'polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))',
               boxShadow: name.trim() ? '0 0 16px rgba(195,0,47,0.15)' : 'none',
               transition: 'all 0.3s',
             }}
           />
           {name.trim() && (
-            <div style={{
-              position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)',
-              width: 16, height: 16, background: 'var(--red)', borderRadius: '50%',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 10, color: 'white', cursor: 'pointer',
-            }}
-              onClick={() => { setName(''); setShowPresets(true) }}
-            >
-              ✕
+            <div style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <button
+                onClick={handleAIAnalyze}
+                disabled={analyzing}
+                style={{
+                  fontFamily: 'Share Tech Mono,monospace', fontSize: 9, letterSpacing: 1,
+                  padding: '4px 10px',
+                  background: analyzing ? 'var(--dim)' : 'rgba(195,0,47,0.12)',
+                  border: '1px solid rgba(195,0,47,0.35)',
+                  color: analyzing ? 'var(--muted)' : 'var(--red)',
+                  cursor: analyzing ? 'wait' : 'pointer',
+                  clipPath: 'polygon(4px 0,100% 0,calc(100% - 4px) 100%,0 100%)',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {analyzing ? '分析中…' : '✨ AI 分析'}
+              </button>
+              <div
+                onClick={() => { setName(''); setShowPresets(true); setAnalyzeTip('') }}
+                style={{
+                  width: 16, height: 16, background: 'var(--red)', borderRadius: '50%',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 10, color: 'white', cursor: 'pointer',
+                }}
+              >
+                ✕
+              </div>
             </div>
           )}
         </div>
+
+        {/* AI analyze tip */}
+        {analyzeTip && (
+          <div style={{ fontFamily: 'Share Tech Mono,monospace', fontSize: 8.5, color: 'rgba(232,200,64,0.85)', letterSpacing: 1, marginTop: 5, paddingLeft: 4, lineHeight: 1.6 }}>
+            {analyzeTip}
+          </div>
+        )}
 
         {/* Presets */}
         {showPresets && (
@@ -239,8 +285,7 @@ export default function CreateHabit({ onClose }: CreateHabitProps) {
                     cursor: 'pointer',
                     clipPath: 'polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%)',
                     transition: 'all 0.2s',
-                    textAlign: 'left',
-                    letterSpacing: 0.3,
+                    textAlign: 'left', letterSpacing: 0.3,
                   }}
                 >
                   {p.name}
@@ -281,19 +326,16 @@ export default function CreateHabit({ onClose }: CreateHabitProps) {
             const state = dimExps[dim.id]
             return (
               <div key={dim.id} style={{
-                background: 'var(--card)',
-                padding: '10px 12px',
+                background: 'var(--card)', padding: '10px 12px',
                 clipPath: 'polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%)',
                 borderLeft: `3px solid ${state.selected ? dim.color : 'transparent'}`,
-                transition: 'all 0.2s',
-                opacity: state.selected ? 1 : 0.5,
+                transition: 'all 0.2s', opacity: state.selected ? 1 : 0.5,
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <DiamondCheckbox
                     checked={state.selected}
                     onChange={() => setDimExps(prev => ({
-                      ...prev,
-                      [dim.id]: { ...prev[dim.id], selected: !prev[dim.id].selected }
+                      ...prev, [dim.id]: { ...prev[dim.id], selected: !prev[dim.id].selected }
                     }))}
                     color={dim.color}
                   />
@@ -314,8 +356,7 @@ export default function CreateHabit({ onClose }: CreateHabitProps) {
                     <ExpSlider
                       value={state.exp}
                       onChange={v => setDimExps(prev => ({
-                        ...prev,
-                        [dim.id]: { ...prev[dim.id], exp: v }
+                        ...prev, [dim.id]: { ...prev[dim.id], exp: v }
                       }))}
                       color={dim.color}
                     />
@@ -334,12 +375,8 @@ export default function CreateHabit({ onClose }: CreateHabitProps) {
             padding: '12px 16px',
             clipPath: 'polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 100%)',
           }}>
-            <div style={{ fontFamily: 'Share Tech Mono,monospace', fontSize: 8, color: 'var(--muted)', letterSpacing: 2, marginBottom: 8 }}>
-              习惯预览
-            </div>
-            <div style={{ fontSize: 13, color: 'var(--white)', marginBottom: 6, fontWeight: 700 }}>
-              {name || '（习惯名称）'}
-            </div>
+            <div style={{ fontFamily: 'Share Tech Mono,monospace', fontSize: 8, color: 'var(--muted)', letterSpacing: 2, marginBottom: 8 }}>习惯预览</div>
+            <div style={{ fontSize: 13, color: 'var(--white)', marginBottom: 6, fontWeight: 700 }}>{name || '（习惯名称）'}</div>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               {selectedDimList.map(d => {
                 const dim = DIMENSIONS.find(dim => dim.id === d.dimension)!
@@ -357,16 +394,12 @@ export default function CreateHabit({ onClose }: CreateHabitProps) {
                   </span>
                 )
               })}
-              <span style={{
-                fontFamily: 'Bebas Neue,sans-serif', fontSize: 14,
-                color: 'var(--gold)', marginLeft: 4,
-              }}>
+              <span style={{ fontFamily: 'Bebas Neue,sans-serif', fontSize: 14, color: 'var(--gold)', marginLeft: 4 }}>
                 = +{totalExp} EXP
               </span>
             </div>
           </div>
         )}
-
       </div>
     </div>
   )
