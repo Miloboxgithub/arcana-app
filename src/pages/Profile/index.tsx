@@ -227,9 +227,10 @@ const SETTINGS = [
 
 interface ProfileProps {
   onOpenArcana: () => void
+  onOpenMorgana?: () => void
 }
 
-export default function Profile({ onOpenArcana }: ProfileProps) {
+export default function Profile({ onOpenArcana, onOpenMorgana }: ProfileProps) {
   const { dimensions, getTotalLevel } = useProfileStore()
   const { getStreak, checkRecords } = useHabitStore()
   const { user, signOut } = useAuthStore()

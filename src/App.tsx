@@ -70,7 +70,7 @@ function App() {
       case 'habits':  return <Habits onCreateHabit={() => setShowCreateHabit(true)} />
       case 'growth':  return <Growth />
       case 'arcana':  return <ArcanaPage onBack={closeArcana} />
-      case 'profile': return <Profile onOpenArcana={openArcana} />
+      case 'profile': return <Profile onOpenArcana={openArcana} onOpenMorgana={() => setShowMorgana(true)} />
       default:        return <Today />
     }
   }
