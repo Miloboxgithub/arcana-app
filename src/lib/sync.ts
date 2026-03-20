@@ -12,7 +12,6 @@ import useHabitStore from '@/stores/useHabitStore'
 import useProfileStore from '@/stores/useProfileStore'
 import { useAchievementStore, Achievement } from '@/stores/useAchievementStore'
 import { showAchievementUnlock } from '@/components/ui/AchievementUnlock'
-import { toast } from '@/components/ui/Toast'
 
 // ─── fire-and-forget 工具 ───────────────────────────────
 function quietly(p: Promise<unknown>) {

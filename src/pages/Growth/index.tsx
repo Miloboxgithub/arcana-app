@@ -273,7 +273,7 @@ export default function Growth() {
       }, 0)
   }, [checkRecords, habits])
 
-  const totalChecks = checkRecords.length
+  void checkRecords.length // track total checks if needed later
   const totalDays = useMemo(() => {
     const dates = new Set(checkRecords.map(r => r.date))
     return dates.size

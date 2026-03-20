@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import BottomNav, { type TabId } from '@/components/layout/BottomNav'
 import Today from '@/pages/Today'
-import Status from '@/pages/Status'
 import Habits from '@/pages/Habits'
 import Growth from '@/pages/Growth'
 import ArcanaPage from '@/pages/Arcana'
 import Profile from '@/pages/Profile'
 import AuthPage from '@/pages/Auth'
 import Onboarding from '@/pages/Onboarding'
+import MorganaPage from '@/pages/Morgana'
+import CreateHabit from '@/pages/Habits/CreateHabit'
 import useAuthStore from '@/stores/useAuthStore'
 import useUIStore from '@/stores/useUIStore'
 import { syncFromCloud } from '@/lib/sync'
@@ -23,29 +24,22 @@ const pageTransition = { duration: 0.18, ease: 'easeInOut' as const }
 
 function App() {
   const [activeTab, setActiveTab] = useState<TabId>('today')
-  const [prevArcana, setPrevArcana] = useState<TabId>('profile')
+  const [showMorgana, setShowMorgana] = useState(false)
+  const [showCreateHabit, setShowCreateHabit] = useState(false)
   const { user, loading, init } = useAuthStore()
-  const { modalOpen } = useUIStore()
 
-  useEffect(() => { 
-    init() 
-    // 安全网：10秒后强制结束 loading 状态
+  useEffect(() => {
+    init()
     const timeout = setTimeout(() => {
-      const state = useAuthStore.getState()
-      if (state.loading) {
-        console.warn('[App] Loading timeout, forcing navigation to show')
-        useAuthStore.setState({ loading: false })
-      }
+      if (useAuthStore.getState().loading) useAuthStore.setState({ loading: false })
     }, 10000)
     return () => clearTimeout(timeout)
   }, [init])
 
-  // 登录后自动从云端同步数据
   useEffect(() => {
     if (user) syncFromCloud(user.id)
   }, [user?.id])
 
-  // 每30分钟验证一次token有效性
   useEffect(() => {
     const interval = setInterval(async () => {
       await useAuthStore.getState().refreshUser()
@@ -54,60 +48,89 @@ function App() {
   }, [])
 
   const handleTabChange = (id: TabId) => {
-    if (id === 'arcana') setPrevArcana(activeTab)
+    if (id === 'arcana') return // arcana only accessible via profile button
     setActiveTab(id)
-    // 切换 tab 时确保 modal 状态重置（防止习惯页 modal 未关导致 FAB 消失）
     useUIStore.getState().closeModal()
-    // Scroll to top on tab change
     window.scrollTo(0, 0)
   }
+
+  const openArcana = () => setActiveTab('arcana')
+  const closeArcana = () => setActiveTab('profile')
 
   const renderPage = () => {
     switch (activeTab) {
       case 'today':   return <Today />
-      case 'status':  return <Status />
-      case 'habits':  return <Habits />
+      case 'habits':  return <Habits onCreateHabit={() => setShowCreateHabit(true)} />
       case 'growth':  return <Growth />
-      case 'arcana':  return <ArcanaPage onBack={() => setActiveTab(prevArcana)} />
-      case 'profile': return <Profile onOpenArcana={() => handleTabChange('arcana')} />
+      case 'arcana':  return <ArcanaPage onBack={closeArcana} />
+      case 'profile': return <Profile onOpenArcana={openArcana} />
       default:        return <Today />
     }
   }
 
-  const showNav = activeTab !== 'arcana' && !modalOpen
+  const showNav = activeTab !== 'arcana' && !showCreateHabit
 
-  // Loading state
+  // Loading
   if (loading) {
     return (
       <div style={{ minHeight: '100vh', background: 'var(--black)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 24, letterSpacing: 6, color: 'var(--red)', opacity: 0.7 }}>
-          ARCANA
-        </div>
+        <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 24, letterSpacing: 6, color: 'var(--red)', opacity: 0.7 }}>ARCANA</div>
       </div>
     )
   }
 
-  // Not logged in → show auth page
   if (!user) return <AuthPage />
-
-  // New user → show onboarding
-  const onboardingDone = user.onboarding_done
-  if (!onboardingDone) {
-    return <Onboarding onComplete={() => {
-      useAuthStore.getState().refreshUser()
-    }} />
+  if (!user.onboarding_done) {
+    return <Onboarding onComplete={() => useAuthStore.getState().refreshUser()} />
   }
 
   return (
     <AchievementUnlockProvider>
-      <div style={{ minHeight: '100vh', background: 'var(--black)', position: 'relative' }}>
+      {/* ── Create Habit Modal ── */}
+      <AnimatePresence>
+        {showCreateHabit && (
+          <motion.div
+            key="create-habit"
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 40 }}
+            transition={{ duration: 0.25, ease: [0.175, 0.885, 0.32, 1.275] }}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 800,
+              background: 'var(--black)',
+              overflowY: 'auto',
+            }}
+          >
+            <CreateHabit onClose={() => setShowCreateHabit(false)} />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-        {/* Background layer */}
+      {/* ── Morgana Chat ── */}
+      <AnimatePresence>
+        {showMorgana && (
+          <motion.div
+            key="morgana"
+            initial={{ opacity: 0, x: 60 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 60 }}
+            transition={{ duration: 0.28, ease: [0.175, 0.885, 0.32, 1.275] }}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 900,
+              background: 'var(--black)',
+            }}
+          >
+            <MorganaPage onClose={() => setShowMorgana(false)} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Main App ── */}
+      <div style={{ minHeight: '100vh', background: 'var(--black)', position: 'relative', display: showMorgana || showCreateHabit ? 'none' : 'block' }}>
+        {/* Background */}
         <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0, overflow: 'hidden' }}>
           <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle, rgba(195,0,47,0.06) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
         </div>
-
-        {/* Background watermark */}
         <div style={{
           position: 'fixed', top: -10, right: -18,
           fontFamily: 'Bebas Neue,sans-serif', fontSize: 180, letterSpacing: -4, lineHeight: 1,
@@ -115,20 +138,12 @@ function App() {
           transform: 'skewX(-8deg) rotate(-8deg)',
           pointerEvents: 'none', zIndex: 0, userSelect: 'none', whiteSpace: 'nowrap',
         }}>ARCANA</div>
-
-        {/* Left diamond decoration */}
-        <div style={{ position: 'fixed', pointerEvents: 'none', zIndex: 0 }}>
-          <div style={{ position: 'absolute', width: 80, height: 80, top: 120, left: -30, border: '1px solid rgba(195,0,47,0.10)', transform: 'rotate(45deg)' }} />
-          <div style={{ position: 'absolute', width: 44, height: 44, top: 160, left: 12, border: '1px solid rgba(195,0,47,0.10)', transform: 'rotate(45deg)' }} />
-        </div>
-
-        {/* Scanline */}
         <div style={{ position: 'fixed', left: 0, right: 0, height: 1, background: 'rgba(195,0,47,0.05)', pointerEvents: 'none', zIndex: 999, animation: 'scan 6s linear infinite' }} />
 
         {/* Morgana FAB */}
         {showNav && (
           <button
-            onClick={() => handleTabChange('arcana')}
+            onClick={() => setShowMorgana(true)}
             title="找莫尔加纳聊聊"
             className="morgana-fab-ring"
             style={{
@@ -144,7 +159,6 @@ function App() {
           </button>
         )}
 
-        {/* Page content — NO overflow:hidden here, let body scroll naturally */}
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
@@ -159,7 +173,6 @@ function App() {
           </motion.div>
         </AnimatePresence>
 
-        {/* Bottom Nav — fixed at bottom */}
         {showNav && <BottomNav active={activeTab} onChange={handleTabChange} />}
       </div>
     </AchievementUnlockProvider>
