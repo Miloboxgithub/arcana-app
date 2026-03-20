@@ -632,7 +632,7 @@ export default function Profile({ onOpenArcana, onOpenMorgana }: ProfileProps) {
         {/* Arcana entry */}
         <SectionHead label="AI 顾问" />
         <div
-          onClick={onOpenArcana}
+          onClick={onOpenMorgana ?? onOpenArcana}
           style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             background: 'var(--card)', padding: '14px 16px', marginBottom: 16, cursor: 'pointer',
