@@ -136,4 +136,48 @@ export const api = {
         }>
       }>('GET', '/api/achievements'),
   },
+
+  reports: {
+    weekly: () =>
+      request<Array<{
+        id: string
+        week_start: string
+        week_end: string
+        total_checks: number
+        total_exp: number
+        streak_days: number
+        dim_changes: Record<string, number>
+        top_habits: Array<{ name: string; count: number }>
+        highlights: string[]
+        suggestions: string[]
+        created_at: string
+      }>>('GET', '/api/reports/weekly'),
+
+    generateWeekly: () =>
+      request<{ id: string; week_start: string; highlights: string[]; suggestions: string[] }>(
+        'POST', '/api/reports/weekly/generate'
+      ),
+  },
+
+  notifications: {
+    list: (limit = 20, unreadOnly = false) =>
+      request<Array<{
+        id: string
+        type: string
+        title: string
+        body: string
+        data: Record<string, unknown>
+        read: boolean
+        created_at: string
+      }>>('GET', `/api/notifications?limit=${limit}&unread=${unreadOnly ? 1 : 0}`),
+
+    unreadCount: () =>
+      request<{ count: number }>('GET', '/api/notifications/unread-count'),
+
+    markRead: (id: string) =>
+      request<{ ok: boolean }>('PATCH', `/api/notifications/${id}/read`),
+
+    markAllRead: () =>
+      request<{ ok: boolean }>('POST', '/api/notifications/read-all'),
+  },
 }
