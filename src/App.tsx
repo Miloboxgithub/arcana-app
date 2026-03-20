@@ -10,10 +10,12 @@ import AuthPage from '@/pages/Auth'
 import Onboarding from '@/pages/Onboarding'
 import MorganaPage from '@/pages/Morgana'
 import CreateHabit from '@/pages/Habits/CreateHabit'
+import NotificationPanel from '@/components/ui/NotificationPanel'
 import useAuthStore from '@/stores/useAuthStore'
 import useUIStore from '@/stores/useUIStore'
 import { syncFromCloud } from '@/lib/sync'
 import { AchievementUnlockProvider } from '@/components/ui/AchievementUnlock'
+import { useNotificationStore } from '@/stores/useNotificationStore'
 
 const pageVariants = {
   initial: { opacity: 0, y: 6 },
@@ -26,7 +28,9 @@ function App() {
   const [activeTab, setActiveTab] = useState<TabId>('today')
   const [showMorgana, setShowMorgana] = useState(false)
   const [showCreateHabit, setShowCreateHabit] = useState(false)
+  const [showNotifications, setShowNotifications] = useState(false)
   const { user, loading, init } = useAuthStore()
+  const { unreadCount, fetchUnreadCount } = useNotificationStore()
 
   useEffect(() => {
     init()
@@ -38,6 +42,7 @@ function App() {
 
   useEffect(() => {
     if (user) syncFromCloud(user.id)
+    fetchUnreadCount()
   }, [user?.id])
 
   useEffect(() => {
@@ -106,6 +111,21 @@ function App() {
         )}
       </AnimatePresence>
 
+      {/* ── Notification Panel ── */}
+      <AnimatePresence>
+        {showNotifications && (
+          <motion.div
+            key="notif-panel"
+            initial={{ opacity: 0, x: 60 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 60 }}
+            transition={{ duration: 0.25, ease: [0.175, 0.885, 0.32, 1.275] }}
+          >
+            <NotificationPanel onClose={() => setShowNotifications(false)} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* ── Morgana Chat ── */}
       <AnimatePresence>
         {showMorgana && (
@@ -142,21 +162,58 @@ function App() {
 
         {/* Morgana FAB */}
         {showNav && (
-          <button
-            onClick={() => setShowMorgana(true)}
-            title="找莫尔加纳聊聊"
-            className="morgana-fab-ring"
-            style={{
-              position: 'fixed', right: 16, bottom: 78,
-              width: 48, height: 48,
-              background: 'var(--card)', border: '1.5px solid rgba(195,0,47,0.5)',
-              clipPath: 'polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px))',
-              cursor: 'pointer', zIndex: 200,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}
-          >
-            <img src="/morgana-avatar.png" alt="莫尔加纳" style={{ width: 36, height: 36, objectFit: 'contain' }} />
-          </button>
+          <>
+            {/* Notification bell — top right when on Today tab */}
+            {activeTab === 'today' && (
+              <button
+                onClick={() => setShowNotifications(true)}
+                title="通知"
+                style={{
+                  position: 'fixed', top: 14, right: 16,
+                  width: 38, height: 38,
+                  background: 'var(--card)', border: '1px solid var(--dim)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer', zIndex: 150,
+                  clipPath: 'polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%)',
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="var(--white)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M13.73 21a2 2 0 01-3.46 0" stroke="var(--white)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                {unreadCount > 0 && (
+                  <div style={{
+                    position: 'absolute', top: -4, right: -4,
+                    width: 16, height: 16, background: 'var(--red)',
+                    borderRadius: '50%', border: '2px solid var(--black)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontFamily: 'Share Tech Mono,monospace', fontSize: 7,
+                    color: 'white', fontWeight: 700,
+                    zIndex: 1,
+                  }}>
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </div>
+                )}
+              </button>
+            )}
+
+            {/* Morgana FAB */}
+            <button
+              onClick={() => setShowMorgana(true)}
+              title="找莫尔加纳聊聊"
+              className="morgana-fab-ring"
+              style={{
+                position: 'fixed', right: 16, bottom: 78,
+                width: 48, height: 48,
+                background: 'var(--card)', border: '1.5px solid rgba(195,0,47,0.5)',
+                clipPath: 'polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px))',
+                cursor: 'pointer', zIndex: 200,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}
+            >
+              <img src="/morgana-avatar.png" alt="莫尔加纳" style={{ width: 36, height: 36, objectFit: 'contain' }} />
+            </button>
+          </>
         )}
 
         <AnimatePresence mode="wait">

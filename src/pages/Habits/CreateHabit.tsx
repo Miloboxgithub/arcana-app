@@ -150,7 +150,6 @@ export default function CreateHabit({ onClose }: CreateHabitProps) {
     onClose()
   }
 
-  const totalDims = habits.filter(h => h.timeSlot === selectedSlot).length
 
   return (
     <div style={{ maxWidth: 390, margin: '0 auto', padding: '0 0 80px' }}>

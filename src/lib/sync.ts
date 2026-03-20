@@ -10,7 +10,7 @@
 import { api } from '@/lib/api'
 import useHabitStore from '@/stores/useHabitStore'
 import useProfileStore from '@/stores/useProfileStore'
-import { useAchievementStore, Achievement } from '@/stores/useAchievementStore'
+import { useAchievementStore } from '@/stores/useAchievementStore'
 import { showAchievementUnlock } from '@/components/ui/AchievementUnlock'
 
 // ─── fire-and-forget 工具 ───────────────────────────────

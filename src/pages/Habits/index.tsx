@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import useHabitStore, { type TimeSlot, type Habit, type DimensionId } from '@/stores/useHabitStore'
+import useHabitStore, { type TimeSlot, type Habit } from '@/stores/useHabitStore'
 
 const TIME_SLOTS: { id: TimeSlot; label: string; color: string }[] = [
   { id: 'morning',   label: '早晨', color: '#FFD54F' },
@@ -41,7 +41,6 @@ function SlotGroup({ slot, habits, onDelete }: { slot: typeof TIME_SLOTS[0]; hab
 }
 
 function HabitRow({ habit, onDelete }: { habit: Habit; onDelete: (id: string) => void }) {
-  const { removeHabit } = useHabitStore()
   const todayCompleted = useHabitStore(s => s.todayCompleted)
   const todayDone = todayCompleted.includes(habit.id)
   const totalExp = habit.dimensions?.reduce((s, d) => s + d.exp, 0) || 0
@@ -78,7 +77,7 @@ function HabitRow({ habit, onDelete }: { habit: Habit; onDelete: (id: string) =>
 }
 
 export default function Habits({ onCreateHabit }: { onCreateHabit: () => void }) {
-  const { habits, removeHabit } = useHabitStore()
+  const { habits } = useHabitStore()
   const todayCompleted = useHabitStore(s => s.todayCompleted)
   const checkRecords = useHabitStore(s => s.checkRecords)
   const getStreak = useHabitStore.getState().getStreak
