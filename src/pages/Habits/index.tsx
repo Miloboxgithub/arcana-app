@@ -136,6 +136,27 @@ export default function Habits({ onCreateHabit }: { onCreateHabit: () => void })
           ))}
         </div>
 
+        {/* Inline add button */}
+        <button
+          onClick={onCreateHabit}
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            gap: 8, background: 'transparent',
+            border: '1px dashed rgba(195,0,47,0.35)', color: 'var(--red)',
+            padding: '11px', cursor: 'pointer',
+            fontFamily: "'Bebas Neue', sans-serif",
+            fontSize: 13, letterSpacing: 3,
+            marginBottom: 16, width: '100%',
+            clipPath: 'polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%)',
+          }}
+        >
+          <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+            <line x1="7" y1="1" x2="7" y2="13" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            <line x1="1" y1="7" x2="13" y2="7" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+          新建习惯
+        </button>
+
         {/* Habits by slot */}
         {TIME_SLOTS.map(slot => (
           <SlotGroup key={slot.id} slot={slot} habits={habitsBySlot(slot.id)} onDelete={handleDelete} />
@@ -145,7 +166,7 @@ export default function Habits({ onCreateHabit }: { onCreateHabit: () => void })
         {habits.length === 0 && (
           <div style={{ textAlign: 'center', padding: '40px 20px', background: 'var(--card)', clipPath: 'polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px))' }}>
             <div style={{ fontFamily: 'Share Tech Mono,monospace', fontSize: 11, color: 'var(--muted)', letterSpacing: 2, marginBottom: 12 }}>还没有习惯</div>
-            <div style={{ fontSize: 13, color: 'var(--white)', lineHeight: 1.7, marginBottom: 16 }}>点击下方「+」添加你的第一个习惯<br />莫尔加纳会帮你追踪进度</div>
+            <div style={{ fontSize: 13, color: 'var(--white)', lineHeight: 1.7, marginBottom: 16 }}>点击上方「新建习惯」添加你的第一个习惯<br />莫尔加纳会帮你追踪进度</div>
           </div>
         )}
 
